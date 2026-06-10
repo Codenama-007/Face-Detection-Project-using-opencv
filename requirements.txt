@@ -6,6 +6,9 @@ pandas
 scikit-learn
 deep-sort-realtime
 ultralytics
-face_recognition
 pillow
 scipy
+flask
+flask-cors
+psycopg2-binary
+

@@ -27,11 +27,8 @@ function init() {
     updateUI(currentData);
     addTimelineEvent('Monitoring started', 'info');
     
-    // Simulate incoming data based on the provided required structure
-    setInterval(simulateIncomingData, 3500);
-    
-    // Animate face box in video feed lightly
-    setInterval(animateFaceBox, 1500);
+    // Fetch live data from Python backend
+    setInterval(fetchLiveStatus, 1000);
 }
 
 // Update the user interface with the new data object
@@ -124,66 +121,30 @@ function addTimelineEvent(message, type) {
     }
 }
 
-// Animates the tracking box in the placeholder video feed
-function animateFaceBox() {
-    // Generate some jittering coordinates
-    let x = 0, y = 0;
-    
-    if (currentData.direction === 'LEFT') {
-        x = -40 - Math.random() * 10;
-    } else if (currentData.direction === 'RIGHT') {
-        x = 40 + Math.random() * 10;
-    } else {
-        x = Math.random() * 10 - 5;
-    }
-    
-    y = Math.random() * 10 - 5;
-
-    faceBox.style.transform = `translate(${x}px, ${y}px)`;
-    
-    if (currentData.status === 'SUSPICIOUS') {
-        faceBox.style.borderColor = 'var(--danger)';
-    } else if (currentData.status === 'WARNING') {
-        faceBox.style.borderColor = 'var(--warning)';
-    } else {
-        faceBox.style.borderColor = 'var(--success)';
-    }
-}
-
-// Simulation Logic to showcase dynamic nature of the Dashboard
-const scenarios = [
-    { risk_score: 5, direction: 'CENTER', status: 'NORMAL' },
-    { risk_score: 15, direction: 'RIGHT', status: 'WARNING' },
-    { risk_score: 25, direction: 'LEFT', status: 'SUSPICIOUS' }, // Matching prompt request
-    { risk_score: 30, direction: 'LEFT', status: 'SUSPICIOUS' },
-    { risk_score: 10, direction: 'CENTER', status: 'NORMAL' },
-    { risk_score: 0, direction: 'CENTER', status: 'NORMAL' },
-];
-
-let simIndex = 0;
-
-function simulateIncomingData() {
-    // Cycle through scenarios
-    const newData = scenarios[simIndex];
-    simIndex = (simIndex + 1) % scenarios.length;
-    
-    const prevStatus = currentData.status;
-    
-    // Update the state
-    currentData = { ...currentData, ...newData };
-    updateUI(currentData);
-    
-    // Generate meaningful alerts based on state transition
-    if (newData.status === 'SUSPICIOUS' && prevStatus !== 'SUSPICIOUS') {
-        addAlert(`Suspicious behavior detected: Gaze ${newData.direction}`, 'danger');
-        addTimelineEvent(`User gaze fixed ${newData.direction}. Flagged.`, 'danger');
-    } else if (newData.status === 'WARNING' && prevStatus === 'NORMAL') {
-        addTimelineEvent(`User looking ${newData.direction}`, 'warning');
-    } else if (newData.status === 'NORMAL' && prevStatus !== 'NORMAL') {
-        addTimelineEvent(`Focus returned to center`, '');
-    } else if (newData.status === 'SUSPICIOUS' && prevStatus === 'SUSPICIOUS') {
-        // Continuous suspicious
-        addTimelineEvent(`Prolonged irregular gaze behavior`, 'danger');
+// Fetch live data from backend
+async function fetchLiveStatus() {
+    try {
+        const response = await fetch('/api/status');
+        const newData = await response.json();
+        
+        const prevStatus = currentData.status;
+        currentData = { ...currentData, ...newData };
+        updateUI(currentData);
+        
+        // Generate meaningful alerts based on state transition
+        if (newData.status === 'SUSPICIOUS' && prevStatus !== 'SUSPICIOUS') {
+            addAlert(`Suspicious behavior detected: Gaze ${newData.direction}`, 'danger');
+            addTimelineEvent(`User gaze fixed ${newData.direction}. Flagged.`, 'danger');
+        } else if (newData.status === 'WARNING' && prevStatus === 'NORMAL') {
+            addTimelineEvent(`User looking ${newData.direction}`, 'warning');
+        } else if (newData.status === 'NORMAL' && prevStatus !== 'NORMAL') {
+            addTimelineEvent(`Focus returned to center`, '');
+        } else if (newData.status === 'HIGH RISK' && prevStatus !== 'HIGH RISK') {
+            addAlert(`High Risk behavior detected!`, 'danger');
+            addTimelineEvent(`Risk score critically high.`, 'danger');
+        }
+    } catch (e) {
+        console.error("Error fetching live status:", e);
     }
 }
 

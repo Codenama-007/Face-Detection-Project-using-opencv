@@ -34,6 +34,7 @@
                         text-decoration:none;padding:0.4rem 0.85rem;
                         border:1px solid var(--card-border);border-radius:8px;
                         transition:all 0.2s;display:flex;align-items:center;gap:0.4rem;
+                        display:none;
                     ">
                         <i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i> Reports
                     </a>
@@ -42,6 +43,7 @@
                         text-decoration:none;padding:0.4rem 0.85rem;
                         border:1px solid var(--card-border);border-radius:8px;
                         transition:all 0.2s;display:flex;align-items:center;gap:0.4rem;
+                        display:none;
                     ">
                         <i data-lucide="play-circle" style="width:14px;height:14px;"></i> Replay
                     </a>
@@ -128,7 +130,7 @@
                     </div>
                 </div>
 
-                <!-- Video Feed / Live View Placeholder -->
+                <!-- Video Feed / Live View -->
                 <div class="card glass-card video-card" id="video-feed">
                     <div class="card-header">
                         <h3>Live Feed Monitoring</h3>
@@ -136,37 +138,12 @@
                             <button class="btn-icon" aria-label="Maximize"><i data-lucide="maximize-2"></i></button>
                         </div>
                     </div>
-                    <div class="video-container">
-                        <!-- Simulate face tracking overlay -->
-                        <div class="face-box" id="faceBox"></div>
-                        <div class="video-overlay text-overlay">
-                            Camera Feed <span class="blink">REC</span>
-                        </div>
+                    <div style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+                        <img src="/video_feed" alt="Live Camera Feed" style="max-width:100%;max-height:100%;border-radius:12px;box-shadow:inset 0 0 20px rgba(0,0,0,0.5);">
                     </div>
                 </div>
                 
-                <!-- Analytics Cards -->
-                <div class="card glass-card analytics-card" id="analytics">
-                    <div class="card-header">
-                        <h3>Session Analytics</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="analytics-bars">
-                            <div class="bar-group">
-                                <div class="bar-label">Focus Time</div>
-                                <div class="bar-track">
-                                    <div class="bar-fill" style="width: 85%;"></div>
-                                </div>
-                            </div>
-                            <div class="bar-group">
-                                <div class="bar-label">Distractions</div>
-                                <div class="bar-track">
-                                    <div class="bar-fill warning" style="width: 15%;"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
             </div>
 
             <!-- Right Column: Timeline & Alerts -->
