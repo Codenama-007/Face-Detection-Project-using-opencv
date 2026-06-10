@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Replay Engine | ProctorAI</title>
+    <meta name="description" content="Ultra-premium Exam Replay Dashboard for AI Examination Integrity Platform.">
+    <!-- Apple Inspired Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="replay.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="reports.html" class="back-btn" id="backBtn" aria-label="Back to Reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Back
+    </a>
+    <div class="app-container">
+        <!-- 1. Premium Header -->
+        <header class="glass-header">
+            <div class="header-left">
+                <i data-lucide="play-circle" class="accent-icon"></i>
+                <h1>Exam Replay Engine</h1>
+                <span class="badge badge-outline">ARCHIVED</span>
+            </div>
+            <div class="header-right">
+                <div class="session-status">
+                    <span class="status-dot red"></span> Final Review Required
+                </div>
+                <div class="replay-controls-header">
+                    <button class="btn-icon" title="Previous Session" aria-label="Previous"><i data-lucide="chevron-left"></i></button>
+                    <button class="btn-icon" title="Next Session" aria-label="Next"><i data-lucide="chevron-right"></i></button>
+                    <button class="btn-primary"><i data-lucide="share"></i> Export Replay</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 2. Session Overview & 10. Replay Summary Card -->
+        <section class="top-grid">
+            <div class="glass-panel overview-card">
+                <div class="overview-header">
+                    <img src="https://i.pravatar.cc/150?img=12" alt="Student Profile" class="student-avatar-small">
+                    <div>
+                        <h2>Alex Johnson</h2>
+                        <p class="student-id">ID: STU-298314</p>
+                    </div>
+                </div>
+                <div class="overview-stats">
+                    <div class="stat-block">
+                        <span class="stat-label">Exam Duration</span>
+                        <span class="stat-value">35m 12s</span>
+                    </div>
+                    <div class="stat-block">
+                        <span class="stat-label">Final Risk Score</span>
+                        <span class="stat-value danger-text">85%</span>
+                    </div>
+                    <div class="stat-block">
+                        <span class="stat-label">Overall Trust Score</span>
+                        <span class="stat-value warning-text">15%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel summary-card">
+                <div class="section-header">
+                    <h3><i data-lucide="file-text" class="accent-icon"></i> Audit Summary</h3>
+                </div>
+                <p class="summary-text">
+                    This session exhibits a high frequency of anomalous behavior. The student repeatedly looked away from the screen, and the face tracking signal was lost entirely at 10:18. A major risk escalation occurred at 10:25 due to sustained suspicious activity, resulting in a compromised trust score. Immediate administrative review and intervention is highly recommended.
+                </p>
+            </div>
+        </section>
+
+        <!-- Main Workspace -->
+        <div class="main-grid">
+            <!-- Center Column (Playback & Timeline) -->
+            <div class="column-main">
+                <!-- Video / Playback Area Mockup -->
+                <div class="glass-panel playback-container">
+                    <div class="video-placeholder">
+                        <div class="face-box"></div>
+                        <div class="timestamp-overlay">10:12:45</div>
+                        <div class="status-overlay warning-bg"><i data-lucide="eye"></i> Looking Left</div>
+                    </div>
+                    
+                    <!-- 4. Event Playback Controls -->
+                    <div class="playback-controls">
+                        <div class="progress-container">
+                            <div class="progress-bar-bg" id="progressBarBg">
+                                <div class="progress-bar-fill" id="progressBarFill" style="width: 35%"></div>
+                                <div class="progress-handle" id="progressHandle" style="left: 35%"></div>
+                            </div>
+                            <div class="time-labels">
+                                <span>10:10:00</span>
+                                <span>10:45:12</span>
+                            </div>
+                        </div>
+                        <div class="controls-row">
+                            <div class="speed-control">
+                                <select class="select-glass" id="speedControl" aria-label="Playback Speed">
+                                    <option value="0.5">0.5x</option>
+                                    <option value="1.0" selected>1.0x</option>
+                                    <option value="1.5">1.5x</option>
+                                    <option value="2.0">2.0x</option>
+                                </select>
+                            </div>
+                            <div class="main-controls">
+                                <button class="btn-control" id="btnPrev" aria-label="Skip Backward"><i data-lucide="skip-back"></i></button>
+                                <button class="btn-control btn-play" id="btnPlayPause" aria-label="Play/Pause"><i data-lucide="play"></i></button>
+                                <button class="btn-control" id="btnNext" aria-label="Skip Forward"><i data-lucide="skip-forward"></i></button>
+                            </div>
+                            <div class="volume-control">
+                                <button class="btn-control" id="btnVolume" aria-label="Volume"><i data-lucide="volume-2"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Interactive Replay Timeline -->
+                <div class="glass-panel timeline-container">
+                    <div class="section-header">
+                        <h3>Event Timeline</h3>
+                        <div class="timeline-filters">
+                            <span class="badge badge-all active">All</span>
+                            <span class="badge badge-warning">Warnings</span>
+                            <span class="badge badge-danger">Violations</span>
+                        </div>
+                    </div>
+                    <div class="timeline-track">
+                        <!-- Events dynamically populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column (Analytics & Details) -->
+            <div class="column-side">
+                <!-- 5. Event Details Panel -->
+                <div class="glass-panel event-details">
+                    <div class="section-header">
+                        <h3>Current Event Inspector</h3>
+                    </div>
+                    <div class="details-content">
+                        <div class="detail-time warning-text">10:12:45</div>
+                        <h4 class="detail-title">Looking Left</h4>
+                        <p class="detail-desc">Subject's gaze deviated sharply to the left quadrant of the screen boundary for an extended duration (4.2 seconds). This is flagged as a potential off-screen resource reference.</p>
+                        <div class="detail-meta">
+                            <span class="badge badge-warning">Medium Severity</span>
+                            <span class="badge badge-outline">Gaze Tracking</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. Risk Score History -->
+                <div class="glass-panel chart-panel">
+                    <div class="section-header">
+                        <h3>Risk Progression</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="riskHistoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 7. Direction Analysis -->
+                <div class="glass-panel chart-panel">
+                    <div class="section-header">
+                        <h3>Gaze Direction Distribution</h3>
+                    </div>
+                    <div class="chart-wrapper donut-wrapper">
+                        <canvas id="directionChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 9. Incident Center -->
+                <div class="glass-panel incidents-panel">
+                    <div class="section-header">
+                        <h3>Incident Log</h3>
+                    </div>
+                    <div class="incidents-list">
+                        <div class="incident-item danger-item">
+                            <i data-lucide="user-minus"></i>
+                            <div class="inc-info">
+                                <strong>Face Missing</strong>
+                                <span>10:18:22 (Duration: 12s)</span>
+                            </div>
+                            <span class="badge badge-danger">High</span>
+                        </div>
+                        <div class="incident-item danger-item">
+                            <i data-lucide="alert-triangle"></i>
+                            <div class="inc-info">
+                                <strong>Suspicious Activity Detected</strong>
+                                <span>10:30:05 (Multiple Voices/Audio)</span>
+                            </div>
+                            <span class="badge badge-danger">High</span>
+                        </div>
+                        <div class="incident-item warning-item">
+                            <i data-lucide="eye-off"></i>
+                            <div class="inc-info">
+                                <strong>Repeated Looking Left</strong>
+                                <span>10:12, 10:25</span>
+                            </div>
+                            <span class="badge badge-warning">Med</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. Integrity Analysis -->
+                <div class="glass-panel stats-panel">
+                    <div class="section-header">
+                        <h3>Integrity Overview</h3>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <span class="metric-label">Suspicious Events</span>
+                            <span class="metric-value danger-text">14</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">Trust Trend</span>
+                            <span class="metric-value warning-text">-85% <i data-lucide="trending-down"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. Footer -->
+        <footer class="glass-footer">
+            <div class="footer-left">
+                <i data-lucide="shield-alert" class="accent-icon"></i>
+                <span>ProctorAI Enterprise | Forensic Audit Mode</span>
+            </div>
+            <div class="footer-right">
+                <span>Session ID: REC-9948271</span>
+                <span>Encrypted & Secured Vault</span>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="replay.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

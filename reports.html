@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports & Analytics | ProctorAI</title>
+    <meta name="description" content="Ultra-premium AI Examination Integrity Dashboard for enterprise and institutions.">
+    <!-- Inter Font - Apple Inspired -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="reports.css">
+    <!-- Icons and Charting library via CDN to keep it framework-free but production ready -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="monitoring.html" class="back-btn" id="backBtn" aria-label="Back to Monitoring">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Back
+    </a>
+    <div class="app-container">
+        <!-- 1. Analytics Header -->
+        <header class="glass-header">
+            <div class="header-left">
+                <i data-lucide="bar-chart-2" class="accent-icon"></i>
+                <h1>Reports & Analytics</h1>
+            </div>
+            <div class="header-right">
+                <div class="date-range">
+                    <i data-lucide="calendar"></i>
+                    <span>Last 30 Days</span>
+                    <i data-lucide="chevron-down"></i>
+                </div>
+                <button class="btn-primary" id="exportBtnTop">
+                    <i data-lucide="download"></i>
+                    Export Report
+                </button>
+            </div>
+        </header>
+
+        <!-- 2. KPI Cards -->
+        <section class="kpi-grid">
+            <div class="kpi-card glass-panel">
+                <div class="kpi-header"><span>Total Students Monitored</span><i data-lucide="users"></i></div>
+                <div class="kpi-value">12,450</div>
+                <div class="kpi-trend positive"><i data-lucide="trending-up"></i> +14%</div>
+            </div>
+            <div class="kpi-card glass-panel">
+                <div class="kpi-header"><span>Active Exams</span><i data-lucide="book-open"></i></div>
+                <div class="kpi-value">45</div>
+                <div class="kpi-trend neutral">Same as last week</div>
+            </div>
+            <div class="kpi-card glass-panel">
+                <div class="kpi-header"><span>High Risk Students</span><i data-lucide="alert-triangle" class="danger-text"></i></div>
+                <div class="kpi-value danger-text">142</div>
+                <div class="kpi-trend negative"><i data-lucide="trending-up"></i> +5%</div>
+            </div>
+            <div class="kpi-card glass-panel">
+                <div class="kpi-header"><span>Avg. Trust Score</span><i data-lucide="shield-check" class="success-text"></i></div>
+                <div class="kpi-value success-text">92.4%</div>
+                <div class="kpi-trend positive"><i data-lucide="trending-up"></i> +1.2%</div>
+            </div>
+            <div class="kpi-card glass-panel">
+                <div class="kpi-header"><span>Total Suspicious Events</span><i data-lucide="eye-off"></i></div>
+                <div class="kpi-value warning-text">3,892</div>
+                <div class="kpi-trend negative"><i data-lucide="trending-up"></i> +8%</div>
+            </div>
+            <div class="kpi-card glass-panel">
+                <div class="kpi-header"><span>Exams Completed</span><i data-lucide="check-circle"></i></div>
+                <div class="kpi-value">8,920</div>
+                <div class="kpi-trend positive"><i data-lucide="trending-up"></i> +22%</div>
+            </div>
+        </section>
+
+        <div class="main-grid">
+            <!-- Left Column -->
+            <div class="column-left">
+                <!-- 3. Trust Score Analytics -->
+                <section class="glass-panel chart-section">
+                    <div class="section-header">
+                        <h2>Trust Score Analytics</h2>
+                        <button class="icon-btn"><i data-lucide="more-horizontal"></i></button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="trustScoreChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- 4. Risk Analytics -->
+                <section class="glass-panel chart-section">
+                    <div class="section-header">
+                        <h2>Risk Trends over Time</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="riskTrendChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- 7. Student Performance vs Trust Analysis -->
+                <section class="glass-panel chart-section">
+                    <div class="section-header">
+                        <h2>Student Performance vs. Trust Score</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column -->
+            <div class="column-right">
+                <!-- 8. AI Insights Panel -->
+                <section class="glass-panel ai-insights">
+                    <div class="section-header">
+                        <h2><i data-lucide="sparkles" class="accent-text"></i> AI Executive Insights</h2>
+                    </div>
+                    <div class="insights-list">
+                        <div class="insight-item">
+                            <div class="insight-icon success-bg"><i data-lucide="shield"></i></div>
+                            <div class="insight-content">
+                                <h4>Most Secure Examination</h4>
+                                <p>"CS101 Midterm" had the highest average trust score (98.2%) with zero major violations.</p>
+                            </div>
+                        </div>
+                        <div class="insight-item">
+                            <div class="insight-icon danger-bg"><i data-lucide="alert-circle"></i></div>
+                            <div class="insight-content">
+                                <h4>Highest Risk Session</h4>
+                                <p>"ECON202 Final" triggered 450+ suspicious events, primarily related to missing faces.</p>
+                            </div>
+                        </div>
+                        <div class="insight-item">
+                            <div class="insight-icon warning-bg"><i data-lucide="trending-down"></i></div>
+                            <div class="insight-content">
+                                <h4>Risk Trend Alert</h4>
+                                <p>Off-screen looking events have increased by 15% across all engineering faculty exams.</p>
+                            </div>
+                        </div>
+                        <div class="insight-item">
+                            <div class="insight-icon accent-bg"><i data-lucide="bar-chart-2"></i></div>
+                            <div class="insight-content">
+                                <h4>Average Classroom Integrity</h4>
+                                <p>Global platform integrity is currently stable at 94.5% across all institutions.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. Violation Analytics -->
+                <section class="glass-panel chart-section">
+                    <div class="section-header">
+                        <h2>Violation Categories & Severity</h2>
+                    </div>
+                    <div class="chart-container donut-container">
+                        <canvas id="violationChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- 5. Examination Integrity Insights -->
+                <section class="glass-panel list-section">
+                    <div class="section-header">
+                        <h2>Most Common Violations</h2>
+                    </div>
+                    <div class="list-container">
+                        <div class="list-item">
+                            <span class="label">Looking Away (Off-screen)</span>
+                            <span class="value">42%</span>
+                            <div class="progress-bar"><div class="fill warning-bg" style="width: 42%"></div></div>
+                        </div>
+                        <div class="list-item">
+                            <span class="label">Multiple Faces Detected</span>
+                            <span class="value">28%</span>
+                            <div class="progress-bar"><div class="fill danger-bg" style="width: 28%"></div></div>
+                        </div>
+                        <div class="list-item">
+                            <span class="label">Face Missing</span>
+                            <span class="value">18%</span>
+                            <div class="progress-bar"><div class="fill accent-bg" style="width: 18%"></div></div>
+                        </div>
+                        <div class="list-item">
+                            <span class="label">Direction Analysis (Looking Down)</span>
+                            <span class="value">12%</span>
+                            <div class="progress-bar"><div class="fill" style="width: 12%"></div></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 9. Export Center -->
+                <section class="glass-panel export-center">
+                    <div class="section-header">
+                        <h2>Export Data Center</h2>
+                    </div>
+                    <div class="export-actions">
+                        <button class="btn-outline"><i data-lucide="file-text"></i> Export as PDF</button>
+                        <button class="btn-outline"><i data-lucide="file-spreadsheet"></i> Export as CSV</button>
+                        <button class="btn-primary full-width"><i data-lucide="download-cloud"></i> Download Full Analytics Data</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- 10. Premium Footer -->
+        <footer class="glass-footer">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <i data-lucide="shield-check" class="accent-icon"></i>
+                    <span>ProctorAI Enterprise</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#">Documentation</a>
+                    <a href="#">API Reference</a>
+                    <a href="#">Support Center</a>
+                    <a href="#">Privacy</a>
+                </div>
+                <div class="footer-meta">
+                    System Status: <span class="status-dot green"></span> All Systems Operational
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="reports.js"></script>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>

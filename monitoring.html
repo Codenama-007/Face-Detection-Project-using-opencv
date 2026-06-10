@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Examination Monitoring Dashboard</title>
+    <meta name="description" content="Ultra-premium AI Examination Monitoring Dashboard">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Back Button -->
+    <a href="index.html" class="back-btn" id="backBtn" aria-label="Back to Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Back
+    </a>
+    <div class="app-container">
+        <!-- Premium Header -->
+        <header class="glass-header">
+            <a href="index.html" class="logo" style="text-decoration:none;color:inherit;" title="Go to Home">
+                <i data-lucide="shield-check" class="logo-icon"></i>
+                <span>ProctorAI</span>
+            </a>
+            <div class="header-actions">
+                <div class="status-indicator">
+                    <span class="dot live"></span> Live Monitoring
+                </div>
+                <nav style="display:flex;gap:1rem;align-items:center;">
+                    <a href="reports.html" id="navReportsBtn" style="
+                        font-size:0.8rem;font-weight:600;color:var(--text-secondary);
+                        text-decoration:none;padding:0.4rem 0.85rem;
+                        border:1px solid var(--card-border);border-radius:8px;
+                        transition:all 0.2s;display:flex;align-items:center;gap:0.4rem;
+                    ">
+                        <i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i> Reports
+                    </a>
+                    <a href="replay.html" id="navReplayBtn" style="
+                        font-size:0.8rem;font-weight:600;color:var(--text-secondary);
+                        text-decoration:none;padding:0.4rem 0.85rem;
+                        border:1px solid var(--card-border);border-radius:8px;
+                        transition:all 0.2s;display:flex;align-items:center;gap:0.4rem;
+                    ">
+                        <i data-lucide="play-circle" style="width:14px;height:14px;"></i> Replay
+                    </a>
+                </nav>
+                <div class="user-profile">
+                    <img src="https://i.pravatar.cc/150?img=11" alt="Admin" class="avatar">
+                    <span class="user-name">Admin</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Left Column: Student Info & Real-time Stats -->
+            <div class="column left-col">
+                <!-- Student Profile Card -->
+                <div class="card glass-card profile-card" id="profile-card">
+                    <div class="card-header">
+                        <h3>Student Profile</h3>
+                    </div>
+                    <div class="card-body profile-body">
+                        <div class="profile-avatar-container">
+                            <img src="https://i.pravatar.cc/150?img=33" alt="Student" class="student-avatar" id="studentAvatar">
+                            <div class="status-badge" id="studentStatusBadge">Active</div>
+                        </div>
+                        <div class="profile-info">
+                            <h2 id="studentName">Loading...</h2>
+                            <p class="student-id">ID: <span id="studentId">---</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trust Score Widget -->
+                <div class="card glass-card trust-score-card" id="trust-score">
+                    <div class="card-header">
+                        <h3>Trust Score</h3>
+                        <i data-lucide="activity"></i>
+                    </div>
+                    <div class="card-body">
+                        <div class="circular-progress">
+                            <svg viewBox="0 0 100 100">
+                                <circle class="bg" cx="50" cy="50" r="40"></circle>
+                                <circle class="progress" cx="50" cy="50" r="40" id="trustScoreProgress"></circle>
+                            </svg>
+                            <div class="score-value" id="trustScoreValue">100%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Column: Main Monitoring Cards -->
+            <div class="column main-col">
+                <div class="stats-grid">
+                    <!-- Risk Score Card -->
+                    <div class="card glass-card stat-card" id="riskCard">
+                        <div class="stat-icon warning">
+                            <i data-lucide="alert-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Risk Score</p>
+                            <h3 class="stat-value" id="riskScore">0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Status Card -->
+                    <div class="card glass-card stat-card" id="statusCard">
+                        <div class="stat-icon info">
+                            <i data-lucide="eye"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Current Status</p>
+                            <h3 class="stat-value" id="currentStatus">NORMAL</h3>
+                        </div>
+                    </div>
+
+                    <!-- Direction Monitoring Card -->
+                    <div class="card glass-card stat-card" id="directionCard">
+                        <div class="stat-icon secondary">
+                            <i data-lucide="compass"></i>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label">Gaze Direction</p>
+                            <h3 class="stat-value" id="gazeDirection">CENTER</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Feed / Live View Placeholder -->
+                <div class="card glass-card video-card" id="video-feed">
+                    <div class="card-header">
+                        <h3>Live Feed Monitoring</h3>
+                        <div class="feed-controls">
+                            <button class="btn-icon" aria-label="Maximize"><i data-lucide="maximize-2"></i></button>
+                        </div>
+                    </div>
+                    <div class="video-container">
+                        <!-- Simulate face tracking overlay -->
+                        <div class="face-box" id="faceBox"></div>
+                        <div class="video-overlay text-overlay">
+                            Camera Feed <span class="blink">REC</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analytics Cards -->
+                <div class="card glass-card analytics-card" id="analytics">
+                    <div class="card-header">
+                        <h3>Session Analytics</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="analytics-bars">
+                            <div class="bar-group">
+                                <div class="bar-label">Focus Time</div>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: 85%;"></div>
+                                </div>
+                            </div>
+                            <div class="bar-group">
+                                <div class="bar-label">Distractions</div>
+                                <div class="bar-track">
+                                    <div class="bar-fill warning" style="width: 15%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Timeline & Alerts -->
+            <div class="column right-col">
+                <!-- Alert Center -->
+                <div class="card glass-card alerts-card" id="alerts">
+                    <div class="card-header">
+                        <h3>Alert Center</h3>
+                        <span class="badge warning">Updates</span>
+                    </div>
+                    <div class="alerts-list" id="alertsList">
+                        <!-- Alerts injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Live Activity Timeline -->
+                <div class="card glass-card timeline-card" id="timeline-card">
+                    <div class="card-header">
+                        <h3>Live Activity Timeline</h3>
+                    </div>
+                    <div class="timeline" id="timeline">
+                        <!-- Timeline items injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="main.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
