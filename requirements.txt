@@ -1,0 +1,11 @@
+opencv-python 
+mediapipe 
+numpy
+streamlit
+pandas
+scikit-learn
+deep-sort-realtime
+ultralytics
+face_recognition
+pillow
+scipy
