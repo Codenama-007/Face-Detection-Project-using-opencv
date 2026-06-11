@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervisor Login | ProctorAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: var(--surface-color);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.875rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-family: inherit;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn:disabled {
+            background: #334155;
+            cursor: not-allowed;
+            color: #94a3b8;
+        }
+
+        .message {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        
+        .back-link:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <i data-lucide="shield-check" class="logo-icon"></i>
+        <h2>Supervisor Login</h2>
+        <p>Authenticate to access the Proctor Dashboard.</p>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter supervisor username" required autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter password" required>
+            </div>
+
+            <button type="submit" class="btn" id="loginBtn">
+                <i data-lucide="log-in"></i> Login
+            </button>
+
+            <div id="statusMsg" class="message"></div>
+        </form>
+        
+        <a href="index.html" class="back-link">&larr; Back to Home</a>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const statusMsg = document.getElementById('statusMsg');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="lucide-loader"></i> Authenticating...';
+            statusMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/supervisor_login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Set token
+                    localStorage.setItem('supervisor_token', result.token);
+                    // Redirect to dashboard
+                    window.location.href = 'monitoring.html';
+                } else {
+                    statusMsg.textContent = result.error || 'Invalid credentials.';
+                    statusMsg.style.display = 'block';
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<i data-lucide="log-in"></i> Login';
+                    lucide.createIcons();
+                }
+            } catch (err) {
+                statusMsg.textContent = 'Network error. Is the server running?';
+                statusMsg.style.display = 'block';
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i data-lucide="log-in"></i> Login';
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>

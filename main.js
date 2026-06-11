@@ -1,85 +1,121 @@
-// Sample Data from Backend as per requirements
-let currentData = {
-    "id": 101,
-    "name": "Student Name",
-    "risk_score": 0,
-    "direction": "CENTER",
-    "status": "NORMAL"
-};
-
 // DOM Elements
-const studentNameEl = document.getElementById('studentName');
-const studentIdEl = document.getElementById('studentId');
-const studentStatusBadge = document.getElementById('studentStatusBadge');
-const riskScoreEl = document.getElementById('riskScore');
-const currentStatusEl = document.getElementById('currentStatus');
-const gazeDirectionEl = document.getElementById('gazeDirection');
-const riskCard = document.getElementById('riskCard');
-const statusCard = document.getElementById('statusCard');
-const trustScoreProgress = document.getElementById('trustScoreProgress');
-const trustScoreValue = document.getElementById('trustScoreValue');
+const studentsGrid = document.getElementById('studentsGrid');
+const globalStatusBanner = document.getElementById('globalStatusBanner');
+const globalStatusText = document.getElementById('globalStatusText');
+const unknownCountBadge = document.getElementById('unknownCountBadge');
 const alertsList = document.getElementById('alertsList');
-const timeline = document.getElementById('timeline');
-const faceBox = document.getElementById('faceBox');
 
-// Initialize with initial data
+let displayedStudents = new Set();
+let previousAlerts = [];
+
+// Initialize
 function init() {
-    updateUI(currentData);
-    addTimelineEvent('Monitoring started', 'info');
-    
-    // Fetch live data from Python backend
+    addAlert('Dashboard initialized. Waiting for feed...', 'info');
     setInterval(fetchLiveStatus, 1000);
 }
 
-// Update the user interface with the new data object
-function updateUI(data) {
-    // Update Profile
-    studentNameEl.textContent = data.name;
-    studentIdEl.textContent = data.id;
-
-    // Update Stats
-    riskScoreEl.textContent = data.risk_score;
-    currentStatusEl.textContent = data.status;
-    gazeDirectionEl.textContent = data.direction;
-
-    // Update Trust Score (100 - risk_score) bounded between 0 and 100
-    const trustScore = Math.max(0, Math.min(100, 100 - data.risk_score));
-    trustScoreValue.textContent = `${trustScore}%`;
+// Update the grid of students
+function updateStudentsGrid(students) {
+    const currentFrameStudents = new Set(students.map(s => s.id));
     
-    // Circular progress stroke dashoffset calculation
-    // Circle circumference = 2 * pi * r (r=40 -> 251.2)
-    const offset = 251.2 - (251.2 * trustScore) / 100;
-    trustScoreProgress.style.strokeDashoffset = offset;
+    // Remove students no longer tracked
+    for (let sid of displayedStudents) {
+        if (!currentFrameStudents.has(sid)) {
+            const card = document.getElementById(`student-card-${sid}`);
+            if (card) card.remove();
+            displayedStudents.delete(sid);
+            addAlert(`Student ${sid} left the frame.`, 'warning');
+        }
+    }
 
-    // Style adjustments based on risk
-    updateStyles(data);
+    if (students.length === 0) {
+        if (studentsGrid.innerHTML.trim() === '') {
+            studentsGrid.innerHTML = '<div style="text-align:center; color:#94a3b8; font-size:0.9rem; padding:2rem 0;">Waiting for students to enter the frame...</div>';
+        }
+        return;
+    }
+
+    // Remove the waiting message if it exists
+    if (studentsGrid.innerHTML.includes('Waiting for students')) {
+        studentsGrid.innerHTML = '';
+    }
+
+    // Update or create cards
+    students.forEach(student => {
+        let card = document.getElementById(`student-card-${student.id}`);
+        
+        // Calculate trust score
+        const trustScore = Math.max(0, Math.min(100, 100 - student.risk_score));
+        let riskClass = 'success';
+        if (student.risk_score >= 25) riskClass = 'danger';
+        else if (student.risk_score >= 10) riskClass = 'warning';
+
+        if (!card) {
+            // Create new card
+            addAlert(`Identified: ${student.name} (${student.id})`, 'success');
+            displayedStudents.add(student.id);
+            card = document.createElement('div');
+            card.id = `student-card-${student.id}`;
+            card.className = `card glass-card stat-card`;
+            card.style.display = 'flex';
+            card.style.justifyContent = 'space-between';
+            card.style.alignItems = 'center';
+            card.style.padding = '1rem';
+            
+            card.innerHTML = `
+                <div style="display:flex; align-items:center; gap:1rem;">
+                    <div style="width:40px;height:40px;border-radius:50%;background:var(--${riskClass});display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">
+                        ${student.name.charAt(0)}
+                    </div>
+                    <div>
+                        <h4 style="margin:0;font-size:1rem;color:var(--text-primary);">${student.name}</h4>
+                        <p style="margin:0;font-size:0.8rem;color:var(--text-secondary);">${student.id}</p>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:1.2rem;font-weight:bold;color:var(--${riskClass});" class="trust-val">${trustScore}% Trust</div>
+                    <div style="font-size:0.75rem;color:var(--text-secondary);" class="status-val">${student.status}</div>
+                </div>
+            `;
+            studentsGrid.appendChild(card);
+        } else {
+            // Update existing card
+            const avatar = card.querySelector('div[style*="border-radius:50%"]');
+            const trustVal = card.querySelector('.trust-val');
+            const statusVal = card.querySelector('.status-val');
+
+            avatar.style.background = `var(--${riskClass})`;
+            trustVal.style.color = `var(--${riskClass})`;
+            trustVal.textContent = `${trustScore}% Trust`;
+            statusVal.textContent = student.status;
+            
+            if (riskClass === 'danger') {
+                card.classList.add('danger-pulse');
+            } else {
+                card.classList.remove('danger-pulse');
+            }
+        }
+    });
 }
 
-// Applies dynamic styles/animations depending on the status and risk score
-function updateStyles(data) {
-    // Reset classes
-    riskCard.className = 'card glass-card stat-card';
-    statusCard.className = 'card glass-card stat-card';
-    trustScoreProgress.style.stroke = 'var(--success)';
-    studentStatusBadge.style.background = 'var(--success)';
-    studentStatusBadge.textContent = 'Active';
-
-    if (data.status === 'SUSPICIOUS' || data.risk_score >= 25) {
-        riskCard.classList.add('danger-pulse');
-        statusCard.classList.add('danger-pulse');
-        trustScoreProgress.style.stroke = 'var(--danger)';
-        studentStatusBadge.style.background = 'var(--danger)';
-        studentStatusBadge.textContent = 'Flagged';
-        currentStatusEl.style.color = 'var(--danger)';
-        riskScoreEl.style.color = 'var(--danger)';
-    } else if (data.status === 'WARNING' || data.risk_score > 10) {
-        trustScoreProgress.style.stroke = 'var(--warning)';
-        studentStatusBadge.style.background = 'var(--warning)';
-        currentStatusEl.style.color = 'var(--warning)';
-        riskScoreEl.style.color = 'var(--warning)';
+// Update Room Status Banner
+function updateRoomStatus(status, unknownCount) {
+    unknownCountBadge.textContent = `${unknownCount} Unknown`;
+    
+    if (status === 'HIGH RISK' || unknownCount > 0) {
+        globalStatusBanner.style.background = 'rgba(239, 68, 68, 0.2)';
+        globalStatusBanner.style.color = 'var(--danger)';
+        globalStatusBanner.style.border = '1px solid rgba(239, 68, 68, 0.5)';
+        globalStatusText.textContent = 'HIGH RISK: UNKNOWN PERSON DETECTED';
+        const liveDot = document.querySelector('.dot.live');
+        if (liveDot) liveDot.style.background = 'var(--danger)';
     } else {
-        currentStatusEl.style.color = 'var(--text-primary)';
-        riskScoreEl.style.color = 'var(--text-primary)';
+        globalStatusBanner.style.background = 'rgba(16, 185, 129, 0.1)';
+        globalStatusBanner.style.color = 'var(--success)';
+        globalStatusBanner.style.border = '1px solid rgba(16, 185, 129, 0.2)';
+        globalStatusText.textContent = 'ROOM SECURE';
+        const liveDot = document.querySelector('.dot.live');
+        if (liveDot) liveDot.style.background = 'var(--success)';
     }
 }
 
@@ -94,30 +130,8 @@ function addAlert(message, type) {
     `;
     alertsList.insertAdjacentHTML('afterbegin', alertHtml);
     
-    // Keep only last 10 alerts
-    if (alertsList.children.length > 10) {
+    if (alertsList.children.length > 20) {
         alertsList.lastElementChild.remove();
-    }
-}
-
-// Adds an event to the Activity Timeline
-function addTimelineEvent(message, type) {
-    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-    const dotClass = type === 'danger' ? 'danger' : (type === 'warning' ? 'warning' : '');
-    const timelineHtml = `
-        <div class="timeline-item">
-            <div class="timeline-dot ${dotClass}"></div>
-            <div class="timeline-content">
-                <span class="timeline-text">${message}</span>
-                <span class="timeline-time">${time}</span>
-            </div>
-        </div>
-    `;
-    timeline.insertAdjacentHTML('afterbegin', timelineHtml);
-    
-    // Keep only last 15 events
-    if (timeline.children.length > 15) {
-        timeline.lastElementChild.remove();
     }
 }
 
@@ -125,30 +139,25 @@ function addTimelineEvent(message, type) {
 async function fetchLiveStatus() {
     try {
         const response = await fetch('/api/status');
-        const newData = await response.json();
+        const data = await response.json();
         
-        const prevStatus = currentData.status;
-        currentData = { ...currentData, ...newData };
-        updateUI(currentData);
+        updateRoomStatus(data.room_status, data.unknown_count);
+        updateStudentsGrid(data.students);
         
-        // Generate meaningful alerts based on state transition
-        if (newData.status === 'SUSPICIOUS' && prevStatus !== 'SUSPICIOUS') {
-            addAlert(`Suspicious behavior detected: Gaze ${newData.direction}`, 'danger');
-            addTimelineEvent(`User gaze fixed ${newData.direction}. Flagged.`, 'danger');
-        } else if (newData.status === 'WARNING' && prevStatus === 'NORMAL') {
-            addTimelineEvent(`User looking ${newData.direction}`, 'warning');
-        } else if (newData.status === 'NORMAL' && prevStatus !== 'NORMAL') {
-            addTimelineEvent(`Focus returned to center`, '');
-        } else if (newData.status === 'HIGH RISK' && prevStatus !== 'HIGH RISK') {
-            addAlert(`High Risk behavior detected!`, 'danger');
-            addTimelineEvent(`Risk score critically high.`, 'danger');
+        // Check for state transitions to generate alerts
+        if (data.unknown_count > 0 && !previousAlerts.includes('unknown_alert')) {
+            addAlert('Critical: Unknown person entered the room!', 'danger');
+            previousAlerts.push('unknown_alert');
+        } else if (data.unknown_count === 0 && previousAlerts.includes('unknown_alert')) {
+            addAlert('Room secure. Unknown person left.', 'success');
+            previousAlerts = previousAlerts.filter(a => a !== 'unknown_alert');
         }
+
     } catch (e) {
         console.error("Error fetching live status:", e);
     }
 }
 
-// Start execution
 document.addEventListener('DOMContentLoaded', init);
 
 // ─── Toast System ───────────────────────────────────────────

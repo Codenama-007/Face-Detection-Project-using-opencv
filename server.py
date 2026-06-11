@@ -100,8 +100,20 @@ load_students()
 
 # ---------------- ENDPOINTS ----------------
 
+@app.route('/api/supervisor_login', methods=['POST'])
+def supervisor_login():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    
+    if username == 'admin' and password == 'admin': # Simple hardcoded admin credentials
+        return jsonify({"success": True, "token": "super_secret_admin_token_123"})
+    else:
+        return jsonify({"error": "Invalid credentials"}), 401
+
 @app.route('/api/register', methods=['POST'])
 def register():
+    # ... existing register logic ...
     data = request.json
     student_id = data.get('student_id')
     name = data.get('name')
@@ -155,10 +167,12 @@ def register():
 # ---------------- STATE ----------------
 # Track state of the room globally
 room_state = {
-    "students": [],
     "unknown_count": 0,
     "status": "NORMAL"
 }
+
+# tracked_students dictionary: { "STU-1002": {"name": "John", "risk_score": 0, "status": "Active", "last_seen": time.time()} }
+tracked_students = {}
 
 def log_to_db(student_id, risk_score, direction, status):
     try:
@@ -189,7 +203,7 @@ def gen_frames():
         detector.setInputSize((frame.shape[1], frame.shape[0]))
         _, faces = detector.detect(frame)
 
-        current_students = []
+        current_students_in_frame = set()
         unknown_count = 0
 
         if faces is not None:
@@ -211,9 +225,19 @@ def gen_frames():
 
                 # Threshold for Cosine is ~0.363
                 if best_match and best_score >= 0.363:
-                    label = f"{best_match['name']} ({best_match['student_id']})"
+                    sid = best_match['student_id']
+                    name = best_match['name']
+                    label = f"{name} ({sid})"
                     color = (0, 255, 0)
-                    current_students.append(best_match['student_id'])
+                    current_students_in_frame.add(sid)
+                    
+                    if sid not in tracked_students:
+                        tracked_students[sid] = {"name": name, "risk_score": 0, "status": "Active"}
+                    
+                    tracked_students[sid]["last_seen"] = now
+                    # Decrease risk score if they are looking at the screen
+                    tracked_students[sid]["risk_score"] = max(0, tracked_students[sid]["risk_score"] - 1)
+                    tracked_students[sid]["status"] = "Active"
                 else:
                     label = "UNKNOWN"
                     color = (0, 0, 255)
@@ -223,16 +247,23 @@ def gen_frames():
                 cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
                 cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
+        # Update offline students
+        for sid in list(tracked_students.keys()):
+            if sid not in current_students_in_frame:
+                time_away = now - tracked_students[sid].get("last_seen", 0)
+                if time_away > 2.0: # Away for more than 2 seconds
+                    tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + 2)
+                    tracked_students[sid]["status"] = "Away"
+                if time_away > 60.0: # Remove from tracker if away for 60 seconds
+                    del tracked_students[sid]
+
         # Update room state
         global room_state
-        room_state["students"] = current_students
         room_state["unknown_count"] = unknown_count
         
         status = "NORMAL"
         if unknown_count > 0:
             status = "HIGH RISK" # Unknown person in room
-        elif len(current_students) > 1:
-            status = "SUSPICIOUS" # Multiple students talking/collaborating?
             
         room_state["status"] = status
 
@@ -254,13 +285,21 @@ def video_feed():
 
 @app.route('/api/status')
 def api_status():
-    global room_state
+    global room_state, tracked_students
+    
+    students_list = []
+    for sid, data in tracked_students.items():
+        students_list.append({
+            "id": sid,
+            "name": data["name"],
+            "risk_score": data["risk_score"],
+            "status": data["status"]
+        })
+        
     return jsonify({
-        "id": ", ".join(room_state["students"]) if room_state["students"] else "None",
-        "name": f"Students: {len(room_state['students'])}",
-        "risk_score": 100 if room_state["status"] == "HIGH RISK" else (50 if room_state["status"] == "SUSPICIOUS" else 0),
-        "direction": "ROOM VIEW",
-        "status": room_state["status"]
+        "room_status": room_state["status"],
+        "unknown_count": room_state["unknown_count"],
+        "students": students_list
     })
 
 @app.route('/api/alerts')
