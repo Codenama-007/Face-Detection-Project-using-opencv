@@ -191,10 +191,9 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    // Set token
-                    localStorage.setItem('supervisor_token', result.token);
-                    // Redirect to dashboard
-                    window.location.href = 'monitoring.html';
+                    // Backend session cookie is now set securely via HTTP
+                    // Redirect to the Enrollment Lobby
+                    window.location.href = 'enrollment.html';
                 } else {
                     statusMsg.textContent = result.error || 'Invalid credentials.';
                     statusMsg.style.display = 'block';

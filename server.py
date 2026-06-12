@@ -4,7 +4,7 @@ import json
 import os
 import numpy as np
 import psycopg2
-from flask import Flask, Response, jsonify, send_from_directory, request
+from flask import Flask, Response, jsonify, send_from_directory, request, session, redirect, url_for
 from flask_cors import CORS
 from datetime import datetime
 import base64
@@ -16,7 +16,28 @@ DB_URL = "postgresql://neondb_owner:npg_58LHqXDdanEy@ep-young-sea-aotvi360.c-2.a
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
-CORS(app)
+app.secret_key = 'super_secret_proctor_key_change_in_production'
+CORS(app, supports_credentials=True)
+
+# ---------------- MIDDLEWARE ----------------
+@app.before_request
+def require_auth():
+    # Only protect API endpoints, video feed, monitoring, and enrollment.
+    # We do NOT protect the index, login page, static assets, or the login API endpoint itself.
+    protected_html = ['/monitoring.html', '/enrollment.html']
+    
+    # Allow login endpoints and static files
+    if request.endpoint in ['supervisor_login', 'serve_index']:
+        return
+
+    path = request.path
+    if path in protected_html or path.startswith('/video_feed') or (path.startswith('/api/') and path != '/api/supervisor_login'):
+        if not session.get('admin_logged_in'):
+            # Return 401 for API, redirect to login for HTML pages
+            if path.startswith('/api/') or path.startswith('/video_feed'):
+                return jsonify({"error": "Unauthorized"}), 401
+            else:
+                return redirect('/supervisor_login.html')
 
 @app.route('/')
 def serve_index():
@@ -49,6 +70,9 @@ tracker = DeepSort(max_age=30)
 # Track ID to Student ID mapping
 track_to_student = {}
 
+# Session State
+SESSION_ACTIVE = False
+session_start_time = None
 
 # ---------------- DB INIT ----------------
 def init_db():
@@ -117,9 +141,15 @@ def supervisor_login():
     password = data.get('password')
     
     if username == 'admin' and password == 'admin': # Simple hardcoded admin credentials
-        return jsonify({"success": True, "token": "super_secret_admin_token_123"})
+        session['admin_logged_in'] = True
+        return jsonify({"success": True, "message": "Logged in successfully"})
     else:
         return jsonify({"error": "Invalid credentials"}), 401
+
+@app.route('/api/supervisor_logout', methods=['POST', 'GET'])
+def supervisor_logout():
+    session.pop('admin_logged_in', None)
+    return jsonify({"success": True})
 
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -174,6 +204,97 @@ def register():
         print(f"Error registering student: {e}")
         return jsonify({"error": "Database error"}), 500
 
+@app.route('/reports/<path:filename>')
+def download_report(filename):
+    return send_from_directory('static/reports', filename)
+
+@app.route('/api/session/status', methods=['GET'])
+def get_session_status():
+    global SESSION_ACTIVE
+    return jsonify({"active": SESSION_ACTIVE})
+
+@app.route('/api/session/start', methods=['POST'])
+def start_session():
+    global SESSION_ACTIVE, session_start_time, tracked_students, track_to_student
+    SESSION_ACTIVE = True
+    session_start_time = datetime.now()
+    # Reset tracking state for new session
+    for sid in tracked_students:
+        tracked_students[sid]["risk_score"] = 0
+        tracked_students[sid]["status"] = "Active"
+    return jsonify({"success": True, "message": "Session started"})
+
+@app.route('/api/session/end', methods=['POST'])
+def end_session():
+    global SESSION_ACTIVE
+    SESSION_ACTIVE = False
+    
+    # Generate HTML Report
+    import os
+    os.makedirs('static/reports', exist_ok=True)
+    report_filename = f"report_{datetime.now().strftime('%Y%md_%H%M%S')}.html"
+    report_path = os.path.join('static/reports', report_filename)
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Examination Integrity Report</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>
+            body {{ font-family: 'Inter', sans-serif; background: #050505; color: #fff; padding: 3rem; line-height: 1.6; }}
+            h1 {{ border-bottom: 1px solid #333; padding-bottom: 1rem; color: #0a84ff; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 2rem; }}
+            th, td {{ padding: 1rem; text-align: left; border-bottom: 1px solid #222; }}
+            th {{ background: #111; color: #888; text-transform: uppercase; font-size: 0.85rem; }}
+            .high-risk {{ color: #ff453a; font-weight: bold; }}
+            .med-risk {{ color: #ffd60a; font-weight: bold; }}
+            .low-risk {{ color: #32d74b; font-weight: bold; }}
+        </style>
+    </head>
+    <body>
+        <h1>Examination Integrity Report</h1>
+        <p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Name</th>
+                    <th>Final Risk Score</th>
+                    <th>Last Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    """
+    
+    for sid, data in tracked_students.items():
+        score = int(data['risk_score'])
+        if score > 75: risk_class = "high-risk"
+        elif score > 25: risk_class = "med-risk"
+        else: risk_class = "low-risk"
+        
+        html_content += f"""
+                <tr>
+                    <td>{sid}</td>
+                    <td>{data['name']}</td>
+                    <td class="{risk_class}">{score}%</td>
+                    <td>{data['status']}</td>
+                </tr>
+        """
+        
+    html_content += """
+            </tbody>
+        </table>
+    </body>
+    </html>
+    """
+    
+    with open(report_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+        
+    return jsonify({"success": True, "report_url": f"/reports/{report_filename}"})
+
 # ---------------- STATE ----------------
 # Track state of the room globally
 room_state = {
@@ -201,6 +322,7 @@ def log_to_db(student_id, risk_score, direction, status):
 # ---------------- VIDEO PROCESSING ----------------
 
 def gen_frames():
+    global tracked_students, current_students_in_frame, track_to_student, SESSION_ACTIVE
     cap = cv2.VideoCapture(0)
     last_log_time = 0
     
@@ -309,10 +431,10 @@ def gen_frames():
                     if w_face > 0 and h_face > 0:
                         nx = (x_nose - x_face) / w_face
                         ny = (y_nose - y_face) / h_face
-                        if nx < 0.35: direction = "RIGHT"
-                        elif nx > 0.65: direction = "LEFT"
-                        elif ny < 0.35: direction = "UP"
-                        elif ny > 0.75: direction = "DOWN"
+                        if nx < 0.25: direction = "RIGHT"
+                        elif nx > 0.75: direction = "LEFT"
+                        elif ny < 0.25: direction = "UP"
+                        elif ny > 0.85: direction = "DOWN"
                 
                 # Update Risk Score
                 last_update = tracked_students[sid].get("last_update", now)
@@ -321,12 +443,19 @@ def gen_frames():
                 tracked_students[sid]["last_seen"] = now
                 tracked_students[sid]["direction"] = direction
                 
-                if direction != "CENTER":
-                    tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (5 * delta_t))
-                    tracked_students[sid]["status"] = f"Looking {direction}"
-                else:
-                    tracked_students[sid]["risk_score"] = max(0, tracked_students[sid]["risk_score"] - (5 * delta_t))
-                    tracked_students[sid]["status"] = "Active"
+                if SESSION_ACTIVE:
+                    if phone_detected:
+                        tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (20 * delta_t))
+                        tracked_students[sid]["status"] = "Phone Detected"
+                    elif book_detected:
+                        tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (15 * delta_t))
+                        tracked_students[sid]["status"] = "Book Detected"
+                    elif direction != "CENTER":
+                        tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (5 * delta_t))
+                        tracked_students[sid]["status"] = f"Looking {direction}"
+                    else:
+                        # User requested: Do not reduce risk score, just update status
+                        tracked_students[sid]["status"] = "Looking Straight"
                 
                 # Draw
                 color = (0, 255, 0)
@@ -335,7 +464,10 @@ def gen_frames():
                 if tracked_students[sid]["risk_score"] > 75:
                     color = (0, 0, 255) # Red
                     
+                    
                 label = f"{name} ({sid}) Risk: {int(tracked_students[sid]['risk_score'])}"
+                if not SESSION_ACTIVE:
+                    label = f"{name} (Paused)"
                 cv2.rectangle(frame, (tx1, ty1), (tx2, ty2), color, 2)
                 cv2.putText(frame, label, (tx1, ty1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
             else:
@@ -350,10 +482,11 @@ def gen_frames():
                 delta_t = now - last_update
                 tracked_students[sid]["last_update"] = now
                 
+                if SESSION_ACTIVE:
+                    tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (2 * delta_t))
+                tracked_students[sid]["status"] = "Away"
+                
                 time_away = now - tracked_students[sid].get("last_seen", 0)
-                if time_away > 2.0:
-                    tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (10 * delta_t))
-                    tracked_students[sid]["status"] = "Away"
                 if time_away > 60.0:
                     del tracked_students[sid]
                     to_delete = [tid for tid, s in track_to_student.items() if s == sid]

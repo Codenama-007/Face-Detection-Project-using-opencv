@@ -11,9 +11,50 @@ let previousAlerts = [];
 // Initialize
 function init() {
     addAlert('Dashboard initialized. Waiting for feed...', 'info');
+    
+    // Check Session Status immediately and then every second
+    checkSessionStatus();
     setInterval(fetchLiveStatus, 1000);
+    setInterval(checkSessionStatus, 2000);
+
+    const endBtn = document.getElementById('endSessionBtn');
+    
+    if(endBtn) {
+        endBtn.addEventListener('click', async () => {
+            if(!confirm('End this examination session and generate report?')) return;
+            const res = await fetch('/api/session/end', { method: 'POST' });
+            if(res.ok) {
+                const data = await res.json();
+                checkSessionStatus();
+                addAlert('Session ended. Report generated!', 'info');
+                // Open report in new tab
+                window.open(data.report_url, '_blank');
+            }
+        });
+    }
 }
 
+async function checkSessionStatus() {
+    try {
+        const res = await fetch('/api/session/status');
+        const data = await res.json();
+        
+        const dot = document.getElementById('sessionStatusDot');
+        const text = document.getElementById('globalStatusText');
+        
+        if(data.active) {
+            dot.style.background = '#32d74b'; // green
+            dot.style.boxShadow = '0 0 10px #32d74b';
+            text.innerText = 'SESSION ACTIVE';
+        } else {
+            dot.style.background = '#64748b'; // gray
+            dot.style.boxShadow = '0 0 10px #64748b';
+            text.innerText = 'SESSION PAUSED/ENDED';
+        }
+    } catch(err) {
+        console.error("Failed to check session status", err);
+    }
+}
 // Update the grid of students
 function updateStudentsGrid(students) {
     const currentFrameStudents = new Set(students.map(s => s.id));
@@ -45,10 +86,10 @@ function updateStudentsGrid(students) {
         let card = document.getElementById(`student-card-${student.id}`);
         
         // Calculate trust score
-        const trustScore = Math.max(0, Math.min(100, 100 - student.risk_score));
+        const trustScore = Math.max(0, 100 - student.risk_score).toFixed(1);
         let riskClass = 'success';
-        if (student.risk_score >= 25) riskClass = 'danger';
-        else if (student.risk_score >= 10) riskClass = 'warning';
+        if (student.risk_score > 75) riskClass = 'danger';
+        else if (student.risk_score > 25) riskClass = 'warning';
 
         if (!card) {
             // Create new card

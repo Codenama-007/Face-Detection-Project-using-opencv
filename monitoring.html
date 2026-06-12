@@ -7,12 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        // SUPERVISOR GATEKEEPER
-        if (!localStorage.getItem('supervisor_token')) {
-            window.location.href = 'supervisor_login.html';
-        }
-    </script>
 </head>
 <body>
     <div class="app-container">
@@ -22,9 +16,15 @@
                 <i data-lucide="shield-check" class="logo-icon" style="color: var(--primary);"></i>
                 <span style="font-weight:700; font-size:1.2rem;">ProctorAI Dashboard</span>
             </div>
-            <div class="header-actions">
-                <div class="status-indicator" id="globalStatusBanner" style="font-weight:600; padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; gap:0.5rem;">
-                    <span class="dot live"></span> <span id="globalStatusText">ROOM NORMAL</span>
+            <div class="header-actions" style="display:flex; align-items:center; gap: 1rem;">
+                <div class="status-indicator" id="globalStatusBanner" style="font-weight:600; padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; gap:0.5rem; background: rgba(51,65,85,0.5);">
+                    <span class="dot" id="sessionStatusDot" style="background:#64748b; width:10px; height:10px; border-radius:50%; box-shadow:0 0 10px #64748b;"></span>
+                    <span id="globalStatusText">SESSION PENDING</span>
+                </div>
+                <div class="session-controls" style="display:flex; gap: 0.5rem; border-right: 1px solid #334155; padding-right: 1rem;">
+                    <button id="endSessionBtn" style="background:var(--danger); color:#fff; padding:0.5rem 1rem; border-radius:6px; font-weight:600; font-size:0.85rem; border:none; cursor:pointer; display:flex; align-items:center; gap:0.4rem; box-shadow:0 4px 15px rgba(239,68,68,0.3); transition:all 0.2s;">
+                        <i data-lucide="square" style="width:16px; height:16px;"></i> End Session
+                    </button>
                 </div>
                 <div class="user-profile">
                     <img src="https://i.pravatar.cc/150?img=11" alt="Supervisor" class="avatar">
@@ -83,8 +83,8 @@
     <script src="main.js"></script>
     <script>
         lucide.createIcons();
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            localStorage.removeItem('supervisor_token');
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch('/api/supervisor_logout', {method: 'POST'});
             window.location.href = 'supervisor_login.html';
         });
     </script>
