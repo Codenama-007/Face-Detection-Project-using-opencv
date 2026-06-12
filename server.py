@@ -8,6 +8,8 @@ from flask import Flask, Response, jsonify, send_from_directory, request
 from flask_cors import CORS
 from datetime import datetime
 import base64
+from ultralytics import YOLO
+from deep_sort_realtime.deepsort_tracker import DeepSort
 
 # ---------------- CONFIG ----------------
 DB_URL = "postgresql://neondb_owner:npg_58LHqXDdanEy@ep-young-sea-aotvi360.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
@@ -27,6 +29,7 @@ def serve_static(path):
     return "Not Found", 404
 
 # ---------------- AI MODELS ----------------
+yolo_model = YOLO('yolov8n.pt')
 detector = cv2.FaceDetectorYN.create(
     "models/face_detection_yunet_2023mar.onnx",
     "",
@@ -39,6 +42,13 @@ recognizer = cv2.FaceRecognizerSF.create(
     "models/face_recognition_sface_2021dec.onnx",
     ""
 )
+
+# DeepSort Tracker
+tracker = DeepSort(max_age=30)
+
+# Track ID to Student ID mapping
+track_to_student = {}
+
 
 # ---------------- DB INIT ----------------
 def init_db():
@@ -200,69 +210,164 @@ def gen_frames():
             break
 
         now = time.time()
-        detector.setInputSize((frame.shape[1], frame.shape[0]))
-        _, faces = detector.detect(frame)
+        
+        # 1. YOLO Detection
+        yolo_results = yolo_model(frame, stream=True, verbose=False)
+        person_detections = []
+        phone_detected = False
+        book_detected = False
+        
+        for r in yolo_results:
+            for box in r.boxes:
+                cls_id = int(box.cls[0])
+                conf = float(box.conf[0])
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                
+                if cls_id == 0 and conf > 0.5: # person
+                    person_detections.append(([x1, y1, x2 - x1, y2 - y1], conf, "person"))
+                elif cls_id == 67: # phone
+                    phone_detected = True
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                    cv2.putText(frame, "PHONE DETECTED", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
+                elif cls_id == 73: # book
+                    book_detected = True
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
+                    cv2.putText(frame, "BOOK DETECTED", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
 
+        room_state["phone_detected"] = phone_detected
+        room_state["book_detected"] = book_detected
+        
+        # 2. DeepSort Tracking
+        tracks = tracker.update_tracks(person_detections, frame=frame)
+        
         current_students_in_frame = set()
         unknown_count = 0
-
-        if faces is not None:
-            for face in faces:
-                x, y, w, h = map(int, face[:4])
+        
+        for track in tracks:
+            if not track.is_confirmed():
+                continue
                 
-                # Extract features
-                aligned_face = recognizer.alignCrop(frame, face)
-                feature = recognizer.feature(aligned_face)
+            track_id = track.track_id
+            tx1, ty1, tx2, ty2 = map(int, track.to_ltrb())
+            
+            # Bound crop
+            tx1 = max(0, tx1)
+            ty1 = max(0, ty1)
+            tx2 = min(frame.shape[1], tx2)
+            ty2 = min(frame.shape[0], ty2)
+            
+            if tx2 - tx1 < 10 or ty2 - ty1 < 10:
+                continue
                 
-                # Match
-                best_match = None
-                best_score = 0
-                for s in registered_students:
-                    score = recognizer.match(feature, s["encoding"], cv2.FaceRecognizerSF_FR_COSINE)
-                    if score > best_score:
-                        best_score = score
-                        best_match = s
+            person_crop = frame[ty1:ty2, tx1:tx2]
+            
+            # Identify if needed
+            if track_id not in track_to_student:
+                detector.setInputSize((person_crop.shape[1], person_crop.shape[0]))
+                _, faces = detector.detect(person_crop)
+                
+                if faces is not None and len(faces) > 0:
+                    face = faces[0]
+                    aligned_face = recognizer.alignCrop(person_crop, face)
+                    feature = recognizer.feature(aligned_face)
+                    
+                    best_match = None
+                    best_score = 0
+                    for s in registered_students:
+                        score = recognizer.match(feature, s["encoding"], cv2.FaceRecognizerSF_FR_COSINE)
+                        if score > best_score:
+                            best_score = score
+                            best_match = s
+                    
+                    if best_match and best_score >= 0.363:
+                        track_to_student[track_id] = best_match['student_id']
+                        if best_match['student_id'] not in tracked_students:
+                            tracked_students[best_match['student_id']] = {
+                                "name": best_match['name'], 
+                                "risk_score": 0, 
+                                "status": "Active", 
+                                "direction": "CENTER", 
+                                "last_seen": now, 
+                                "last_update": now
+                            }
 
-                # Threshold for Cosine is ~0.363
-                if best_match and best_score >= 0.363:
-                    sid = best_match['student_id']
-                    name = best_match['name']
-                    label = f"{name} ({sid})"
-                    color = (0, 255, 0)
-                    current_students_in_frame.add(sid)
-                    
-                    if sid not in tracked_students:
-                        tracked_students[sid] = {"name": name, "risk_score": 0, "status": "Active"}
-                    
-                    tracked_students[sid]["last_seen"] = now
-                    # Decrease risk score if they are looking at the screen
-                    tracked_students[sid]["risk_score"] = max(0, tracked_students[sid]["risk_score"] - 1)
-                    tracked_students[sid]["status"] = "Active"
+            # If identified, process head pose
+            if track_id in track_to_student:
+                sid = track_to_student[track_id]
+                current_students_in_frame.add(sid)
+                name = tracked_students[sid]["name"]
+                
+                # Yunet Head Direction on cropped body
+                direction = "CENTER"
+                detector.setInputSize((person_crop.shape[1], person_crop.shape[0]))
+                _, faces = detector.detect(person_crop)
+                
+                if faces is not None and len(faces) > 0:
+                    face = faces[0]
+                    x_face, y_face, w_face, h_face = map(int, face[:4])
+                    x_nose, y_nose = map(int, face[8:10])
+                    if w_face > 0 and h_face > 0:
+                        nx = (x_nose - x_face) / w_face
+                        ny = (y_nose - y_face) / h_face
+                        if nx < 0.35: direction = "RIGHT"
+                        elif nx > 0.65: direction = "LEFT"
+                        elif ny < 0.35: direction = "UP"
+                        elif ny > 0.75: direction = "DOWN"
+                
+                # Update Risk Score
+                last_update = tracked_students[sid].get("last_update", now)
+                delta_t = now - last_update
+                tracked_students[sid]["last_update"] = now
+                tracked_students[sid]["last_seen"] = now
+                tracked_students[sid]["direction"] = direction
+                
+                if direction != "CENTER":
+                    tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (5 * delta_t))
+                    tracked_students[sid]["status"] = f"Looking {direction}"
                 else:
-                    label = "UNKNOWN"
-                    color = (0, 0, 255)
-                    unknown_count += 1
-
+                    tracked_students[sid]["risk_score"] = max(0, tracked_students[sid]["risk_score"] - (5 * delta_t))
+                    tracked_students[sid]["status"] = "Active"
+                
                 # Draw
-                cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
-                cv2.putText(frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                color = (0, 255, 0)
+                if tracked_students[sid]["risk_score"] > 25:
+                    color = (0, 165, 255) # Orange
+                if tracked_students[sid]["risk_score"] > 75:
+                    color = (0, 0, 255) # Red
+                    
+                label = f"{name} ({sid}) Risk: {int(tracked_students[sid]['risk_score'])}"
+                cv2.rectangle(frame, (tx1, ty1), (tx2, ty2), color, 2)
+                cv2.putText(frame, label, (tx1, ty1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+            else:
+                unknown_count += 1
+                cv2.rectangle(frame, (tx1, ty1), (tx2, ty2), (0, 0, 255), 2)
+                cv2.putText(frame, f"UNKNOWN {track_id}", (tx1, ty1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
         # Update offline students
         for sid in list(tracked_students.keys()):
             if sid not in current_students_in_frame:
+                last_update = tracked_students[sid].get("last_update", now)
+                delta_t = now - last_update
+                tracked_students[sid]["last_update"] = now
+                
                 time_away = now - tracked_students[sid].get("last_seen", 0)
-                if time_away > 2.0: # Away for more than 2 seconds
-                    tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + 2)
+                if time_away > 2.0:
+                    tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (10 * delta_t))
                     tracked_students[sid]["status"] = "Away"
-                if time_away > 60.0: # Remove from tracker if away for 60 seconds
+                if time_away > 60.0:
                     del tracked_students[sid]
+                    to_delete = [tid for tid, s in track_to_student.items() if s == sid]
+                    for tid in to_delete:
+                        del track_to_student[tid]
 
-        # Update room state
-        global room_state
         room_state["unknown_count"] = unknown_count
         
         status = "NORMAL"
-        if unknown_count > 0:
+        if phone_detected:
+            status = "PHONE DETECTED"
+        elif book_detected:
+            status = "BOOK DETECTED"
+        elif unknown_count > 0:
             status = "HIGH RISK" # Unknown person in room
             
         room_state["status"] = status
@@ -299,6 +404,8 @@ def api_status():
     return jsonify({
         "room_status": room_state["status"],
         "unknown_count": room_state["unknown_count"],
+        "phone_detected": room_state.get("phone_detected", False),
+        "book_detected": room_state.get("book_detected", False),
         "students": students_list
     })
 

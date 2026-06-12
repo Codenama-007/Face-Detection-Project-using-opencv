@@ -3,6 +3,68 @@
    All interactions wired. No dead clicks.
    ============================================================ */
 
+// ─── Particle System (Liquid Glass Background) ───────────────
+function initParticles() {
+    const canvas = document.getElementById('particles-bg');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    let width, height;
+    let particles = [];
+
+    function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+        constructor() {
+            this.x = Math.random() * width;
+            this.y = Math.random() * height;
+            this.vx = (Math.random() - 0.5) * 0.5;
+            this.vy = (Math.random() - 0.5) * 0.5;
+            this.radius = Math.random() * 40 + 20;
+            this.hue = Math.random() > 0.5 ? 210 : 250; // Blue and Purple
+        }
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < -this.radius) this.x = width + this.radius;
+            if (this.x > width + this.radius) this.x = -this.radius;
+            if (this.y < -this.radius) this.y = height + this.radius;
+            if (this.y > height + this.radius) this.y = -this.radius;
+        }
+        draw() {
+            ctx.beginPath();
+            const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+            gradient.addColorStop(0, `hsla(${this.hue}, 100%, 60%, 0.15)`);
+            gradient.addColorStop(1, `hsla(${this.hue}, 100%, 60%, 0)`);
+            ctx.fillStyle = gradient;
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Initialize 50 particles
+    for (let i = 0; i < 50; i++) {
+        particles.push(new Particle());
+    }
+
+    function animate() {
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0, 0, width, height);
+        particles.forEach(p => {
+            p.update();
+            p.draw();
+        });
+        requestAnimationFrame(animate);
+    }
+    animate();
+}
+
 // ─── Toast Notification System ──────────────────────────────
 function showToast(message, type = 'success', duration = 3000) {
     let container = document.getElementById('toast-container');
@@ -169,6 +231,9 @@ function initMobileMenu() {
 
 // ─── Main Init ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Initialize background particles
+    initParticles();
 
     // 1. Scroll reveal (Intersection Observer)
     const revealElements = document.querySelectorAll('.reveal-up');
@@ -357,8 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'Security Overview': () => showToast('Security Overview — Coming Soon', 'info'),
         'Privacy Policy': () => showToast('Privacy Policy — Coming Soon', 'info'),
         'Live Monitoring': () => navigateWithTransition('monitoring.html', 500),
-        'Analytics Dashboard': () => navigateWithTransition('reports.html', 500),
-        'Replay Engine': () => navigateWithTransition('replay.html', 500),
+        'Identity Enrollment': () => navigateWithTransition('enrollment.html', 500),
     };
 
     document.querySelectorAll('.footer-links-group a').forEach(link => {

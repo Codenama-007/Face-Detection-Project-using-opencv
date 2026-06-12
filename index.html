@@ -13,6 +13,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
+    <!-- Particles Background -->
+    <canvas id="particles-bg"></canvas>
+    
     <!-- Navigation -->
     <nav class="navbar glass-panel">
         <div class="nav-content">
@@ -49,34 +52,23 @@
                     <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
                 </div>
                 <div class="mockup-body">
-                    <!-- Generic abstract placeholder image representing analytics/UI -->
-                    <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2070" alt="Dashboard Preview" class="mockup-img">
+                    <!-- High-tech AI Concept Image -->
+                    <img src="proctor_concept.png" alt="ProctorAI Computer Vision Concept" class="mockup-img">
                     <div class="mockup-overlay"></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 6. Statistics Section (Social Proof) -->
-    <section class="statistics">
+    <!-- Core Concept Section (Replacing fake stats) -->
+    <section class="statistics" style="padding-bottom: 2rem;">
         <div class="container">
-            <div class="stats-grid">
-                <div class="stat-item reveal-up">
-                    <h3 class="stat-number">10M+</h3>
-                    <p class="stat-label">Students Monitored</p>
-                </div>
-                <div class="stat-item reveal-up" style="transition-delay: 0.1s;">
-                    <h3 class="stat-number">500k+</h3>
-                    <p class="stat-label">Examinations Analyzed</p>
-                </div>
-                <div class="stat-item reveal-up" style="transition-delay: 0.2s;">
-                    <h3 class="stat-number">12M+</h3>
-                    <p class="stat-label">Trust Scores Generated</p>
-                </div>
-                <div class="stat-item reveal-up" style="transition-delay: 0.3s;">
-                    <h3 class="stat-number">99.9%</h3>
-                    <p class="stat-label">Incidents Detected</p>
-                </div>
+            <div class="glass-panel" style="padding: 3rem; text-align: center; border-radius: 20px; max-width: 800px; margin: 0 auto; background: rgba(13, 17, 23, 0.6); backdrop-filter: blur(20px);">
+                <i data-lucide="cpu" class="accent-icon" style="width: 48px; height: 48px; margin-bottom: 1.5rem;"></i>
+                <h2 style="font-size: 2rem; margin-bottom: 1rem; color: var(--text-primary);">Advanced Computer Vision</h2>
+                <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6;">
+                    ProctorAI uses state-of-the-art facial landmark extraction to continuously track student gaze direction, presence, and prohibited objects (like cell phones and books) in real-time. Our dynamic Trust Engine ensures exams are fair by monitoring exact behavioral states without invasive software installations.
+                </p>
             </div>
         </div>
     </section>
@@ -106,9 +98,9 @@
                     <p>Quantify student integrity across sessions, providing a continuous metric of academic reliability.</p>
                 </div>
                 <div class="feature-card glass-panel reveal-up">
-                    <div class="feature-icon"><i data-lucide="play-circle"></i></div>
-                    <h3>Exam Replay</h3>
-                    <p>A complete flight-recorder for exams. Review flags with synchronized timeline and video playback.</p>
+                    <div class="feature-icon"><i data-lucide="scan-face"></i></div>
+                    <h3>Secure Identity Enrollment</h3>
+                    <p>Onboard students seamlessly using our FaceRecognizerSF AI model for instant, secure authentication.</p>
                 </div>
                 <div class="feature-card glass-panel reveal-up" style="transition-delay: 0.1s;">
                     <div class="feature-icon"><i data-lucide="bar-chart-2"></i></div>
@@ -116,9 +108,9 @@
                     <p>Executive-level insights, integrity trends, and comprehensive exportable institutional reports.</p>
                 </div>
                 <div class="feature-card glass-panel reveal-up" style="transition-delay: 0.2s;">
-                    <div class="feature-icon accent-icon"><i data-lucide="sparkles"></i></div>
-                    <h3>Examination Insights</h3>
-                    <p>Auto-generated AI narratives explaining session risks, top violations, and classroom trends instantly.</p>
+                    <div class="feature-icon accent-icon"><i data-lucide="crosshair"></i></div>
+                    <h3>Persistent Body Tracking</h3>
+                    <p>Unbreakable tracking locks using DeepSort algorithms ensure students are monitored even when looking away.</p>
                 </div>
             </div>
         </div>
@@ -150,7 +142,7 @@
                 <div class="step-card reveal-up" style="transition-delay: 0.3s;">
                     <div class="step-number">04</div>
                     <h3>Create Reports</h3>
-                    <p>Administrators receive actionable insights, timeline replays, and PDF reports for final auditing.</p>
+                    <p>Administrators receive actionable alerts, real-time tracking metrics, and exportable PDF reports for final auditing.</p>
                 </div>
             </div>
         </div>
@@ -186,15 +178,14 @@
                         <p>Institutional KPIs, AI insights, and violation data.</p>
                     </div>
                 </a>
-                <!-- Showcase Card 3 -->
-                <a href="replay.html" class="showcase-card glass-panel reveal-up" style="transition-delay: 0.2s;">
+                <a href="enrollment.html" class="showcase-card glass-panel reveal-up" style="transition-delay: 0.2s;">
                     <div class="showcase-img-wrapper">
                         <div class="placeholder-gradient bg-3"></div>
                         <div class="showcase-overlay"><i data-lucide="external-link"></i></div>
                     </div>
                     <div class="showcase-content">
-                        <h3>Exam Replay Engine</h3>
-                        <p>Interactive forensic timeline and synchronized audit logs.</p>
+                        <h3>Identity Enrollment</h3>
+                        <p>Secure student verification and facial data registration.</p>
                     </div>
                 </a>
             </div>
@@ -229,36 +220,7 @@
         </div>
     </section>
 
-    <!-- 7. Testimonials -->
-    <section class="testimonials section-padding">
-        <div class="container">
-            <div class="section-header reveal-up">
-                <h2 class="section-title">Trusted globally.</h2>
-            </div>
-            <div class="testim-grid">
-                <div class="testim-card glass-panel reveal-up">
-                    <div class="quote">"ProctorAI completely transformed our remote examination process. The Trust Score engine provides invaluable peace of mind for our faculty."</div>
-                    <div class="author">
-                        <div class="author-avatar">S</div>
-                        <div class="author-info">
-                            <strong>Dr. Sarah Jenkins</strong>
-                            <span>Dean of Engineering, Tech University</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="testim-card glass-panel reveal-up" style="transition-delay: 0.15s;">
-                    <div class="quote">"The Exam Replay feature is exactly like a flight-recorder. Investigating academic integrity appeals now takes minutes instead of days."</div>
-                    <div class="author">
-                        <div class="author-avatar">M</div>
-                        <div class="author-info">
-                            <strong>Michael Chang</strong>
-                            <span>Director of Assessment, Global Certifications</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+
 
     <!-- 8. CTA Section -->
     <section class="cta section-padding">
@@ -289,8 +251,7 @@
                 <div class="footer-links-group">
                     <h4>Platform</h4>
                     <a href="monitoring.html">Live Monitoring</a>
-                    <a href="reports.html">Analytics Dashboard</a>
-                    <a href="replay.html">Replay Engine</a>
+                    <a href="enrollment.html">Identity Enrollment</a>
                 </div>
                 <div class="footer-links-group">
                     <h4>Company</h4>

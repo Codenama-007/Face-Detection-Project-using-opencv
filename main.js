@@ -99,10 +99,24 @@ function updateStudentsGrid(students) {
 }
 
 // Update Room Status Banner
-function updateRoomStatus(status, unknownCount) {
+function updateRoomStatus(status, unknownCount, phoneDetected, bookDetected) {
     unknownCountBadge.textContent = `${unknownCount} Unknown`;
     
-    if (status === 'HIGH RISK' || unknownCount > 0) {
+    if (phoneDetected) {
+        globalStatusBanner.style.background = 'rgba(239, 68, 68, 0.2)';
+        globalStatusBanner.style.color = 'var(--danger)';
+        globalStatusBanner.style.border = '1px solid rgba(239, 68, 68, 0.5)';
+        globalStatusText.textContent = 'CRITICAL: CELL PHONE DETECTED!';
+        const liveDot = document.querySelector('.dot.live');
+        if (liveDot) liveDot.style.background = 'var(--danger)';
+    } else if (bookDetected) {
+        globalStatusBanner.style.background = 'rgba(239, 68, 68, 0.2)';
+        globalStatusBanner.style.color = 'var(--danger)';
+        globalStatusBanner.style.border = '1px solid rgba(239, 68, 68, 0.5)';
+        globalStatusText.textContent = 'CRITICAL: PROHIBITED BOOK DETECTED!';
+        const liveDot = document.querySelector('.dot.live');
+        if (liveDot) liveDot.style.background = 'var(--danger)';
+    } else if (status === 'HIGH RISK' || unknownCount > 0) {
         globalStatusBanner.style.background = 'rgba(239, 68, 68, 0.2)';
         globalStatusBanner.style.color = 'var(--danger)';
         globalStatusBanner.style.border = '1px solid rgba(239, 68, 68, 0.5)';
@@ -141,10 +155,26 @@ async function fetchLiveStatus() {
         const response = await fetch('/api/status');
         const data = await response.json();
         
-        updateRoomStatus(data.room_status, data.unknown_count);
+        updateRoomStatus(data.room_status, data.unknown_count, data.phone_detected, data.book_detected);
         updateStudentsGrid(data.students);
         
         // Check for state transitions to generate alerts
+        if (data.phone_detected && !previousAlerts.includes('phone_alert')) {
+            addAlert('Critical: Cell phone detected in camera frame!', 'danger');
+            previousAlerts.push('phone_alert');
+        } else if (!data.phone_detected && previousAlerts.includes('phone_alert')) {
+            addAlert('Phone removed from frame.', 'success');
+            previousAlerts = previousAlerts.filter(a => a !== 'phone_alert');
+        }
+
+        if (data.book_detected && !previousAlerts.includes('book_alert')) {
+            addAlert('Critical: Prohibited book detected in camera frame!', 'danger');
+            previousAlerts.push('book_alert');
+        } else if (!data.book_detected && previousAlerts.includes('book_alert')) {
+            addAlert('Book removed from frame.', 'success');
+            previousAlerts = previousAlerts.filter(a => a !== 'book_alert');
+        }
+
         if (data.unknown_count > 0 && !previousAlerts.includes('unknown_alert')) {
             addAlert('Critical: Unknown person entered the room!', 'danger');
             previousAlerts.push('unknown_alert');
@@ -152,6 +182,16 @@ async function fetchLiveStatus() {
             addAlert('Room secure. Unknown person left.', 'success');
             previousAlerts = previousAlerts.filter(a => a !== 'unknown_alert');
         }
+        
+        // Check for students looking away or high risk
+        data.students.forEach(student => {
+            if (student.risk_score > 25 && !previousAlerts.includes(`risk_${student.id}`)) {
+                addAlert(`Warning: ${student.name} is accumulating high risk!`, 'warning');
+                previousAlerts.push(`risk_${student.id}`);
+            } else if (student.risk_score <= 10 && previousAlerts.includes(`risk_${student.id}`)) {
+                previousAlerts = previousAlerts.filter(a => a !== `risk_${student.id}`);
+            }
+        });
 
     } catch (e) {
         console.error("Error fetching live status:", e);
