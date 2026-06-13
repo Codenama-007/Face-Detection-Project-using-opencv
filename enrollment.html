@@ -177,6 +177,80 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
         }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #334155;
+            margin-bottom: 1.5rem;
+        }
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .file-upload-zone {
+            border: 2px dashed #334155;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .file-upload-zone:hover {
+            border-color: var(--primary);
+        }
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            background: #0f172a;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid #1e293b;
+        }
+        .file-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .file-item-info {
+            flex: 1;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .file-item-info input {
+            padding: 0.4rem;
+            border-radius: 4px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: white;
+            width: 50%;
+        }
     </style>
 </head>
 <body>
@@ -186,23 +260,44 @@
         <h2>Face ID Enrollment</h2>
         <p>Register your face for the CCTV monitoring system.</p>
 
-        <div class="video-container">
-            <video id="webcam" autoplay playsinline></video>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Webcam</button>
+            <button class="tab-btn" onclick="switchTab('uploadTab', this)">Bulk Upload</button>
         </div>
 
-        <div class="input-group">
-            <label for="studentName">Full Name</label>
-            <input type="text" id="studentName" placeholder="e.g. John Doe" autocomplete="off">
+        <div id="webcamTab" class="tab-content active">
+            <div class="video-container">
+                <video id="webcam" autoplay playsinline></video>
+            </div>
+
+            <div class="input-group">
+                <label for="studentName">Full Name</label>
+                <input type="text" id="studentName" placeholder="e.g. John Doe" autocomplete="off">
+            </div>
+
+            <div class="input-group">
+                <label for="studentId">Student ID</label>
+                <input type="text" id="studentId" placeholder="e.g. STU-1002" autocomplete="off">
+            </div>
+
+            <button class="btn" id="captureBtn">
+                <i data-lucide="camera"></i> Enroll Face ID
+            </button>
         </div>
 
-        <div class="input-group">
-            <label for="studentId">Student ID</label>
-            <input type="text" id="studentId" placeholder="e.g. STU-1002" autocomplete="off">
+        <div id="uploadTab" class="tab-content">
+            <div class="file-upload-zone" onclick="document.getElementById('fileInput').click()">
+                <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--text-secondary);margin-bottom:0.5rem;display:inline-block;"></i>
+                <p>Click to select photos or ID cards<br><small style="color:var(--text-secondary)">Tip: Name files as "ID-Name.jpg" to auto-fill</small></p>
+            </div>
+            <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+            
+            <div class="file-list" id="fileList"></div>
+            
+            <button class="btn" id="uploadAllBtn" disabled>
+                <i data-lucide="upload"></i> Register All Selected
+            </button>
         </div>
-
-        <button class="btn" id="captureBtn">
-            <i data-lucide="camera"></i> Enroll Face ID
-        </button>
 
         <div id="statusMsg" class="message"></div>
         
@@ -215,6 +310,16 @@
 
     <script>
         lucide.createIcons();
+        
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btnElement.classList.add('active');
+            
+            // Re-render icons incase they are in hidden tabs initially
+            lucide.createIcons();
+        }
 
         const video = document.getElementById('webcam');
         const captureBtn = document.getElementById('captureBtn');
@@ -314,6 +419,130 @@
                 startSessionBtn.disabled = false;
             }
         });
+        
+        // --- BULK UPLOAD LOGIC ---
+        let selectedFilesData = [];
+        
+        function handleFiles(files) {
+            const fileListEl = document.getElementById('fileList');
+            const uploadBtn = document.getElementById('uploadAllBtn');
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) continue;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // Try to parse ID-Name from filename
+                    let defaultId = "";
+                    let defaultName = "";
+                    const nameParts = file.name.split('.')[0].split('-');
+                    if (nameParts.length >= 2) {
+                        defaultId = nameParts[0].trim();
+                        defaultName = nameParts.slice(1).join('-').trim();
+                    } else {
+                        defaultName = nameParts[0].trim();
+                    }
+                    
+                    const fileId = Date.now() + i;
+                    selectedFilesData.push({
+                        id: fileId,
+                        dataUrl: e.target.result,
+                        studentId: defaultId,
+                        studentName: defaultName,
+                        status: 'pending'
+                    });
+                    
+                    renderFileList();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function renderFileList() {
+            const fileListEl = document.getElementById('fileList');
+            const uploadBtn = document.getElementById('uploadAllBtn');
+            fileListEl.innerHTML = '';
+            
+            if (selectedFilesData.length === 0) {
+                uploadBtn.disabled = true;
+                return;
+            }
+            uploadBtn.disabled = false;
+            
+            selectedFilesData.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'file-item';
+                
+                let iconHtml = '';
+                if (item.status === 'success') iconHtml = '<i data-lucide="check-circle" style="color:var(--success);width:20px;"></i>';
+                else if (item.status === 'error') iconHtml = '<i data-lucide="x-circle" style="color:var(--danger);width:20px;"></i>';
+                else if (item.status === 'uploading') iconHtml = '<i data-lucide="loader" style="color:var(--primary);width:20px;" class="lucide-spin"></i>';
+                
+                el.innerHTML = `
+                    <img src="${item.dataUrl}">
+                    <div class="file-item-info">
+                        <input type="text" placeholder="ID" value="${item.studentId}" onchange="updateFileData(${item.id}, 'studentId', this.value)">
+                        <input type="text" placeholder="Name" value="${item.studentName}" onchange="updateFileData(${item.id}, 'studentName', this.value)">
+                    </div>
+                    <div id="status-${item.id}">${iconHtml}</div>
+                `;
+                fileListEl.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+        
+        function updateFileData(id, field, value) {
+            const item = selectedFilesData.find(x => x.id === id);
+            if (item) item[field] = value;
+        }
+        
+        document.getElementById('uploadAllBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('uploadAllBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Processing...';
+            lucide.createIcons();
+            
+            for (let i = 0; i < selectedFilesData.length; i++) {
+                const item = selectedFilesData[i];
+                if (item.status === 'success') continue; // skip already uploaded
+                
+                if (!item.studentId || !item.studentName) {
+                    item.status = 'error';
+                    renderFileList();
+                    continue;
+                }
+                
+                item.status = 'uploading';
+                renderFileList();
+                
+                try {
+                    const response = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: item.studentName,
+                            student_id: item.studentId,
+                            image: item.dataUrl
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        item.status = 'success';
+                    } else {
+                        item.status = 'error';
+                    }
+                } catch (e) {
+                    item.status = 'error';
+                }
+                renderFileList();
+            }
+            
+            btn.innerHTML = '<i data-lucide="upload"></i> Register All Selected';
+            btn.disabled = false;
+            lucide.createIcons();
+        });
+        
     </script>
 </body>
 </html>

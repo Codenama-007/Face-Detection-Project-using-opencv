@@ -50,7 +50,7 @@ def serve_static(path):
     return "Not Found", 404
 
 # ---------------- AI MODELS ----------------
-yolo_model = YOLO('yolov8n.pt')
+yolo_model = YOLO('yolov8s.pt')
 detector = cv2.FaceDetectorYN.create(
     "models/face_detection_yunet_2023mar.onnx",
     "",
@@ -69,6 +69,11 @@ tracker = DeepSort(max_age=30)
 
 # Track ID to Student ID mapping
 track_to_student = {}
+track_votes = {} # track_id -> {student_id: count}
+historical_risk_scores = {}
+head_pose_buffers = {}
+baseline_calibration = {} # sid -> {"nx": [], "ny": []}
+VIDEO_SOURCE = 0 # Can be an RTSP url like 'rtsp://admin:123@192.168.1.100/stream'
 
 # Session State
 SESSION_ACTIVE = False
@@ -322,8 +327,8 @@ def log_to_db(student_id, risk_score, direction, status):
 # ---------------- VIDEO PROCESSING ----------------
 
 def gen_frames():
-    global tracked_students, current_students_in_frame, track_to_student, SESSION_ACTIVE
-    cap = cv2.VideoCapture(0)
+    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, head_pose_buffers, baseline_calibration, VIDEO_SOURCE, SESSION_ACTIVE
+    cap = cv2.VideoCapture(VIDEO_SOURCE)
     last_log_time = 0
     
     while True:
@@ -347,14 +352,14 @@ def gen_frames():
                 
                 if cls_id == 0 and conf > 0.5: # person
                     person_detections.append(([x1, y1, x2 - x1, y2 - y1], conf, "person"))
-                elif cls_id == 67: # phone
+                elif cls_id == 67 and conf > 0.65: # phone
                     phone_detected = True
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
-                    cv2.putText(frame, "PHONE DETECTED", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
-                elif cls_id == 73: # book
+                    cv2.putText(frame, f"PHONE: {conf:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
+                elif cls_id == 73 and conf > 0.60: # book
                     book_detected = True
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
-                    cv2.putText(frame, "BOOK DETECTED", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
+                    cv2.putText(frame, f"BOOK: {conf:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 3)
 
         room_state["phone_detected"] = phone_detected
         room_state["book_detected"] = book_detected
@@ -378,7 +383,8 @@ def gen_frames():
             tx2 = min(frame.shape[1], tx2)
             ty2 = min(frame.shape[0], ty2)
             
-            if tx2 - tx1 < 10 or ty2 - ty1 < 10:
+            # Minimum bounding box check
+            if tx2 - tx1 < 40 or ty2 - ty1 < 40:
                 continue
                 
             person_crop = frame[ty1:ty2, tx1:tx2]
@@ -389,6 +395,8 @@ def gen_frames():
                 _, faces = detector.detect(person_crop)
                 
                 if faces is not None and len(faces) > 0:
+                    # Sort faces by area (width * height) and pick the largest
+                    faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
                     face = faces[0]
                     aligned_face = recognizer.alignCrop(person_crop, face)
                     feature = recognizer.feature(aligned_face)
@@ -401,17 +409,28 @@ def gen_frames():
                             best_score = score
                             best_match = s
                     
-                    if best_match and best_score >= 0.363:
-                        track_to_student[track_id] = best_match['student_id']
-                        if best_match['student_id'] not in tracked_students:
-                            tracked_students[best_match['student_id']] = {
-                                "name": best_match['name'], 
-                                "risk_score": 0, 
-                                "status": "Active", 
-                                "direction": "CENTER", 
-                                "last_seen": now, 
-                                "last_update": now
-                            }
+                    if best_match and best_score >= 0.45:
+                        sid = best_match['student_id']
+                        if track_id not in track_votes:
+                            track_votes[track_id] = {}
+                        track_votes[track_id][sid] = track_votes[track_id].get(sid, 0) + 1
+                        
+                        # Lock identity if 5 votes reached
+                        if track_votes[track_id][sid] >= 5:
+                            track_to_student[track_id] = sid
+                            
+                            # Restore historical risk score if exists
+                            hist_score = historical_risk_scores.get(sid, 0)
+                            
+                            if sid not in tracked_students:
+                                tracked_students[sid] = {
+                                    "name": best_match['name'], 
+                                    "risk_score": hist_score, 
+                                    "status": "Active", 
+                                    "direction": "CENTER", 
+                                    "last_seen": now, 
+                                    "last_update": now
+                                }
 
             # If identified, process head pose
             if track_id in track_to_student:
@@ -425,23 +444,56 @@ def gen_frames():
                 _, faces = detector.detect(person_crop)
                 
                 if faces is not None and len(faces) > 0:
+                    # Pick largest face
+                    faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
                     face = faces[0]
                     x_face, y_face, w_face, h_face = map(int, face[:4])
                     x_nose, y_nose = map(int, face[8:10])
                     if w_face > 0 and h_face > 0:
                         nx = (x_nose - x_face) / w_face
                         ny = (y_nose - y_face) / h_face
-                        if nx < 0.25: direction = "RIGHT"
-                        elif nx > 0.75: direction = "LEFT"
-                        elif ny < 0.25: direction = "UP"
-                        elif ny > 0.85: direction = "DOWN"
+                        
+                        # Dynamic Overhead Calibration
+                        if sid not in baseline_calibration:
+                            baseline_calibration[sid] = {"nx": [], "ny": []}
+                            
+                        # Calibrate for the first 30 frames
+                        if len(baseline_calibration[sid]["nx"]) < 30:
+                            baseline_calibration[sid]["nx"].append(nx)
+                            baseline_calibration[sid]["ny"].append(ny)
+                            # Assume CENTER during calibration
+                            direction = "CENTER"
+                        else:
+                            # Use baseline average
+                            base_nx = sum(baseline_calibration[sid]["nx"]) / 30.0
+                            base_ny = sum(baseline_calibration[sid]["ny"]) / 30.0
+                            
+                            # Dynamic Thresholds (adjust based on baseline)
+                            if nx < base_nx - 0.15: direction = "RIGHT"
+                            elif nx > base_nx + 0.15: direction = "LEFT"
+                            elif ny < base_ny - 0.15: direction = "UP"
+                            elif ny > base_ny + 0.15: direction = "DOWN"
+                else:
+                    direction = "OCCLUDED"
                 
+                # Head pose stabilization buffer
+                if sid not in head_pose_buffers:
+                    head_pose_buffers[sid] = []
+                head_pose_buffers[sid].append(direction)
+                if len(head_pose_buffers[sid]) > 3:
+                    head_pose_buffers[sid].pop(0)
+                
+                # Only use direction if consistent across 3 frames, else use last known direction
+                stable_direction = tracked_students[sid].get("direction", "CENTER")
+                if len(head_pose_buffers[sid]) == 3 and all(d == head_pose_buffers[sid][0] for d in head_pose_buffers[sid]):
+                    stable_direction = head_pose_buffers[sid][0]
+
                 # Update Risk Score
                 last_update = tracked_students[sid].get("last_update", now)
                 delta_t = now - last_update
                 tracked_students[sid]["last_update"] = now
                 tracked_students[sid]["last_seen"] = now
-                tracked_students[sid]["direction"] = direction
+                tracked_students[sid]["direction"] = stable_direction
                 
                 if SESSION_ACTIVE:
                     if phone_detected:
@@ -450,12 +502,17 @@ def gen_frames():
                     elif book_detected:
                         tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (15 * delta_t))
                         tracked_students[sid]["status"] = "Book Detected"
-                    elif direction != "CENTER":
+                    elif stable_direction == "OCCLUDED":
+                        tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (10 * delta_t))
+                        tracked_students[sid]["status"] = "Face Occluded/Hidden"
+                    elif stable_direction != "CENTER":
                         tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (5 * delta_t))
-                        tracked_students[sid]["status"] = f"Looking {direction}"
+                        tracked_students[sid]["status"] = f"Looking {stable_direction}"
                     else:
-                        # User requested: Do not reduce risk score, just update status
                         tracked_students[sid]["status"] = "Looking Straight"
+                        
+                # Update historical cache
+                historical_risk_scores[sid] = tracked_students[sid]["risk_score"]
                 
                 # Draw
                 color = (0, 255, 0)
@@ -488,10 +545,15 @@ def gen_frames():
                 
                 time_away = now - tracked_students[sid].get("last_seen", 0)
                 if time_away > 60.0:
+                    historical_risk_scores[sid] = tracked_students[sid]["risk_score"]
+                    if sid in baseline_calibration:
+                        del baseline_calibration[sid]
                     del tracked_students[sid]
                     to_delete = [tid for tid, s in track_to_student.items() if s == sid]
                     for tid in to_delete:
                         del track_to_student[tid]
+                        if tid in track_votes:
+                            del track_votes[tid]
 
         room_state["unknown_count"] = unknown_count
         
