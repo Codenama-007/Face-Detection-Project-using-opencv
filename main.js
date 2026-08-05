@@ -55,10 +55,18 @@ async function checkSessionStatus() {
         console.error("Failed to check session status", err);
     }
 }
+// Tier -> theme status color + label (label always shown: never color alone)
+const TIER_STYLE = {
+    LOW:      { cls: 'success', label: 'LOW' },
+    MEDIUM:   { cls: 'warning', label: 'MEDIUM' },
+    HIGH:     { cls: 'danger',  label: 'HIGH' },
+    CRITICAL: { cls: 'danger',  label: 'CRITICAL' },
+};
+
 // Update the grid of students
 function updateStudentsGrid(students) {
     const currentFrameStudents = new Set(students.map(s => s.id));
-    
+
     // Remove students no longer tracked
     for (let sid of displayedStudents) {
         if (!currentFrameStudents.has(sid)) {
@@ -76,61 +84,78 @@ function updateStudentsGrid(students) {
         return;
     }
 
-    // Remove the waiting message if it exists
     if (studentsGrid.innerHTML.includes('Waiting for students')) {
         studentsGrid.innerHTML = '';
     }
 
-    // Update or create cards
     students.forEach(student => {
         let card = document.getElementById(`student-card-${student.id}`);
-        
-        // Calculate trust score
-        const trustScore = Math.max(0, 100 - student.risk_score).toFixed(1);
-        let riskClass = 'success';
-        if (student.risk_score > 75) riskClass = 'danger';
-        else if (student.risk_score > 25) riskClass = 'warning';
+        const tier = TIER_STYLE[student.tier] || TIER_STYLE.LOW;
+        const score = Math.round(student.suspicion_score ?? student.risk_score ?? 0);
+        const scorePct = Math.min(100, score); // meter caps at 100 visually
+        const phone = (student.phone_conf || 0) > 0 ? `${student.phone_conf}%` : '—';
+        const calib = student.calibrated === false ? ' (calibrating)' : '';
+        const le = student.last_event;
+        const lastEventText = le
+            ? `${le.label} · ${le.time} · ${le.confidence}%`
+            : 'No suspicious events';
 
         if (!card) {
-            // Create new card
             addAlert(`Identified: ${student.name} (${student.id})`, 'success');
             displayedStudents.add(student.id);
             card = document.createElement('div');
             card.id = `student-card-${student.id}`;
-            card.className = `card glass-card stat-card`;
-            card.style.display = 'flex';
-            card.style.justifyContent = 'space-between';
-            card.style.alignItems = 'center';
-            card.style.padding = '1rem';
-            
+            card.className = 'card glass-card stat-card';
+            card.style.cssText = 'display:flex;flex-direction:column;gap:0.6rem;padding:1rem;';
             card.innerHTML = `
-                <div style="display:flex; align-items:center; gap:1rem;">
-                    <div style="width:40px;height:40px;border-radius:50%;background:var(--${riskClass});display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;">
-                        ${student.name.charAt(0)}
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+                    <div style="display:flex;align-items:center;gap:0.75rem;min-width:0;">
+                        <div class="sc-avatar" style="width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;background:var(--${tier.cls});">${student.name.charAt(0)}</div>
+                        <div style="min-width:0;">
+                            <h4 style="margin:0;font-size:0.95rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${student.name}</h4>
+                            <p style="margin:0;font-size:0.75rem;color:var(--text-secondary);">${student.id}</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 style="margin:0;font-size:1rem;color:var(--text-primary);">${student.name}</h4>
-                        <p style="margin:0;font-size:0.8rem;color:var(--text-secondary);">${student.id}</p>
+                    <span class="sc-tier badge" style="background:rgba(255,255,255,0.06);color:var(--${tier.cls});border:1px solid var(--${tier.cls});font-size:0.7rem;">${tier.label}</span>
+                </div>
+                <div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.25rem;">
+                        <span>Suspicion score</span><span class="sc-score" style="color:var(--text-primary);font-weight:600;">${score}</span>
+                    </div>
+                    <div style="height:6px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden;">
+                        <div class="sc-meter" style="height:100%;width:${scorePct}%;border-radius:99px;background:var(--${tier.cls});transition:width 0.6s ease, background 0.3s;"></div>
                     </div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:1.2rem;font-weight:bold;color:var(--${riskClass});" class="trust-val">${trustScore}% Trust</div>
-                    <div style="font-size:0.75rem;color:var(--text-secondary);" class="status-val">${student.status}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;font-size:0.72rem;color:var(--text-secondary);">
+                    <div>Yaw <span class="sc-yaw" style="color:var(--text-primary);font-variant-numeric:tabular-nums;">${student.yaw}°</span></div>
+                    <div>Pitch <span class="sc-pitch" style="color:var(--text-primary);font-variant-numeric:tabular-nums;">${student.pitch}°</span></div>
+                    <div>Gaze <span class="sc-gaze" style="color:var(--text-primary);">${student.gaze}</span></div>
                 </div>
+                <div style="display:flex;justify-content:space-between;font-size:0.75rem;">
+                    <span class="sc-status" style="color:var(--text-primary);">${student.status}${calib}</span>
+                    <span style="color:var(--text-secondary);">Phone <span class="sc-phone" style="color:var(--text-primary);">${phone}</span></span>
+                </div>
+                <div class="sc-lastev" style="font-size:0.7rem;color:var(--text-secondary);border-top:1px solid rgba(255,255,255,0.06);padding-top:0.4rem;">${lastEventText}</div>
             `;
             studentsGrid.appendChild(card);
         } else {
-            // Update existing card
-            const avatar = card.querySelector('div[style*="border-radius:50%"]');
-            const trustVal = card.querySelector('.trust-val');
-            const statusVal = card.querySelector('.status-val');
+            card.querySelector('.sc-avatar').style.background = `var(--${tier.cls})`;
+            const tierEl = card.querySelector('.sc-tier');
+            tierEl.textContent = tier.label;
+            tierEl.style.color = `var(--${tier.cls})`;
+            tierEl.style.borderColor = `var(--${tier.cls})`;
+            card.querySelector('.sc-score').textContent = score;
+            const meter = card.querySelector('.sc-meter');
+            meter.style.width = `${scorePct}%`;
+            meter.style.background = `var(--${tier.cls})`;
+            card.querySelector('.sc-yaw').textContent = `${student.yaw}°`;
+            card.querySelector('.sc-pitch').textContent = `${student.pitch}°`;
+            card.querySelector('.sc-gaze').textContent = student.gaze;
+            card.querySelector('.sc-status').textContent = `${student.status}${calib}`;
+            card.querySelector('.sc-phone').textContent = phone;
+            card.querySelector('.sc-lastev').textContent = lastEventText;
 
-            avatar.style.background = `var(--${riskClass})`;
-            trustVal.style.color = `var(--${riskClass})`;
-            trustVal.textContent = `${trustScore}% Trust`;
-            statusVal.textContent = student.status;
-            
-            if (riskClass === 'danger') {
+            if (student.tier === 'HIGH' || student.tier === 'CRITICAL') {
                 card.classList.add('danger-pulse');
             } else {
                 card.classList.remove('danger-pulse');
@@ -140,43 +165,39 @@ function updateStudentsGrid(students) {
 }
 
 // Update Room Status Banner
-function updateRoomStatus(status, unknownCount, phoneDetected, bookDetected) {
+function updateRoomStatus(status, unknownCount, phoneDetected, cameraBlocked) {
     unknownCountBadge.textContent = `${unknownCount} Unknown`;
-    
-    if (phoneDetected) {
+    const liveDot = document.querySelector('.dot.live');
+
+    function danger(text) {
         globalStatusBanner.style.background = 'rgba(239, 68, 68, 0.2)';
         globalStatusBanner.style.color = 'var(--danger)';
         globalStatusBanner.style.border = '1px solid rgba(239, 68, 68, 0.5)';
-        globalStatusText.textContent = 'CRITICAL: CELL PHONE DETECTED!';
-        const liveDot = document.querySelector('.dot.live');
+        globalStatusText.textContent = text;
         if (liveDot) liveDot.style.background = 'var(--danger)';
-    } else if (bookDetected) {
-        globalStatusBanner.style.background = 'rgba(239, 68, 68, 0.2)';
-        globalStatusBanner.style.color = 'var(--danger)';
-        globalStatusBanner.style.border = '1px solid rgba(239, 68, 68, 0.5)';
-        globalStatusText.textContent = 'CRITICAL: PROHIBITED BOOK DETECTED!';
-        const liveDot = document.querySelector('.dot.live');
-        if (liveDot) liveDot.style.background = 'var(--danger)';
-    } else if (status === 'HIGH RISK' || unknownCount > 0) {
-        globalStatusBanner.style.background = 'rgba(239, 68, 68, 0.2)';
-        globalStatusBanner.style.color = 'var(--danger)';
-        globalStatusBanner.style.border = '1px solid rgba(239, 68, 68, 0.5)';
-        globalStatusText.textContent = 'HIGH RISK: UNKNOWN PERSON DETECTED';
-        const liveDot = document.querySelector('.dot.live');
-        if (liveDot) liveDot.style.background = 'var(--danger)';
+    }
+
+    if (cameraBlocked) {
+        danger('CRITICAL: CAMERA BLOCKED!');
+    } else if (phoneDetected) {
+        danger('CRITICAL: CELL PHONE DETECTED!');
+    } else if (status === 'UNKNOWN PERSON' || unknownCount > 0) {
+        danger('HIGH RISK: UNKNOWN PERSON DETECTED');
     } else {
         globalStatusBanner.style.background = 'rgba(16, 185, 129, 0.1)';
         globalStatusBanner.style.color = 'var(--success)';
         globalStatusBanner.style.border = '1px solid rgba(16, 185, 129, 0.2)';
         globalStatusText.textContent = 'ROOM SECURE';
-        const liveDot = document.querySelector('.dot.live');
         if (liveDot) liveDot.style.background = 'var(--success)';
     }
 }
 
-// Adds an alert to the Alert Center
-function addAlert(message, type) {
-    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+// Adds an alert to the Alert Center.
+// eventTime: the time the event actually occurred (from the backend). Falls
+// back to now for locally generated notices. A forensic log must show when
+// the behaviour happened, not when the browser happened to render it.
+function addAlert(message, type, eventTime) {
+    const time = eventTime || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
     const alertHtml = `
         <div class="alert-item ${type}">
             <span class="alert-title">${message}</span>
@@ -190,49 +211,40 @@ function addAlert(message, type) {
     }
 }
 
+// Confirmed alerts already shown in the Alert Center (dedupe keys)
+const seenAlerts = new Set();
+
+function feedConfirmedAlerts(owner, alerts, tierCls) {
+    // The backend sends newest-first. addAlert prepends, so replay
+    // oldest-first to leave the newest alert at the top of the list.
+    (alerts || []).slice().reverse().forEach(a => {
+        const key = `${owner}|${a.type}|${a.time}`;
+        if (seenAlerts.has(key)) return;
+        seenAlerts.add(key);
+        const dur = a.duration ? ` for ${a.duration}s` : '';
+        addAlert(`${owner}: ${a.label}${dur} (${a.confidence}% conf, +${a.points})`, tierCls, a.time);
+    });
+    if (seenAlerts.size > 600) seenAlerts.clear();  // bound memory
+}
+
 // Fetch live data from backend
 async function fetchLiveStatus() {
     try {
         const response = await fetch('/api/status');
         const data = await response.json();
-        
-        updateRoomStatus(data.room_status, data.unknown_count, data.phone_detected, data.book_detected);
+
+        updateRoomStatus(data.room_status, data.unknown_count, data.phone_detected, data.camera_blocked);
         updateStudentsGrid(data.students);
-        
-        // Check for state transitions to generate alerts
-        if (data.phone_detected && !previousAlerts.includes('phone_alert')) {
-            addAlert('Critical: Cell phone detected in camera frame!', 'danger');
-            previousAlerts.push('phone_alert');
-        } else if (!data.phone_detected && previousAlerts.includes('phone_alert')) {
-            addAlert('Phone removed from frame.', 'success');
-            previousAlerts = previousAlerts.filter(a => a !== 'phone_alert');
-        }
 
-        if (data.book_detected && !previousAlerts.includes('book_alert')) {
-            addAlert('Critical: Prohibited book detected in camera frame!', 'danger');
-            previousAlerts.push('book_alert');
-        } else if (!data.book_detected && previousAlerts.includes('book_alert')) {
-            addAlert('Book removed from frame.', 'success');
-            previousAlerts = previousAlerts.filter(a => a !== 'book_alert');
-        }
-
-        if (data.unknown_count > 0 && !previousAlerts.includes('unknown_alert')) {
-            addAlert('Critical: Unknown person entered the room!', 'danger');
-            previousAlerts.push('unknown_alert');
-        } else if (data.unknown_count === 0 && previousAlerts.includes('unknown_alert')) {
-            addAlert('Room secure. Unknown person left.', 'success');
-            previousAlerts = previousAlerts.filter(a => a !== 'unknown_alert');
-        }
-        
-        // Check for students looking away or high risk
+        // The backend's temporal engine only confirms an alert after the
+        // behaviour is sustained/repeated - so everything arriving here is
+        // already filtered. Feed each confirmed alert once.
         data.students.forEach(student => {
-            if (student.risk_score > 25 && !previousAlerts.includes(`risk_${student.id}`)) {
-                addAlert(`Warning: ${student.name} is accumulating high risk!`, 'warning');
-                previousAlerts.push(`risk_${student.id}`);
-            } else if (student.risk_score <= 10 && previousAlerts.includes(`risk_${student.id}`)) {
-                previousAlerts = previousAlerts.filter(a => a !== `risk_${student.id}`);
-            }
+            const cls = (student.tier === 'HIGH' || student.tier === 'CRITICAL') ? 'danger'
+                      : (student.tier === 'MEDIUM' ? 'warning' : 'info');
+            feedConfirmedAlerts(student.name || student.id, student.alerts, cls);
         });
+        feedConfirmedAlerts('Room', data.room_alerts, 'danger');
 
     } catch (e) {
         console.error("Error fetching live status:", e);

@@ -11,4 +11,9 @@ scipy
 flask
 flask-cors
 psycopg2-binary
+# Windows Hello / Face ID sign-in for the supervisor (WebAuthn standard).
+# The browser drives the Hello prompt, so no OS-specific packages are needed.
+# Pinned: 3.x pulls in post-quantum (mldsa) imports that break on the
+# installed cryptography build.
+webauthn==2.5.2
 

@@ -7,12 +7,12 @@ st.set_page_config(page_title="Exam Dashboard", layout="wide")
 
 st.title("🎓 AI Exam Monitoring Dashboard")
 
-placeholder = st.empty()
-
 
 def read_snapshot():
     try:
-        file_path = "snapshot_tmp.json"
+        # main.py atomically renames snapshot_tmp.json -> snapshot.json,
+        # so this file is always complete valid JSON
+        file_path = "snapshot.json"
 
         if not os.path.exists(file_path):
             return None
@@ -36,28 +36,26 @@ def read_snapshot():
         return None
 
 
-while True:
+data = read_snapshot()
 
-    data = read_snapshot()
+if not data:
+    st.warning("Waiting for valid data...")
+else:
+    col1, col2, col3 = st.columns(3)
 
-    with placeholder.container():
+    col1.metric("Student ID", data.get("id", "NA"))
+    col2.metric("Risk Score", data.get("risk_score", 0))
+    col3.metric("Direction", data.get("direction", "UNKNOWN"))
 
-        if not data:
-            st.warning("Waiting for valid data...")
-        else:
-            col1, col2, col3 = st.columns(3)
+    status = data.get("status", "UNKNOWN")
 
-            col1.metric("Student ID", data.get("id", "NA"))
-            col2.metric("Risk Score", data.get("risk_score", 0))
-            col3.metric("Direction", data.get("direction", "UNKNOWN"))
+    if status == "NORMAL":
+        st.success(status)
+    elif status == "SUSPICIOUS":
+        st.warning(status)
+    else:
+        st.error(status)
 
-            status = data.get("status", "UNKNOWN")
-
-            if status == "NORMAL":
-                st.success(status)
-            elif status == "SUSPICIOUS":
-                st.warning(status)
-            else:
-                st.error(status)
-
-    time.sleep(1)
+# Re-render once per second instead of blocking in a while-loop
+time.sleep(1)
+st.rerun()

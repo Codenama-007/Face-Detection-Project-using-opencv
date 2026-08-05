@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>First-Run Setup | ProctorAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@0.462.0"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+
+        .container {
+            background: var(--surface-color);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 480px;
+        }
+
+        .header { text-align: center; }
+        .logo-icon { width: 48px; height: 48px; color: var(--primary); margin-bottom: 1rem; }
+        h2 { margin: 0 0 0.5rem; font-weight: 600; }
+        .subtitle { color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.9rem; }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--primary);
+            margin: 1.75rem 0 1rem;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 0.5rem;
+        }
+        .section-label:first-of-type { margin-top: 0; }
+
+        .input-group { margin-bottom: 1.25rem; text-align: left; }
+        .input-group label { display: block; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-secondary); }
+        .input-group input {
+            width: 100%;
+            padding: 0.875rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            font-family: inherit;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .input-group input:focus { outline: none; border-color: var(--primary); }
+        .hint { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4; }
+
+        .btn {
+            background: var(--primary); color: white; border: none;
+            padding: 1rem 1.5rem; border-radius: 0.5rem; font-weight: 500;
+            cursor: pointer; width: 100%; transition: background 0.2s;
+            font-family: inherit; display: flex; align-items: center;
+            justify-content: center; gap: 0.5rem; font-size: 1rem; margin-top: 1.5rem;
+        }
+        .btn:hover { background: var(--primary-hover); }
+        .btn:disabled { background: #334155; cursor: not-allowed; color: #94a3b8; }
+
+        .message {
+            margin-top: 1rem; font-size: 0.9rem; padding: 0.75rem;
+            border-radius: 0.5rem; display: none;
+            background: rgba(239, 68, 68, 0.1); color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .message.success {
+            background: rgba(34, 197, 94, 0.1); color: var(--success);
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <i data-lucide="settings" class="logo-icon"></i>
+            <h2>ProctorAI First-Run Setup</h2>
+            <p class="subtitle">Answer these questions once to configure your monitoring system.</p>
+        </div>
+
+        <form id="setupForm">
+            <div class="section-label">Supervisor Details</div>
+            <div class="input-group">
+                <label for="supervisorName">Full Name *</label>
+                <input type="text" id="supervisorName" placeholder="e.g. Dr. Jane Smith" required>
+            </div>
+            <div class="input-group">
+                <label for="organization">Organization / Institution *</label>
+                <input type="text" id="organization" placeholder="e.g. Springfield University" required>
+            </div>
+
+            <div class="section-label">Exam Details</div>
+            <div class="input-group">
+                <label for="examName">Exam Name *</label>
+                <input type="text" id="examName" placeholder="e.g. ECON202 Final Exam" required>
+            </div>
+            <div class="input-group">
+                <label for="examDuration">Exam Duration (minutes)</label>
+                <input type="number" id="examDuration" placeholder="e.g. 90" min="0">
+            </div>
+
+            <div class="section-label">Login Credentials</div>
+            <div class="input-group">
+                <label for="username">Supervisor Username *</label>
+                <input type="text" id="username" placeholder="Choose a username (min 3 characters)" required autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label for="password">Password *</label>
+                <input type="password" id="password" placeholder="Minimum 8 characters" required>
+            </div>
+            <div class="input-group">
+                <label for="confirmPassword">Confirm Password *</label>
+                <input type="password" id="confirmPassword" placeholder="Re-enter your password" required>
+            </div>
+
+            <div class="section-label">Camera Source</div>
+            <div class="input-group">
+                <label for="cctvIp">CCTV / IP Camera Address (optional)</label>
+                <input type="text" id="cctvIp" placeholder="e.g. rtsp://admin:pass@192.168.1.50:554/stream" autocomplete="off">
+                <div class="hint">
+                    Leave empty to use this computer's webcam.
+                    If filled, the live feed and all suspicious-activity detection run on the CCTV stream instead.
+                    Accepts <b>rtsp://</b> and <b>http://</b> URLs, or a bare IP address (assumed RTSP).
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="setupBtn">
+                <i data-lucide="check-circle"></i> Complete Setup
+            </button>
+
+            <div id="statusMsg" class="message"></div>
+        </form>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // If setup is already done, this page should not be used again
+        fetch('/api/setup/status')
+            .then(r => r.json())
+            .then(s => { if (s.setup_complete) window.location.href = 'supervisor_login.html'; })
+            .catch(() => {});
+
+        const form = document.getElementById('setupForm');
+        const setupBtn = document.getElementById('setupBtn');
+        const statusMsg = document.getElementById('statusMsg');
+
+        function showError(text) {
+            statusMsg.textContent = text;
+            statusMsg.classList.remove('success');
+            statusMsg.style.display = 'block';
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password.length < 8) { showError('Password must be at least 8 characters.'); return; }
+            if (password !== confirmPassword) { showError('Passwords do not match.'); return; }
+
+            const payload = {
+                supervisor_name: document.getElementById('supervisorName').value.trim(),
+                organization: document.getElementById('organization').value.trim(),
+                exam_name: document.getElementById('examName').value.trim(),
+                exam_duration_minutes: document.getElementById('examDuration').value || 0,
+                username: document.getElementById('username').value.trim(),
+                password: password,
+                confirm_password: confirmPassword,
+                cctv_ip: document.getElementById('cctvIp').value.trim()
+            };
+
+            setupBtn.disabled = true;
+            statusMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    statusMsg.textContent = 'Setup complete! Redirecting to login…';
+                    statusMsg.classList.add('success');
+                    statusMsg.style.display = 'block';
+                    setTimeout(() => { window.location.href = 'supervisor_login.html'; }, 1200);
+                } else {
+                    showError(result.error || 'Setup failed.');
+                    setupBtn.disabled = false;
+                }
+            } catch (err) {
+                showError('Network error. Is the server running?');
+                setupBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

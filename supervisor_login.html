@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supervisor Login | ProctorAI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.462.0"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -131,9 +131,41 @@
             text-decoration: none;
             font-size: 0.85rem;
         }
-        
+
         .back-link:hover {
             color: white;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.4rem;
+            line-height: 1.4;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.25rem 0;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #334155;
+        }
+
+        .btn-hello {
+            background: transparent;
+            border: 1px solid #334155;
+            color: var(--text-primary);
+        }
+        .btn-hello:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: var(--primary);
         }
     </style>
 </head>
@@ -155,8 +187,22 @@
                 <input type="password" id="password" placeholder="Enter password" required>
             </div>
 
+            <div class="input-group">
+                <label for="cctvIp">CCTV / IP Camera Address (optional)</label>
+                <input type="text" id="cctvIp" placeholder="e.g. rtsp://admin:pass@192.168.1.50:554/stream" autocomplete="off">
+                <div class="hint">
+                    Fill this in to monitor via your CCTV feed. Leave empty to use this computer's webcam.
+                </div>
+            </div>
+
             <button type="submit" class="btn" id="loginBtn">
                 <i data-lucide="log-in"></i> Login
+            </button>
+
+            <div class="divider">or</div>
+
+            <button type="button" class="btn btn-hello" id="helloBtn">
+                <i data-lucide="scan-face"></i> Sign in with Windows Hello (Face ID)
             </button>
 
             <div id="statusMsg" class="message"></div>
@@ -168,45 +214,177 @@
     <script>
         lucide.createIcons();
 
+        // First run? Send the supervisor to the setup wizard instead
+        fetch('/api/setup/status')
+            .then(r => r.json())
+            .then(s => { if (!s.setup_complete) window.location.href = 'setup.html'; })
+            .catch(() => {});
+
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');
+        const helloBtn = document.getElementById('helloBtn');
         const statusMsg = document.getElementById('statusMsg');
+
+        function showError(text) {
+            statusMsg.textContent = text;
+            statusMsg.style.display = 'block';
+        }
+
+        function resetButtons() {
+            loginBtn.disabled = false;
+            helloBtn.disabled = false;
+            loginBtn.innerHTML = '<i data-lucide="log-in"></i> Login';
+            helloBtn.innerHTML = '<i data-lucide="scan-face"></i> Sign in with Windows Hello (Face ID)';
+            lucide.createIcons();
+        }
+
+        // ---- WebAuthn (Windows Hello / Face ID) helpers ----------------
+        const b64urlToBuf = (s) => {
+            s = s.replace(/-/g, '+').replace(/_/g, '/');
+            const pad = s.length % 4 ? '='.repeat(4 - (s.length % 4)) : '';
+            const bin = atob(s + pad);
+            return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer;
+        };
+        const bufToB64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+
+        const cctvValue = () => document.getElementById('cctvIp').value.trim();
+
+        // Only offer Face ID if the browser supports a platform authenticator
+        // AND this device has already been enrolled for this origin.
+        async function initHelloButton() {
+            helloBtn.style.display = 'none';
+            if (!window.PublicKeyCredential) return;
+            try {
+                const supported = await PublicKeyCredential
+                    .isUserVerifyingPlatformAuthenticatorAvailable();
+                if (!supported) return;
+                const st = await (await fetch('/api/webauthn/status')).json();
+                if (st.registered) helloBtn.style.display = 'flex';
+            } catch (e) { /* leave hidden */ }
+        }
+        initHelloButton();
+
+        async function passwordLogin() {
+            const response = await fetch('/api/supervisor_login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: document.getElementById('username').value.trim(),
+                    password: document.getElementById('password').value.trim(),
+                    cctv_ip: cctvValue()
+                })
+            });
+            const result = await response.json();
+            if (!response.ok) {
+                if (result.setup_required) { window.location.href = 'setup.html'; return; }
+                showError(result.error || 'Authentication failed.');
+                resetButtons();
+                return;
+            }
+            // Logged in. Offer to enable Face ID on this device if possible.
+            await maybeEnrollFaceId();
+            window.location.href = 'enrollment.html';
+        }
+
+        async function maybeEnrollFaceId() {
+            if (!window.PublicKeyCredential) return;
+            try {
+                const supported = await PublicKeyCredential
+                    .isUserVerifyingPlatformAuthenticatorAvailable();
+                if (!supported) return;
+                const st = await (await fetch('/api/webauthn/status')).json();
+                if (st.registered) return;
+                if (!confirm('Enable Windows Hello (Face ID) sign-in on this device?')) return;
+
+                const options = await (await fetch('/api/webauthn/register/begin', { method: 'POST' })).json();
+                options.challenge = b64urlToBuf(options.challenge);
+                options.user.id = b64urlToBuf(options.user.id);
+                (options.excludeCredentials || []).forEach(c => c.id = b64urlToBuf(c.id));
+
+                const cred = await navigator.credentials.create({ publicKey: options });
+                const body = {
+                    id: cred.id,
+                    rawId: bufToB64url(cred.rawId),
+                    type: cred.type,
+                    response: {
+                        clientDataJSON: bufToB64url(cred.response.clientDataJSON),
+                        attestationObject: bufToB64url(cred.response.attestationObject)
+                    }
+                };
+                const r = await fetch('/api/webauthn/register/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                if (!r.ok) {
+                    const err = await r.json();
+                    alert('Could not enable Face ID: ' + (err.error || 'unknown error'));
+                }
+            } catch (e) {
+                // User cancelled the Hello prompt, or it is unavailable - not fatal
+                console.warn('Face ID enrollment skipped:', e);
+            }
+        }
+
+        async function faceIdLogin() {
+            const options = await (await fetch('/api/webauthn/login/begin', { method: 'POST' })).json();
+            if (options.error) { showError(options.error); resetButtons(); return; }
+
+            options.challenge = b64urlToBuf(options.challenge);
+            (options.allowCredentials || []).forEach(c => c.id = b64urlToBuf(c.id));
+
+            const assertion = await navigator.credentials.get({ publicKey: options });
+            const body = {
+                id: assertion.id,
+                rawId: bufToB64url(assertion.rawId),
+                type: assertion.type,
+                response: {
+                    clientDataJSON: bufToB64url(assertion.response.clientDataJSON),
+                    authenticatorData: bufToB64url(assertion.response.authenticatorData),
+                    signature: bufToB64url(assertion.response.signature),
+                    userHandle: assertion.response.userHandle ? bufToB64url(assertion.response.userHandle) : null
+                },
+                extra: { cctv_ip: cctvValue() }
+            };
+            const r = await fetch('/api/webauthn/login/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const result = await r.json();
+            if (r.ok) {
+                window.location.href = 'enrollment.html';
+            } else {
+                showError(result.error || 'Face ID sign-in failed.');
+                resetButtons();
+            }
+        }
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-
-            loginBtn.disabled = true;
-            loginBtn.innerHTML = '<i class="lucide-loader"></i> Authenticating...';
+            loginBtn.disabled = true; helloBtn.disabled = true;
             statusMsg.style.display = 'none';
-
+            loginBtn.innerHTML = 'Authenticating...';
             try {
-                const response = await fetch('/api/supervisor_login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    // Backend session cookie is now set securely via HTTP
-                    // Redirect to the Enrollment Lobby
-                    window.location.href = 'enrollment.html';
-                } else {
-                    statusMsg.textContent = result.error || 'Invalid credentials.';
-                    statusMsg.style.display = 'block';
-                    loginBtn.disabled = false;
-                    loginBtn.innerHTML = '<i data-lucide="log-in"></i> Login';
-                    lucide.createIcons();
-                }
+                await passwordLogin();
             } catch (err) {
-                statusMsg.textContent = 'Network error. Is the server running?';
-                statusMsg.style.display = 'block';
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i data-lucide="log-in"></i> Login';
-                lucide.createIcons();
+                showError('Network error. Is the server running?');
+                resetButtons();
+            }
+        });
+
+        helloBtn.addEventListener('click', async () => {
+            loginBtn.disabled = true; helloBtn.disabled = true;
+            statusMsg.style.display = 'none';
+            helloBtn.innerHTML = 'Look at your camera…';
+            try {
+                await faceIdLogin();
+            } catch (err) {
+                showError(err.name === 'NotAllowedError'
+                    ? 'Face ID was cancelled or timed out.'
+                    : 'Face ID error: ' + err.message);
+                resetButtons();
             }
         });
     </script>

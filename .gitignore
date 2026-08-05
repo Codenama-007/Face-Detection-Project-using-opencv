@@ -6,3 +6,22 @@ images/
 
 # Ignore all .pyc files
 *.pyc
+
+# ---- Model weights (large, and downloadable on first run) ----
+# buffalo_l pack: https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip
+models/buffalo_l/
+models/buffalo_l.zip
+# MediaPipe FaceLandmarker task bundle
+models/face_landmarker.task
+# Ultralytics weights (auto-download on first use)
+*.pt
+
+# ---- Local secrets & personal data (never commit) ----
+# Supervisor credentials, password salt/hash, Flask secret key, exam config
+config.json
+# Captured face image used by the recognition benchmarks
+bench_probe.jpg
+# Generated session reports
+static/reports/
+# Local SQLite databases
+*.db

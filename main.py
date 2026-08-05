@@ -27,6 +27,8 @@ face_detection = mp.solutions.face_detection.FaceDetection(
 
 cap = cv2.VideoCapture(0)
 
+prev_frame_time = time.time()
+
 # ---------------- LOOP ----------------
 while True:
     ret, frame = cap.read()
@@ -34,6 +36,8 @@ while True:
         break
 
     now = time.time()
+    frame_dt = now - prev_frame_time
+    prev_frame_time = now
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = face_detection.process(rgb)
 
@@ -49,6 +53,9 @@ while True:
         face_y = bbox.ymin + bbox.height / 2
 
         # -------- direction logic --------
+        # Labels are from the student's point of view: a face on the
+        # left side of the (non-mirrored) camera image means the
+        # student moved to THEIR right.
         if face_x < 0.4:
             direction = "RIGHT"
         elif face_x > 0.6:
@@ -69,11 +76,11 @@ while True:
             look_start_time = now
 
         else:
-            duration = now - look_start_time if look_start_time else 0
-
-            # risk increases gradually
+            # risk increases gradually: 2 points per second of
+            # continuously looking away (per-frame delta, not the
+            # accumulated duration, so growth stays linear)
             if current_direction != "CENTER":
-                risk += duration * 0.05
+                risk += frame_dt * 2
                 risk = min(risk, 100)
 
     # ================= NO FACE =================
@@ -85,8 +92,9 @@ while True:
         if no_face_start is None:
             no_face_start = now
 
+        # after a 2 second grace period, 5 risk points per second
         if now - no_face_start > 2:
-            risk += 1
+            risk += frame_dt * 5
             risk = min(risk, 100)
 
     # ---------------- STATUS ----------------
@@ -103,13 +111,15 @@ while True:
     data["status"] = status
 
 
+    # Write to a temp file, then atomically rename so the dashboard
+    # never reads a half-written JSON file
     tmp_file = "snapshot_tmp.json"
     final_file = "snapshot.json"
 
     with open(tmp_file, "w") as f:
         json.dump(data, f)
 
-    # os.replace(tmp_file, final_file)
+    os.replace(tmp_file, final_file)
 
     # ---------------- DISPLAY ----------------
     cv2.putText(frame, f"Direction: {current_direction}", (30, 50),
