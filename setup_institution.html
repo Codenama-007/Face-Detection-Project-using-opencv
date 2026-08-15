@@ -639,17 +639,119 @@ html, body {
                             <label class="form-label" for="campus">
                                 <i data-lucide="building" style="width:14px;height:14px;"></i>
                                 <span>Campus / Location</span>
+                                <span class="required-indicator">*</span>
                             </label>
                             <input 
                                 type="text" 
                                 id="campus" 
                                 class="form-input" 
-                                placeholder="e.g., Main Campus (Optional)"
+                                placeholder="e.g., Main Campus"
+                                required
                                 autocomplete="off"
+                            >
+                            <div class="error-message" id="campusError">
+                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
+                                <span>Campus location is required</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Academic Information -->
+                    <div class="form-section">
+                        <div class="section-label">Academic Information</div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="department">
+                                <i data-lucide="briefcase" style="width:14px;height:14px;"></i>
+                                <span>Examination Department / Division</span>
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="department" 
+                                class="form-input" 
+                                placeholder="e.g., Computer Science Department"
+                                required
+                                autocomplete="off"
+                            >
+                            <div class="error-message" id="departmentError">
+                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
+                                <span>Department is required</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="examType">
+                                <i data-lucide="file-text" style="width:14px;height:14px;"></i>
+                                <span>Examination Type</span>
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <select id="examType" class="form-select" required>
+                                <option value="" disabled selected>Select examination type</option>
+                                <option value="university">University Examination</option>
+                                <option value="college">College Examination</option>
+                                <option value="school">School Examination</option>
+                                <option value="entrance">Entrance Examination</option>
+                                <option value="internal">Internal Assessment</option>
+                                <option value="competitive">Competitive Examination</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div class="error-message" id="examTypeError">
+                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
+                                <span>Examination type is required</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Optional Contact Information -->
+                    <div class="form-section">
+                        <div class="section-label">Contact Information (Optional)</div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="website">
+                                <i data-lucide="globe" style="width:14px;height:14px;"></i>
+                                <span>Institution Website</span>
+                            </label>
+                            <input 
+                                type="url" 
+                                id="website" 
+                                class="form-input" 
+                                placeholder="e.g., https://www.institution.edu"
+                                autocomplete="url"
                             >
                             <div class="field-hint">
                                 <i data-lucide="info" style="width:11px;height:11px;"></i>
-                                <span>Optional: Specify campus or branch location</span>
+                                <span>Optional: Institution website URL</span>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="contactEmail">
+                                    <i data-lucide="mail" style="width:14px;height:14px;"></i>
+                                    <span>Contact Email</span>
+                                </label>
+                                <input 
+                                    type="email" 
+                                    id="contactEmail" 
+                                    class="form-input" 
+                                    placeholder="e.g., admin@institution.edu"
+                                    autocomplete="email"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="examRoom">
+                                    <i data-lucide="door-open" style="width:14px;height:14px;"></i>
+                                    <span>Examination Room / Hall</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="examRoom" 
+                                    class="form-input" 
+                                    placeholder="e.g., Main Examination Hall"
+                                    autocomplete="off"
+                                >
                             </div>
                         </div>
                     </div>
@@ -657,7 +759,7 @@ html, body {
                     <!-- Submit Button -->
                     <button type="submit" class="btn-submit" id="submitBtn">
                         <i data-lucide="arrow-right" class="btn-icon" style="width:18px;height:18px;"></i>
-                        <span class="btn-text">Continue to ProctorAI</span>
+                        <span class="btn-text">Review & Continue</span>
                         <i data-lucide="loader" class="spinner" style="width:18px;height:18px;"></i>
                     </button>
                 </form>
@@ -685,7 +787,12 @@ html, body {
             country: document.getElementById('country'),
             state: document.getElementById('state'),
             city: document.getElementById('city'),
-            campus: document.getElementById('campus')
+            campus: document.getElementById('campus'),
+            department: document.getElementById('department'),
+            examType: document.getElementById('examType'),
+            website: document.getElementById('website'),
+            contactEmail: document.getElementById('contactEmail'),
+            examRoom: document.getElementById('examRoom')
         };
 
         const errors = {
@@ -693,7 +800,10 @@ html, body {
             institutionType: document.getElementById('institutionTypeError'),
             country: document.getElementById('countryError'),
             state: document.getElementById('stateError'),
-            city: document.getElementById('cityError')
+            city: document.getElementById('cityError'),
+            campus: document.getElementById('campusError'),
+            department: document.getElementById('departmentError'),
+            examType: document.getElementById('examTypeError')
         };
 
         // Check if setup is already completed
@@ -714,6 +824,11 @@ html, body {
                     fields.state.value = data.state || '';
                     fields.city.value = data.city || '';
                     fields.campus.value = data.campus || '';
+                    fields.department.value = data.department || '';
+                    fields.examType.value = data.examType || '';
+                    fields.website.value = data.website || '';
+                    fields.contactEmail.value = data.contactEmail || '';
+                    fields.examRoom.value = data.examRoom || '';
                     
                     // Update header text for edit mode
                     document.querySelector('.setup-title').textContent = 'Edit Institution Details';
@@ -754,7 +869,7 @@ html, body {
             let isValid = true;
             
             // Required fields
-            const requiredFields = ['institutionName', 'institutionType', 'country', 'state', 'city'];
+            const requiredFields = ['institutionName', 'institutionType', 'country', 'state', 'city', 'campus', 'department', 'examType'];
             
             requiredFields.forEach(fieldName => {
                 if (!validateField(fieldName)) {
@@ -804,7 +919,12 @@ html, body {
                 country: fields.country.value.trim(),
                 state: fields.state.value.trim(),
                 city: fields.city.value.trim(),
-                campus: fields.campus.value.trim() || 'Main Campus',
+                campus: fields.campus.value.trim(),
+                department: fields.department.value.trim(),
+                examType: fields.examType.value,
+                website: fields.website.value.trim() || null,
+                contactEmail: fields.contactEmail.value.trim() || null,
+                examRoom: fields.examRoom.value.trim() || null,
                 setupDate: new Date().toISOString()
             };
 
