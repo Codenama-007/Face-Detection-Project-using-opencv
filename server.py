@@ -347,13 +347,13 @@ def end_session():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProctorAI — Examination Integrity Report</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{
             font-family: 'Inter', -apple-system, sans-serif;
-            background: #070b12;
-            color: #f0f4ff;
+            background: #06090e;
+            color: #f8fafc;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
             line-height: 1.6;

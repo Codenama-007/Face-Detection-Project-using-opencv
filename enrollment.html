@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biometric Identity Enrollment | ProctorAI</title>
+    <title>Biometric Identity Enrollment | ProctorAI SOC</title>
     <meta name="description" content="Secure Biometric Identity Enrollment & Face ID Registration for ProctorAI SOC.">
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
 /* ═════════════════════════════════════════════════════════════════════
    PROCTORAI — SECURE BIOMETRIC IDENTITY ENROLLMENT
+   Enterprise Face Verification Onboarding & Batch Roster Ingestion
    ═════════════════════════════════════════════════════════════════════ */
 
 *, *::before, *::after {
@@ -23,20 +24,21 @@
 }
 
 :root {
-    --bg-base:        #070a0f;
-    --bg-surface:     #0b1018;
-    --bg-elevated:    #0e1420;
+    --bg-base:        #06090e;
+    --bg-surface:     #080c14;
+    --bg-elevated:    #0e1422;
     
-    --panel-glass:    rgba(14, 20, 32, 0.85);
-    --panel-card:     rgba(18, 26, 42, 0.70);
-    --panel-hover:    rgba(25, 36, 58, 0.85);
+    --panel-glass:    rgba(14, 20, 34, 0.82);
+    --panel-card:     rgba(18, 26, 44, 0.70);
+    --panel-hover:    rgba(25, 36, 60, 0.85);
     
     --border-subtle:  rgba(255, 255, 255, 0.06);
     --border-light:   rgba(255, 255, 255, 0.12);
-    --border-hover:   rgba(56, 189, 248, 0.28);
-    --border-active:  rgba(56, 189, 248, 0.50);
+    --border-hover:   rgba(56, 189, 248, 0.32);
+    --border-active:  rgba(0, 229, 255, 0.55);
     
     --cyan:           #00e5ff;
+    --cyan-glow:      rgba(0, 229, 255, 0.35);
     --accent:         #38bdf8;
     --accent-dim:     rgba(56, 189, 248, 0.12);
     --accent-bd:      rgba(56, 189, 248, 0.28);
@@ -50,16 +52,16 @@
     --warning-bd:     rgba(245, 158, 11, 0.28);
     
     --danger:         #ef4444;
-    --danger-dim:     rgba(239, 68, 68, 0.12);
-    --danger-bd:      rgba(239, 68, 68, 0.30);
+    --danger-dim:     rgba(239, 68, 68, 0.14);
+    --danger-bd:      rgba(239, 68, 68, 0.35);
     
-    --t1: #f0f4ff;
-    --t2: #94a3b8;
-    --t3: #5c7098;
-    --t4: #2e3e58;
+    --t1:             #f8fafc;
+    --t2:             #94a3b8;
+    --t3:             #64748b;
+    --t4:             #334155;
     
-    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
 }
 
 body {
@@ -70,7 +72,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem 1rem;
+    padding: 2.5rem 1rem;
     position: relative;
     overflow-x: hidden;
 }
@@ -81,9 +83,10 @@ body::before {
     position: fixed;
     inset: 0;
     background:
-        radial-gradient(ellipse 65% 45% at 50% 20%, rgba(14, 42, 80, 0.35) 0%, transparent 65%),
+        radial-gradient(ellipse 65% 45% at 50% 18%, rgba(14, 42, 80, 0.35) 0%, transparent 65%),
         radial-gradient(ellipse 50% 40% at 10% 90%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
-        #070a0f;
+        radial-gradient(ellipse 50% 40% at 90% 90%, rgba(16, 185, 129, 0.06) 0%, transparent 60%),
+        var(--bg-base);
     pointer-events: none;
     z-index: 0;
 }
@@ -93,34 +96,80 @@ body::after {
     position: fixed;
     inset: 0;
     background-image:
-        linear-gradient(rgba(56, 189, 248, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px);
-    background-size: 32px 32px;
+        linear-gradient(rgba(56, 189, 248, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.018) 1px, transparent 1px);
+    background-size: 36px 36px;
     pointer-events: none;
     z-index: 0;
     opacity: 0.8;
+}
+
+/* Back Button */
+.back-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.95rem;
+    font-family: var(--font);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--t1);
+    text-decoration: none;
+    background: rgba(14, 20, 34, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+}
+
+.back-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--cyan);
+    transition: transform 0.2s ease;
+}
+
+.back-btn:hover {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: var(--cyan);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 30px rgba(0, 229, 255, 0.25);
+}
+
+.back-btn:hover svg {
+    transform: translateX(-3px);
 }
 
 .container {
     position: relative;
     z-index: 1;
     background: var(--panel-glass);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
     border: 1px solid var(--border-subtle);
     border-top: 1px solid var(--border-light);
     border-radius: 20px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 229, 255, 0.05);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 229, 255, 0.05);
     padding: 2.25rem;
     width: 100%;
-    max-width: 520px;
+    max-width: 540px;
     text-align: center;
 }
 
 /* Top Icon & Titles */
 .enroll-shield-icon {
-    width: 52px;
-    height: 52px;
+    width: 54px;
+    height: 54px;
     border-radius: 14px;
     background: rgba(0, 229, 255, 0.1);
     border: 1px solid rgba(0, 229, 255, 0.3);
@@ -128,41 +177,118 @@ body::after {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1rem;
-    box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
+    margin-bottom: 0.85rem;
+    box-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
 }
 
 .enroll-shield-icon svg {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
 }
 
 h2 {
-    font-size: 1.35rem;
+    font-size: 1.4rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #38bdf8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.25rem;
 }
 
-p {
+p.subtitle {
     color: var(--t2);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     font-size: 0.82rem;
     line-height: 1.5;
+}
+
+/* Stage Progress Indicator */
+.stage-tracker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(6, 9, 14, 0.6);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 0.6rem 0.85rem;
+    margin-bottom: 1.4rem;
+}
+
+.stage-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    position: relative;
+    flex: 1;
+}
+
+.stage-step::after {
+    content: '';
+    position: absolute;
+    top: 7px;
+    left: 60%;
+    width: 80%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.stage-step:last-child::after {
+    display: none;
+}
+
+.stage-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid var(--t4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.stage-step.active .stage-dot {
+    background: var(--cyan);
+    border-color: #ffffff;
+    box-shadow: 0 0 10px var(--cyan);
+}
+
+.stage-step.complete .stage-dot {
+    background: var(--success);
+    border-color: var(--success);
+    box-shadow: 0 0 8px var(--success);
+}
+
+.stage-label {
+    font-size: 0.56rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--t3);
+}
+
+.stage-step.active .stage-label {
+    color: var(--cyan);
+}
+
+.stage-step.complete .stage-label {
+    color: var(--success);
 }
 
 /* Tabs */
 .tabs {
     display: flex;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.35);
     border: 1px solid var(--border-subtle);
     border-radius: 10px;
     padding: 3px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.4rem;
 }
 
 .tab-btn {
@@ -174,7 +300,7 @@ p {
     cursor: pointer;
     font-weight: 700;
     font-size: 0.76rem;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     font-family: var(--font);
     border-radius: 8px;
@@ -205,7 +331,7 @@ p {
 /* Camera Video Preview Box */
 .video-container {
     width: 100%;
-    height: 280px;
+    height: 290px;
     background: #020509;
     border-radius: 12px;
     overflow: hidden;
@@ -236,10 +362,23 @@ p {
     position: absolute;
     top: 10px;
     left: 10px;
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     border-top: 2px solid var(--cyan);
     border-left: 2px solid var(--cyan);
+    pointer-events: none;
+    z-index: 3;
+    filter: drop-shadow(0 0 4px var(--cyan));
+}
+
+.cam-reticle-br {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 18px;
+    height: 18px;
+    border-bottom: 2px solid var(--cyan);
+    border-right: 2px solid var(--cyan);
     pointer-events: none;
     z-index: 3;
     filter: drop-shadow(0 0 4px var(--cyan));
@@ -260,31 +399,32 @@ video {
 
 .input-group label {
     display: block;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 700;
     margin-bottom: 0.35rem;
     color: var(--t2);
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
 }
 
 .input-group input {
     width: 100%;
     padding: 0.75rem 1rem;
     border-radius: 8px;
-    border: 1px solid var(--border-subtle);
-    background: rgba(18, 26, 42, 0.8);
+    border: 1px solid var(--border-light);
+    background: rgba(6, 9, 14, 0.75);
     color: #fff;
     font-family: var(--font);
     font-size: 0.88rem;
     outline: none;
     transition: all 0.2s ease;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .input-group input:focus {
     border-color: var(--cyan);
-    box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
-    background: rgba(25, 36, 58, 0.9);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.20), inset 0 2px 6px rgba(0, 0, 0, 0.3);
+    background: rgba(14, 20, 34, 0.9);
 }
 
 .input-group input::placeholder {
@@ -299,29 +439,32 @@ video {
     gap: 0.5rem;
     width: 100%;
     padding: 0.85rem 1.5rem;
-    border-radius: 8px;
-    background: linear-gradient(135deg, #0284c7 0%, #00e5ff 100%);
-    color: #070a0f;
-    border: none;
-    font-size: 0.84rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #00e5ff 100%);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    font-size: 0.85rem;
     font-weight: 700;
+    letter-spacing: 0.02em;
     font-family: var(--font);
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 16px rgba(0, 229, 255, 0.25);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(0, 229, 255, 0.4);
-    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(0, 229, 255, 0.45);
 }
 
 .btn:disabled {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--border-subtle);
     cursor: not-allowed;
     color: var(--t3);
     box-shadow: none;
+    transform: none;
 }
 
 /* Messages */
@@ -332,12 +475,20 @@ video {
     padding: 0.75rem 1rem;
     border-radius: 8px;
     display: none;
+    line-height: 1.4;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .message.success {
     background: var(--success-dim);
     color: #34d399;
     border: 1px solid var(--success-bd);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
     display: block;
 }
 
@@ -345,6 +496,7 @@ video {
     background: var(--danger-dim);
     color: #f87171;
     border: 1px solid var(--danger-bd);
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
     display: block;
 }
 
@@ -352,16 +504,16 @@ video {
 .start-session-btn {
     background: linear-gradient(135deg, #059669 0%, #10b981 100%);
     color: #fff;
-    border: none;
+    border: 1px solid rgba(16, 185, 129, 0.4);
     padding: 0.95rem 1.5rem;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 700;
     font-size: 0.88rem;
     font-family: var(--font);
     cursor: pointer;
     width: 100%;
     margin-top: 1rem;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -370,9 +522,8 @@ video {
 }
 
 .start-session-btn:hover:not(:disabled) {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: 0 6px 24px rgba(16, 185, 129, 0.55);
-    filter: brightness(1.08);
 }
 
 /* Bulk Upload Zone */
@@ -397,7 +548,7 @@ video {
     max-height: 240px;
     overflow-y: auto;
     margin-bottom: 1rem;
-    background: rgba(7, 10, 15, 0.6);
+    background: rgba(6, 9, 14, 0.7);
     border: 1px solid var(--border-subtle);
     border-radius: 8px;
     padding: 0.5rem;
@@ -430,24 +581,72 @@ video {
 }
 
 .file-item-info input {
-    padding: 0.4rem 0.6rem;
+    padding: 0.45rem 0.65rem;
     border-radius: 6px;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid var(--border-light);
     background: rgba(18, 26, 42, 0.9);
     color: #fff;
     font-size: 0.78rem;
     width: 50%;
 }
+
+.lucide-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
     </style>
 </head>
 <body>
+    <!-- Back to Monitoring -->
+    <a href="monitoring.html" class="back-btn" aria-label="Back to SOC Monitoring">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        SOC Command
+    </a>
 
     <div class="container">
         <div class="enroll-shield-icon">
             <i data-lucide="scan-face"></i>
         </div>
-        <h2>Identity Enrollment</h2>
-        <p>Biometric facial feature enrollment for ProctorAI Security Operations Center.</p>
+        <h2>Secure Identity Enrollment</h2>
+        <p class="subtitle">Biometric facial feature enrollment for ProctorAI Security Operations Center.</p>
+
+        <!-- Stage Progress Tracker -->
+        <div class="stage-tracker">
+            <div class="stage-step active">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Identity</span>
+            </div>
+            <div class="stage-step active">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Face Scan</span>
+            </div>
+            <div class="stage-step">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Align</span>
+            </div>
+            <div class="stage-step">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Enroll</span>
+            </div>
+            <div class="stage-step">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Ready</span>
+            </div>
+        </div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
@@ -456,6 +655,7 @@ video {
 
         <div id="webcamTab" class="tab-content active">
             <div class="video-container">
+                <div class="cam-reticle-br"></div>
                 <video id="webcam" autoplay playsinline></video>
             </div>
 
@@ -477,7 +677,7 @@ video {
         <div id="uploadTab" class="tab-content">
             <div class="file-upload-zone" onclick="document.getElementById('fileInput').click()">
                 <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--cyan);margin-bottom:0.5rem;display:inline-block;"></i>
-                <p style="margin-bottom:0;">Select photos or ID documents<br><small style="color:var(--t3);font-family:var(--mono);">Format: "ID-Name.jpg" to auto-parse</small></p>
+                <p style="margin-bottom:0;color:var(--t2);font-size:0.82rem;">Select photos or ID documents<br><small style="color:var(--t3);font-family:var(--mono);">Format: "ID-Name.jpg" to auto-parse</small></p>
             </div>
             <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
             
