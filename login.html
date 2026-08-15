@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Command Authentication | ProctorAI Platform</title>
-    <meta name="description" content="Secure Unified Authentication Portal for ProctorAI Platform — Admin, Supervisor, and Student Access.">
+    <title>ProctorAI — Secure AI Examination Operations Platform</title>
+    <meta name="description" content="Enterprise AI Examination Security & Monitoring Operations Platform. Multi-Tenant Proctoring, Real-Time Biometric Integrity, and Institutional SOC.">
+    
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
 /* ═════════════════════════════════════════════════════════════════════
-   PROCTORAI — UNIFIED COMMAND AUTHENTICATION PORTAL
+   PROCTORAI — HACKATHON-GRADE ENTERPRISE AUTHENTICATION UI
    ═════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -22,287 +25,629 @@
 }
 
 :root {
-    --bg-base:        #06090e;
-    --bg-surface:     #080c14;
-    --bg-elevated:    #0e1422;
-    
-    --panel-glass:    rgba(14, 20, 34, 0.88);
-    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --bg-deep:        #04070d;
+    --bg-surface:     #080e18;
+    --bg-card:        rgba(10, 16, 28, 0.78);
+    --bg-card-hover:  rgba(14, 22, 38, 0.88);
+    --bg-input:       rgba(5, 9, 16, 0.85);
+
+    --border-subtle:  rgba(255, 255, 255, 0.07);
     --border-light:   rgba(255, 255, 255, 0.12);
-    --border-hover:   rgba(56, 189, 248, 0.32);
+    --border-focus:   rgba(0, 229, 255, 0.5);
     
     --cyan:           #00e5ff;
-    --cyan-glow:      rgba(0, 229, 255, 0.35);
+    --cyan-dim:       rgba(0, 229, 255, 0.12);
+    --cyan-glow:      rgba(0, 229, 255, 0.25);
     --accent:         #38bdf8;
-    
+    --accent-glow:    rgba(56, 189, 248, 0.2);
+
     --success:        #10b981;
-    --success-dim:    rgba(16, 185, 129, 0.14);
-    --warning:        #f59e0b;
-    --danger:         #ef4444;
-    --danger-dim:     rgba(239, 68, 68, 0.14);
-    --danger-bd:      rgba(239, 68, 68, 0.35);
+    --success-dim:    rgba(16, 185, 129, 0.12);
+    --success-border: rgba(16, 185, 129, 0.3);
+    --danger:         #f43f5e;
+    --danger-dim:     rgba(244, 63, 94, 0.12);
+    --danger-border:  rgba(244, 63, 94, 0.35);
     
     --t1:             #f8fafc;
     --t2:             #94a3b8;
     --t3:             #64748b;
     --t4:             #334155;
-    
+
     --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
 }
 
-body {
+html, body {
+    width: 100%;
+    min-height: 100vh;
     font-family: var(--font);
-    background-color: var(--bg-base);
+    background-color: var(--bg-deep);
     color: var(--t1);
-    margin: 0;
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── CINEMATIC BACKGROUND CANVAS ── */
+.bg-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.bg-radial-1 {
+    position: absolute;
+    top: -20%;
+    left: 20%;
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, rgba(14, 45, 90, 0.35) 0%, rgba(4, 7, 13, 0) 70%);
+    filter: blur(60px);
+}
+
+.bg-radial-2 {
+    position: absolute;
+    bottom: -15%;
+    right: 10%;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.07) 0%, rgba(4, 7, 13, 0) 70%);
+    filter: blur(50px);
+}
+
+.bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, #000 30%, transparent 85%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, #000 30%, transparent 85%);
+}
+
+/* ── ROOT APP WRAPPER ── */
+.app-layout {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 2.5rem 3.5rem;
+    align-items: center;
+    gap: 4rem;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   LEFT HERO COLUMN: BRANDING & AI ECOSYSTEM VISUAL
+   ═════════════════════════════════════════════════════════════════════ */
+.hero-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    max-width: 620px;
+    padding: 2rem 0;
+}
+
+.brand-badge-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.brand-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(56, 189, 248, 0.05));
+    border: 1px solid rgba(0, 229, 255, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
-    padding: 1.5rem;
-    position: relative;
-    overflow-x: hidden;
-}
-
-body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-        radial-gradient(ellipse 65% 45% at 50% 25%, rgba(14, 42, 80, 0.38) 0%, transparent 65%),
-        radial-gradient(ellipse 50% 35% at 85% 85%, rgba(0, 229, 255, 0.06) 0%, transparent 60%),
-        radial-gradient(ellipse 45% 35% at 15% 85%, rgba(56, 189, 248, 0.06) 0%, transparent 60%),
-        var(--bg-base);
-    pointer-events: none;
-    z-index: 0;
-}
-
-body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-        linear-gradient(rgba(56, 189, 248, 0.018) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(56, 189, 248, 0.018) 1px, transparent 1px);
-    background-size: 36px 36px;
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0.8;
-}
-
-.container {
-    position: relative;
-    z-index: 1;
-    background: var(--panel-glass);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border: 1px solid var(--border-subtle);
-    border-top: 1px solid var(--border-light);
-    border-radius: 20px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 229, 255, 0.05);
-    padding: 2.5rem;
-    width: 100%;
-    max-width: 460px;
-    text-align: center;
-}
-
-.logo-badge {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    background: rgba(0, 229, 255, 0.1);
-    border: 1px solid rgba(0, 229, 255, 0.3);
     color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+}
+
+.status-live-tag {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    margin-bottom: 1.25rem;
-    box-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
+    gap: 0.45rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 99px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+    color: #6ee7b7;
+    text-transform: uppercase;
 }
 
-.logo-badge svg {
-    width: 28px;
-    height: 28px;
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    animation: livePulse 2s infinite ease-in-out;
 }
 
-h2 {
-    font-size: 1.45rem;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #38bdf8 100%);
+@keyframes livePulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.5; }
+}
+
+.hero-heading {
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 55%, #38bdf8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+.hero-lead {
+    font-size: 1.05rem;
+    color: var(--t2);
+    font-weight: 400;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+}
+
+/* ── DECORATIVE AI RETICLE SCHEMATIC ── */
+.ai-reticle-canvas {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    background: rgba(10, 18, 32, 0.4);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+}
+
+/* Corner Reticle Ticks */
+.reticle-corner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--cyan);
+    opacity: 0.6;
+    pointer-events: none;
+}
+.rc-tl { top: 12px; left: 12px; border-right: none; border-bottom: none; }
+.rc-tr { top: 12px; right: 12px; border-left: none; border-bottom: none; }
+.rc-bl { bottom: 12px; left: 12px; border-right: none; border-top: none; }
+.rc-br { bottom: 12px; right: 12px; border-left: none; border-top: none; }
+
+/* Laser Scan Line */
+.laser-scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    box-shadow: 0 0 12px var(--cyan);
+    animation: laserScan 4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes laserScan {
+    0% { top: 5%; opacity: 0; }
+    15% { opacity: 0.9; }
+    85% { opacity: 0.9; }
+    100% { top: 95%; opacity: 0; }
+}
+
+/* Optical Crosshair Matrix */
+.optical-center-box {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    border: 1px dashed rgba(0, 229, 255, 0.35);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: reticleSpin 24s linear infinite;
+}
+
+@keyframes reticleSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.optical-center-inner {
+    width: 46px;
+    height: 46px;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cyan);
+}
+
+.ai-spec-tag {
+    position: absolute;
+    bottom: 12px;
+    left: 16px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--t3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.ai-lock-tag {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--cyan);
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+
+/* ── CAPABILITY PILLS ── */
+.caps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.85rem;
+}
+
+.cap-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 0.9rem 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    transition: all 0.25s;
+}
+
+.cap-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(56, 189, 248, 0.25);
+    transform: translateY(-1px);
+}
+
+.cap-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(0, 229, 255, 0.08);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.cap-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.cap-title {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--t1);
+    letter-spacing: -0.01em;
+}
+
+.cap-sub {
+    font-size: 0.65rem;
+    color: var(--t3);
+    font-family: var(--mono);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   RIGHT AUTH COLUMN: LOGIN & MFA PANEL CARD
+   ═════════════════════════════════════════════════════════════════════ */
+.auth-col {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.auth-card {
+    position: relative;
+    width: 100%;
+    max-width: 450px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 24px;
+    backdrop-filter: blur(28px) saturate(170%);
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+    padding: 2.75rem 2.5rem;
+    box-shadow: 
+        0 24px 70px rgba(0, 0, 0, 0.65),
+        0 0 40px rgba(0, 229, 255, 0.03);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Card Header */
+.card-header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 99px;
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    font-size: 0.68rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: var(--cyan);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+}
+
+.card-title {
+    font-size: 1.65rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: #ffffff;
     margin-bottom: 0.35rem;
 }
 
-p {
+.card-subtitle {
+    font-size: 0.84rem;
     color: var(--t2);
-    margin-bottom: 1.75rem;
-    font-size: 0.82rem;
+    margin-bottom: 2rem;
     line-height: 1.5;
 }
 
-.input-group {
-    margin-bottom: 1.25rem;
+/* ── FORM ELEMENTS ── */
+.form-group {
+    margin-bottom: 1.35rem;
     text-align: left;
 }
 
-.input-group label {
+.form-label {
     display: block;
     font-size: 0.72rem;
     font-weight: 700;
-    margin-bottom: 0.4rem;
-    color: var(--t2);
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    color: var(--t2);
+    margin-bottom: 0.45rem;
 }
 
-.input-group input {
+.input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon-leading {
+    position: absolute;
+    left: 1rem;
+    color: var(--t3);
+    pointer-events: none;
+    transition: color 0.2s;
+}
+
+.form-input {
     width: 100%;
-    padding: 0.85rem 1rem;
-    border-radius: 8px;
+    padding: 0.88rem 1rem 0.88rem 2.85rem;
+    border-radius: 12px;
     border: 1px solid var(--border-light);
-    background: rgba(6, 9, 14, 0.75);
-    color: #fff;
+    background: var(--bg-input);
+    color: #ffffff;
     font-family: var(--font);
     font-size: 0.92rem;
     outline: none;
     transition: all 0.2s ease;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
-.input-group input:focus {
+.form-input:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.form-input:focus {
     border-color: var(--cyan);
-    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.20), inset 0 2px 6px rgba(0, 0, 0, 0.3);
-    background: rgba(14, 20, 34, 0.9);
+    background: rgba(10, 16, 28, 0.95);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.18), inset 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 
-.input-group input::placeholder {
-    color: var(--t3);
-}
-
-.btn {
-    width: 100%;
-    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #00e5ff 100%);
-    color: #ffffff;
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    padding: 0.9rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 0.88rem;
-    font-family: var(--font);
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
-    margin-top: 0.5rem;
-}
-
-.btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(0, 229, 255, 0.45);
-    border-color: var(--cyan);
-}
-
-.btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.message {
-    margin-top: 1.25rem;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    display: none;
-    text-align: left;
-}
-
-.message.error {
-    display: block;
-    background: var(--danger-dim);
-    border: 1px solid var(--danger-bd);
-    color: #fca5a5;
-}
-
-.message.success {
-    display: block;
-    background: var(--success-dim);
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #6ee7b7;
-}
-
-/* Quick Fill Selector Chips */
-.quick-fill-wrap {
-    margin-top: 1.5rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--border-subtle);
-    text-align: left;
-}
-
-.quick-fill-title {
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--t3);
-    margin-bottom: 0.6rem;
-}
-
-.chips-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-}
-
-.chip-btn {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
-    padding: 0.5rem 0.65rem;
-    color: var(--t2);
-    font-size: 0.72rem;
-    font-family: var(--font);
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.chip-btn:hover {
-    background: rgba(56, 189, 248, 0.08);
-    border-color: rgba(56, 189, 248, 0.3);
+.form-input:focus + .input-icon-leading,
+.form-input:focus ~ .input-icon-leading {
     color: var(--cyan);
 }
 
-.chip-role {
-    font-size: 0.62rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--accent);
+.form-input::placeholder {
+    color: var(--t3);
+    font-size: 0.88rem;
 }
 
-.chip-uname {
-    font-family: var(--mono);
+/* Password Toggle Button */
+.pwd-toggle-btn {
+    position: absolute;
+    right: 0.85rem;
+    background: transparent;
+    border: none;
+    color: var(--t3);
+    cursor: pointer;
+    padding: 0.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.pwd-toggle-btn:hover {
     color: var(--t1);
-    font-size: 0.7rem;
+    background: rgba(255, 255, 255, 0.06);
 }
 
-.back-link {
+/* ── PRIMARY CTA BUTTON ── */
+.btn-submit {
+    width: 100%;
+    background: linear-gradient(135deg, #1e40af 0%, #0284c7 55%, #00e5ff 100%);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    padding: 0.95rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    font-family: var(--font);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
+    margin-top: 0.75rem;
+}
+
+.btn-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 229, 255, 0.4);
+    border-color: var(--cyan);
+}
+
+.btn-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    filter: grayscale(20%);
+}
+
+/* ── 6-SLOT INDIVIDUAL 2FA INPUTS ── */
+.mfa-slots-wrap {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.5rem;
+    margin: 1.5rem 0 1.25rem 0;
+}
+
+.mfa-digit-slot {
+    width: 100%;
+    height: 54px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #ffffff;
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    outline: none;
+    transition: all 0.2s;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.mfa-digit-slot:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    background: rgba(14, 22, 38, 0.95);
+}
+
+.mfa-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: none;
+    border: none;
+    color: var(--t3);
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    margin-top: 1.25rem;
+    transition: all 0.2s;
+}
+
+.mfa-back-link:hover {
+    color: var(--cyan);
+    transform: translateX(-2px);
+}
+
+/* ── STATUS & NOTIFICATION BANNERS ── */
+.status-banner {
+    display: none;
+    margin-top: 1.25rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.45;
+    text-align: left;
+    animation: bannerFade 0.3s ease-out;
+}
+
+@keyframes bannerFade {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.status-banner.error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    background: var(--danger-dim);
+    border: 1px solid var(--danger-border);
+    color: #fecdd3;
+    animation: shakeError 0.35s ease-in-out;
+}
+
+@keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-5px); }
+    40%, 80% { transform: translateX(5px); }
+}
+
+.status-banner.success {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--success-dim);
+    border: 1px solid var(--success-border);
+    color: #a7f3d0;
+}
+
+/* ── FOOTER ACTIONS ── */
+.card-footer-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.footer-link {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    margin-top: 1.5rem;
     color: var(--t3);
     text-decoration: none;
     font-size: 0.78rem;
@@ -310,194 +655,490 @@ p {
     transition: all 0.2s;
 }
 
-.back-link:hover {
+.footer-link:hover {
     color: var(--cyan);
     transform: translateX(-2px);
 }
 
+.footer-shield-tag {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--t4);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* ── SPINNER ANIMATION ── */
 .lucide-spin {
-    animation: spin 1s linear infinite;
+    animation: spin 0.9s linear infinite;
 }
 
 @keyframes spin {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   RESPONSIVE DESIGN ADAPTATIONS
+   ═════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1080px) {
+    .app-layout {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        padding: 2.5rem 2rem;
+        max-width: 580px;
+    }
+    .hero-col {
+        padding: 1rem 0 0 0;
+        text-align: center;
+        align-items: center;
+    }
+    .brand-badge-wrap {
+        justify-content: center;
+    }
+    .hero-heading {
+        font-size: 2.4rem;
+    }
+    .ai-reticle-canvas {
+        display: none;
+    }
+    .caps-grid {
+        width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    .app-layout {
+        padding: 1.5rem 1rem;
+    }
+    .auth-card {
+        padding: 2rem 1.5rem;
+        border-radius: 18px;
+    }
+    .caps-grid {
+        grid-template-columns: 1fr;
+    }
+    .hero-heading {
+        font-size: 2rem;
+    }
+    .mfa-digit-slot {
+        height: 46px;
+        font-size: 1.25rem;
+    }
+}
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="logo-badge">
-            <i data-lucide="shield-check"></i>
-        </div>
-        <h2>Command Authentication</h2>
-        <p>ProctorAI Enterprise Access Portal · Platform Admin & Teacher / Supervisor Clearance</p>
-
-        <form id="loginForm">
-            <div class="input-group">
-                <label for="username">Username / Email</label>
-                <input type="text" id="username" placeholder="Enter username or email" required autocomplete="username">
-            </div>
-
-            <div class="input-group">
-                <label for="password">Security Password</label>
-                <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
-            </div>
-
-            <button type="submit" class="btn" id="loginBtn">
-                <i data-lucide="log-in"></i> Sign In & Verify Clearance
-            </button>
-        </form>
-
-        <!-- Admin MFA Verification Step -->
-        <form id="mfaForm" style="display:none;margin-top:1rem;">
-            <div style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);border-radius:12px;padding:1rem;margin-bottom:1rem;text-align:left;">
-                <div style="font-size:0.75rem;font-weight:800;color:var(--cyan);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:0.2rem;display:flex;align-items:center;gap:0.4rem;">
-                    <i data-lucide="key-round" style="width:14px;height:14px;"></i> Two-Factor Authenticator Required
-                </div>
-                <div style="font-size:0.75rem;color:var(--t2);line-height:1.4;">
-                    Enter the 6-digit verification code from your authenticator application.
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label for="mfaCode">6-Digit One-Time Code</label>
-                <input type="text" id="mfaCode" placeholder="000000" maxlength="6" style="text-align:center;font-family:var(--mono);font-size:1.4rem;letter-spacing:0.3em;font-weight:800;" autocomplete="one-time-code">
-            </div>
-
-            <button type="submit" class="btn" id="mfaBtn">
-                <i data-lucide="shield-check"></i> Verify 2FA & Enter Platform
-            </button>
-        </form>
-
-        <div id="statusMsg" class="message"></div>
-        
-        <a href="index.html" class="back-link">
-            <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
-            Back to Platform Overview
-        </a>
+    <!-- Cinematic Background Ambient Layers -->
+    <div class="bg-canvas">
+        <div class="bg-radial-1"></div>
+        <div class="bg-radial-2"></div>
+        <div class="bg-grid"></div>
     </div>
 
+    <!-- Main Two-Column Layout -->
+    <main class="app-layout">
+
+        <!-- ═ LEFT COLUMN: VISUAL STORYTELLING & BRAND IDENTITY ═ -->
+        <section class="hero-col">
+            <div>
+                <!-- Brand Badge -->
+                <div class="brand-badge-wrap">
+                    <div class="brand-icon-box">
+                        <i data-lucide="shield-check" style="width:24px;height:24px;"></i>
+                    </div>
+                    <div class="status-live-tag">
+                        <div class="pulse-dot"></div>
+                        <span>Secure Operations Active</span>
+                    </div>
+                </div>
+
+                <!-- Main Branding Heading -->
+                <h1 class="hero-heading">ProctorAI</h1>
+                <p class="hero-lead">
+                    Enterprise AI-Powered Examination Security & Proctoring Operations Platform. Real-time neural biometrics, behavioral gaze tracking, and multi-tenant proctor command.
+                </p>
+
+                <!-- Decorative AI Vision Reticle Schematic -->
+                <div class="ai-reticle-canvas">
+                    <div class="reticle-corner rc-tl"></div>
+                    <div class="reticle-corner rc-tr"></div>
+                    <div class="reticle-corner rc-bl"></div>
+                    <div class="reticle-corner rc-br"></div>
+                    <div class="laser-scan-line"></div>
+
+                    <div class="optical-center-box">
+                        <div class="optical-center-inner">
+                            <i data-lucide="scan-face" style="width:24px;height:24px;"></i>
+                        </div>
+                    </div>
+
+                    <span class="ai-spec-tag">YOLOV8 + SFACE NEURAL PIPELINE</span>
+                    <span class="ai-lock-tag">INTEGRITY LOCK</span>
+                </div>
+
+                <!-- Core Capability Highlight Pills -->
+                <div class="caps-grid">
+                    <div class="cap-item">
+                        <div class="cap-icon">
+                            <i data-lucide="eye" style="width:15px;height:15px;"></i>
+                        </div>
+                        <div class="cap-text">
+                            <span class="cap-title">Gaze Vector</span>
+                            <span class="cap-sub">Pose Tracking</span>
+                        </div>
+                    </div>
+
+                    <div class="cap-item">
+                        <div class="cap-icon">
+                            <i data-lucide="smartphone" style="width:15px;height:15px;"></i>
+                        </div>
+                        <div class="cap-text">
+                            <span class="cap-title">Object Shield</span>
+                            <span class="cap-sub">Phone Detection</span>
+                        </div>
+                    </div>
+
+                    <div class="cap-item">
+                        <div class="cap-icon">
+                            <i data-lucide="building" style="width:15px;height:15px;"></i>
+                        </div>
+                        <div class="cap-text">
+                            <span class="cap-title">Multi-Tenant</span>
+                            <span class="cap-sub">Data Isolation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Meta -->
+            <div style="font-size:0.75rem;color:var(--t3);margin-top:2rem;">
+                ProctorAI Platform Architecture &copy; 2026 &middot; Single Admin Governance &middot; Institutional SOC
+            </div>
+        </section>
+
+
+        <!-- ═ RIGHT COLUMN: AUTHENTICATION PANEL CARD ═ -->
+        <section class="auth-col">
+            <div class="auth-card" id="authCard">
+                
+                <!-- Card Top Badge -->
+                <div class="card-header-badge">
+                    <i data-lucide="lock" style="width:12px;height:12px;"></i>
+                    <span>Authorized Clearance Only</span>
+                </div>
+
+                <h2 class="card-title">Welcome Back</h2>
+                <p class="card-subtitle">Secure authentication portal for Platform Admin and Proctor Teachers.</p>
+
+                <!-- STEP 1: Standard Username & Password Form -->
+                <form id="loginForm">
+                    <!-- Username Input Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="username">Username / Email</label>
+                        <div class="input-container">
+                            <i data-lucide="user" class="input-icon-leading" style="width:16px;height:16px;"></i>
+                            <input 
+                                type="text" 
+                                id="username" 
+                                class="form-input" 
+                                placeholder="Enter username or email" 
+                                required 
+                                autocomplete="username"
+                                spellcheck="false"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Password Input Field with Show/Hide Toggle -->
+                    <div class="form-group">
+                        <label class="form-label" for="password">Security Password</label>
+                        <div class="input-container">
+                            <i data-lucide="key" class="input-icon-leading" style="width:16px;height:16px;"></i>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                class="form-input" 
+                                placeholder="••••••••••••" 
+                                required 
+                                autocomplete="current-password"
+                            >
+                            <button 
+                                type="button" 
+                                class="pwd-toggle-btn" 
+                                id="pwdToggleBtn" 
+                                aria-label="Toggle password visibility"
+                            >
+                                <i data-lucide="eye" id="pwdEyeIcon" style="width:16px;height:16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sign In Submit Button -->
+                    <button type="submit" class="btn-submit" id="loginBtn">
+                        <i data-lucide="log-in" style="width:16px;height:16px;"></i>
+                        <span>Sign In to Platform</span>
+                    </button>
+                </form>
+
+                <!-- STEP 2: Smooth 6-Slot Admin 2FA Verification Form -->
+                <form id="mfaForm" style="display:none;">
+                    <div style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.22);border-radius:12px;padding:0.9rem 1rem;margin-bottom:1.25rem;text-align:left;">
+                        <div style="font-size:0.75rem;font-weight:800;color:var(--cyan);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.4rem;">
+                            <i data-lucide="shield-alert" style="width:14px;height:14px;"></i>
+                            <span>Two-Factor Authenticator Required</span>
+                        </div>
+                        <div style="font-size:0.76rem;color:var(--t2);line-height:1.4;">
+                            Enter the 6-digit verification code from your authenticator app (Google Authenticator, Microsoft Authenticator, or Authy).
+                        </div>
+                    </div>
+
+                    <!-- 6-Slot Visual Digit Inputs -->
+                    <div class="mfa-slots-wrap" id="mfaSlotsWrap">
+                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="0" autofocus>
+                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="1">
+                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="2">
+                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="3">
+                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="4">
+                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="5">
+                    </div>
+
+                    <!-- Verify Button -->
+                    <button type="submit" class="btn-submit" id="mfaBtn">
+                        <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
+                        <span>Verify 2FA & Enter Platform</span>
+                    </button>
+
+                    <!-- Back to Sign In Link -->
+                    <button type="button" class="mfa-back-link" id="mfaBackBtn">
+                        <i data-lucide="arrow-left" style="width:13px;height:13px;"></i>
+                        <span>Return to credential login</span>
+                    </button>
+                </form>
+
+                <!-- Status & Error Alert Notification Container -->
+                <div id="statusBanner" class="status-banner"></div>
+
+                <!-- Footer Navigation -->
+                <div class="card-footer-nav">
+                    <a href="index.html" class="footer-link">
+                        <i data-lucide="arrow-left" style="width:13px;height:13px;"></i>
+                        <span>Platform Overview</span>
+                    </a>
+                    <span class="footer-shield-tag">RBAC &bull; AES-256</span>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
     <script>
+        // Initialize Lucide Icons
         lucide.createIcons();
 
+        // DOM Element Selectors
         const loginForm = document.getElementById('loginForm');
         const mfaForm = document.getElementById('mfaForm');
         const loginBtn = document.getElementById('loginBtn');
         const mfaBtn = document.getElementById('mfaBtn');
-        const statusMsg = document.getElementById('statusMsg');
+        const mfaBackBtn = document.getElementById('mfaBackBtn');
+        const statusBanner = document.getElementById('statusBanner');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
-        const mfaCodeInput = document.getElementById('mfaCode');
+        const pwdToggleBtn = document.getElementById('pwdToggleBtn');
+        const pwdEyeIcon = document.getElementById('pwdEyeIcon');
+        const mfaSlots = document.querySelectorAll('.mfa-digit-slot');
 
-        // Check URL parameters for session state notifications
-        const params = new URLSearchParams(window.location.search);
-        if (params.has('expired')) {
-            statusMsg.className = 'message error';
-            statusMsg.textContent = 'SESSION EXPIRED: Your session timed out due to inactivity. Please log in again.';
-            statusMsg.style.display = 'block';
-        } else if (params.has('disabled')) {
-            statusMsg.className = 'message error';
-            statusMsg.textContent = 'ACCESS DENIED: Your account has been disabled by platform administrator.';
-            statusMsg.style.display = 'block';
+        // Check for URL-passed session state parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('expired')) {
+            showBanner('Your session timed out due to inactivity. Please sign in again.', 'error');
+        } else if (urlParams.has('disabled')) {
+            showBanner('This account has been disabled. Contact your platform administrator.', 'error');
         }
 
+        // ── PASSWORD VISIBILITY TOGGLE ──
+        pwdToggleBtn.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            pwdEyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+            lucide.createIcons();
+        });
+
+        // ── BANNER HELPER FUNCTIONS ──
+        function showBanner(msg, type = 'error') {
+            statusBanner.className = `status-banner ${type}`;
+            const iconName = type === 'error' ? 'alert-circle' : 'check-circle-2';
+            statusBanner.innerHTML = `
+                <i data-lucide="${iconName}" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;"></i>
+                <span>${msg}</span>
+            `;
+            statusBanner.style.display = 'flex';
+            lucide.createIcons();
+        }
+
+        function hideBanner() {
+            statusBanner.style.display = 'none';
+        }
+
+        // ── STEP 1: CREDENTIALS SUBMISSION ──
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            hideBanner();
+
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
 
+            if (!username || !password) return;
+
             loginBtn.disabled = true;
-            loginBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Verifying Command Clearance...';
+            loginBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:16px;height:16px;"></i> <span>Authenticating...</span>';
             lucide.createIcons();
-            statusMsg.style.display = 'none';
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({ username, password })
                 });
 
-                const result = await response.json();
+                const data = await res.json();
 
-                if (response.ok && result.success) {
-                    if (result.mfa_required) {
+                if (res.ok && data.success) {
+                    if (data.mfa_required) {
+                        // Smooth transition to 2FA step
                         loginForm.style.display = 'none';
                         mfaForm.style.display = 'block';
-                        mfaCodeInput.focus();
-                        statusMsg.className = 'message success';
-                        statusMsg.textContent = 'Password verified. Enter 6-digit Authenticator MFA code.';
-                        statusMsg.style.display = 'block';
-                        lucide.createIcons();
+                        mfaSlots.forEach(s => s.value = '');
+                        mfaSlots[0].focus();
+                        showBanner('Password verified. Enter your 6-digit Authenticator code.', 'success');
                         return;
                     }
 
-                    statusMsg.className = 'message success';
-                    statusMsg.textContent = `Clearance Granted: ${result.role} (${result.user.institution_name}). Redirecting...`;
-                    statusMsg.style.display = 'block';
-
+                    // Direct Teacher clearance
+                    showBanner(`Clearance Granted: ${data.role} (${data.user.institution_name || 'Institutional SOC'}). Redirecting...`, 'success');
                     setTimeout(() => {
-                        window.location.href = result.redirect || 'monitoring.html';
-                    }, 400);
+                        window.location.href = data.redirect || 'monitoring.html';
+                    }, 350);
                 } else {
-                    statusMsg.className = 'message error';
-                    statusMsg.textContent = result.error || 'INVALID CREDENTIALS';
-                    statusMsg.style.display = 'block';
+                    let errMsg = 'Unable to authenticate. Check your credentials and try again.';
+                    if (res.status === 429) {
+                        errMsg = data.error || 'Too many attempts. Please wait 60 seconds before retrying.';
+                    } else if (res.status === 403) {
+                        errMsg = data.error || 'This account has been disabled. Contact your administrator.';
+                    }
+                    showBanner(errMsg, 'error');
                     loginBtn.disabled = false;
-                    loginBtn.innerHTML = '<i data-lucide="log-in"></i> Sign In & Verify Clearance';
+                    loginBtn.innerHTML = '<i data-lucide="log-in" style="width:16px;height:16px;"></i> <span>Sign In to Platform</span>';
                     lucide.createIcons();
                 }
             } catch (err) {
-                statusMsg.className = 'message error';
-                statusMsg.textContent = 'Network error: Unable to contact ProctorAI security server.';
-                statusMsg.style.display = 'block';
+                showBanner('Authentication service is currently unavailable. Please verify server status.', 'error');
                 loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i data-lucide="log-in"></i> Sign In & Verify Clearance';
+                loginBtn.innerHTML = '<i data-lucide="log-in" style="width:16px;height:16px;"></i> <span>Sign In to Platform</span>';
                 lucide.createIcons();
             }
         });
 
+        // ── STEP 2: 6-SLOT MFA INPUT CONTROLLER ──
+        mfaSlots.forEach((slot, index) => {
+            slot.addEventListener('input', (e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                e.target.value = val ? val[0] : '';
+                if (val && index < 5) {
+                    mfaSlots[index + 1].focus();
+                }
+                checkAutoSubmitMfa();
+            });
+
+            slot.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !slot.value && index > 0) {
+                    mfaSlots[index - 1].focus();
+                }
+            });
+
+            slot.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim().replace(/\D/g, '');
+                if (!pasteData) return;
+                for (let i = 0; i < Math.min(pasteData.length, 6); i++) {
+                    mfaSlots[i].value = pasteData[i];
+                }
+                const nextFocus = Math.min(pasteData.length, 5);
+                mfaSlots[nextFocus].focus();
+                checkAutoSubmitMfa();
+            });
+        });
+
+        function getFullMfaCode() {
+            let code = '';
+            mfaSlots.forEach(s => code += s.value.trim());
+            return code;
+        }
+
+        function checkAutoSubmitMfa() {
+            const code = getFullMfaCode();
+            if (code.length === 6) {
+                mfaForm.dispatchEvent(new Event('submit'));
+            }
+        }
+
+        // Return from 2FA to credential form
+        mfaBackBtn.addEventListener('click', () => {
+            mfaForm.style.display = 'none';
+            loginForm.style.display = 'block';
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<i data-lucide="log-in" style="width:16px;height:16px;"></i> <span>Sign In to Platform</span>';
+            hideBanner();
+            passwordInput.focus();
+            lucide.createIcons();
+        });
+
+        // ── MFA FORM SUBMISSION ──
         mfaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const code = mfaCodeInput.value.trim();
-            if (!code) return;
+            hideBanner();
+
+            const code = getFullMfaCode();
+            if (code.length !== 6) {
+                showBanner('Please enter all 6 digits of your authenticator code.', 'error');
+                return;
+            }
 
             mfaBtn.disabled = true;
-            mfaBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Verifying 2FA Token...';
+            mfaBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:16px;height:16px;"></i> <span>Verifying 2FA Token...</span>';
             lucide.createIcons();
 
             try {
-                const response = await fetch('/api/auth/mfa-verify', {
+                const res = await fetch('/api/auth/mfa-verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({ code })
                 });
-                const result = await response.json();
-                if (response.ok && result.success) {
-                    statusMsg.className = 'message success';
-                    statusMsg.textContent = '2FA Token Verified. Entering Platform Admin Command...';
-                    statusMsg.style.display = 'block';
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showBanner('2FA Verified. Entering Platform Command Core...', 'success');
                     setTimeout(() => {
-                        window.location.href = result.redirect || '/admin.html';
-                    }, 400);
+                        window.location.href = data.redirect || '/admin.html';
+                    }, 350);
                 } else {
-                    statusMsg.className = 'message error';
-                    statusMsg.textContent = result.error || 'INVALID VERIFICATION CODE';
-                    statusMsg.style.display = 'block';
+                    showBanner(data.error || 'Verification failed. Enter the current authenticator code.', 'error');
                     mfaBtn.disabled = false;
-                    mfaBtn.innerHTML = '<i data-lucide="shield-check"></i> Verify 2FA & Enter Admin SOC';
+                    mfaBtn.innerHTML = '<i data-lucide="shield-check" style="width:16px;height:16px;"></i> <span>Verify 2FA & Enter Platform</span>';
+                    mfaSlots.forEach(s => s.value = '');
+                    mfaSlots[0].focus();
                     lucide.createIcons();
                 }
-            } catch {
-                statusMsg.className = 'message error';
-                statusMsg.textContent = 'Network error during MFA verification.';
-                statusMsg.style.display = 'block';
+            } catch (err) {
+                showBanner('Authentication service is currently unavailable.', 'error');
                 mfaBtn.disabled = false;
-                mfaBtn.innerHTML = '<i data-lucide="shield-check"></i> Verify 2FA & Enter Admin SOC';
+                mfaBtn.innerHTML = '<i data-lucide="shield-check" style="width:16px;height:16px;"></i> <span>Verify 2FA & Enter Platform</span>';
                 lucide.createIcons();
             }
         });
