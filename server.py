@@ -4,7 +4,7 @@ import json
 import os
 import numpy as np
 import psycopg2
-from flask import Flask, Response, jsonify, send_from_directory, request, session, redirect, url_for
+from flask import Flask, Response, jsonify, send_from_directory, request, session, redirect
 from flask_cors import CORS
 from datetime import datetime
 import base64
@@ -218,8 +218,6 @@ def download_report(filename):
 
 @app.route('/api/session/status', methods=['GET'])
 def get_session_status():
-    global SESSION_ACTIVE, session_start_time, session_paused_time, accumulated_elapsed_seconds
-    
     elapsed = accumulated_elapsed_seconds
     if SESSION_ACTIVE and session_start_time is not None:
         elapsed += int((datetime.now() - session_start_time).total_seconds())
@@ -232,7 +230,7 @@ def get_session_status():
 
 @app.route('/api/session/start', methods=['POST'])
 def start_session():
-    global SESSION_ACTIVE, session_start_time, session_paused_time, accumulated_elapsed_seconds, tracked_students
+    global SESSION_ACTIVE, session_start_time, session_paused_time
     SESSION_ACTIVE = True
     session_start_time = datetime.now()
     session_paused_time = None
@@ -563,6 +561,7 @@ def end_session():
             <div class="r-status-pill"><span class="r-status-dot"></span>Generated</div>
             <strong>Report Generated</strong>
             <time>{generated_at}</time>
+            <time style="margin-top:2px;font-size:0.75rem;color:#64748b;">Duration: {total_session_seconds // 60}m {total_session_seconds % 60}s</time>
         </div>
     </div>
 
@@ -763,7 +762,6 @@ def process_eye_gaze(person_crop, face, tx1, ty1, frame):
     }
 
 def gen_frames():
-    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, head_pose_buffers, baseline_calibration, student_gaze_tracker, VIDEO_SOURCE, SESSION_ACTIVE
     cap = cv2.VideoCapture(VIDEO_SOURCE)
     last_log_time = 0
     
@@ -1057,8 +1055,6 @@ def video_feed():
 
 @app.route('/api/status')
 def api_status():
-    global room_state, tracked_students
-    
     students_list = []
     for sid, data in tracked_students.items():
         students_list.append({
