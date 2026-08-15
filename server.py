@@ -72,6 +72,7 @@ def hash_password(password, salt_hex):
 
 CONFIG = load_config()
 
+app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY') or CONFIG.get("secret_key") or 'super_secret_proctor_key_change_in_production_2026'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
