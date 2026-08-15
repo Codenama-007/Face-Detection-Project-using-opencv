@@ -53,8 +53,17 @@ def run_tests():
     r = s.post(f"{BASE}/api/auth/mfa-verify", json={"code": "000000"})
     assert_test("Admin Incorrect 2FA Code Rejected", r.status_code == 401 and "INVALID VERIFICATION CODE" in r.text)
 
-    # TEST 4: Admin correct 2FA code (Default secret JBSWY3DPEHPK3PXP)
-    totp_code = generate_totp("JBSWY3DPEHPK3PXP")
+    # TEST 4: Admin correct 2FA code (Dynamically fetched from DB)
+    import psycopg2
+    conn = psycopg2.connect("postgresql://neondb_owner:npg_58LHqXDdanEy@ep-young-sea-aotvi360.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require")
+    cur = conn.cursor()
+    cur.execute("SELECT mfa_secret FROM users WHERE username='admin';")
+    row = cur.fetchone()
+    admin_secret = row[0] if (row and row[0]) else "JBSWY3DPEHPK3PXP"
+    cur.close()
+    conn.close()
+
+    totp_code = generate_totp(admin_secret)
     r = s.post(f"{BASE}/api/auth/mfa-verify", json={"code": totp_code})
     assert_test("Admin Correct RFC 6238 2FA Verification", r.status_code == 200 and r.json().get("role") == "ADMIN")
 
