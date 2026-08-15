@@ -22,19 +22,20 @@ CORS(app, supports_credentials=True)
 # ---------------- MIDDLEWARE ----------------
 @app.before_request
 def require_auth():
-    # Only protect API endpoints, video feed, monitoring, and enrollment.
-    # We do NOT protect the index, login page, static assets, or the login API endpoint itself.
-    protected_html = ['/monitoring.html', '/enrollment.html']
-    
     # Allow login endpoints and static files
     if request.endpoint in ['supervisor_login', 'serve_index']:
         return
 
     path = request.path
-    if path in protected_html or path.startswith('/video_feed') or (path.startswith('/api/') and path != '/api/supervisor_login'):
+    # Public endpoints (dashboard telemetry, video feed, and login)
+    public_paths = ['/api/supervisor_login', '/api/status', '/api/session/status', '/video_feed']
+    if any(path.startswith(p) for p in public_paths):
+        return
+
+    protected_html = ['/monitoring.html', '/enrollment.html']
+    if path in protected_html or path.startswith('/api/'):
         if not session.get('admin_logged_in'):
-            # Return 401 for API, redirect to login for HTML pages
-            if path.startswith('/api/') or path.startswith('/video_feed'):
+            if path.startswith('/api/'):
                 return jsonify({"error": "Unauthorized"}), 401
             else:
                 return redirect('/supervisor_login.html')
