@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProctorAI — Secure AI Examination Operations Platform</title>
-    <meta name="description" content="Enterprise AI Examination Security & Monitoring Operations Platform. Multi-Tenant Proctoring, Real-Time Biometric Integrity, and Institutional SOC.">
+    <meta name="description" content="Enterprise AI Examination Security & Operations Platform. Real-Time Biometric Integrity, Multi-Tenant Architecture, and Institutional SOC.">
     
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,8 @@
 
     <style>
 /* ═════════════════════════════════════════════════════════════════════
-   PROCTORAI — HACKATHON-GRADE ENTERPRISE AUTHENTICATION UI
+   PROCTORAI — ENTERPRISE SECURITY OPERATIONS AUTHENTICATION SYSTEM
+   RESTRAINED MONOCHROMATIC + STEEL BLUE PALETTE
    ═════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -25,29 +26,29 @@
 }
 
 :root {
-    --bg-deep:        #04070d;
-    --bg-surface:     #080e18;
-    --bg-card:        rgba(10, 16, 28, 0.78);
-    --bg-card-hover:  rgba(14, 22, 38, 0.88);
-    --bg-input:       rgba(5, 9, 16, 0.85);
+    --bg-base:        #06080c;
+    --bg-surface:     #0b0f17;
+    --bg-card:        #0e131d;
+    --bg-card-border: rgba(255, 255, 255, 0.08);
+    --bg-input:       #070a10;
+    --bg-input-focus: #0a0e16;
 
-    --border-subtle:  rgba(255, 255, 255, 0.07);
-    --border-light:   rgba(255, 255, 255, 0.12);
-    --border-focus:   rgba(0, 229, 255, 0.5);
-    
-    --cyan:           #00e5ff;
-    --cyan-dim:       rgba(0, 229, 255, 0.12);
-    --cyan-glow:      rgba(0, 229, 255, 0.25);
-    --accent:         #38bdf8;
-    --accent-glow:    rgba(56, 189, 248, 0.2);
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-mid:     rgba(255, 255, 255, 0.12);
+    --border-active:  rgba(56, 189, 248, 0.4);
+
+    --accent-blue:    #38bdf8;
+    --accent-dark:    #0284c7;
+    --accent-dim:     rgba(56, 189, 248, 0.08);
 
     --success:        #10b981;
-    --success-dim:    rgba(16, 185, 129, 0.12);
-    --success-border: rgba(16, 185, 129, 0.3);
+    --success-dim:    rgba(16, 185, 129, 0.08);
+    --success-border: rgba(16, 185, 129, 0.25);
+
     --danger:         #f43f5e;
-    --danger-dim:     rgba(244, 63, 94, 0.12);
-    --danger-border:  rgba(244, 63, 94, 0.35);
-    
+    --danger-dim:     rgba(244, 63, 94, 0.08);
+    --danger-border:  rgba(244, 63, 94, 0.3);
+
     --t1:             #f8fafc;
     --t2:             #94a3b8;
     --t3:             #64748b;
@@ -61,14 +62,14 @@ html, body {
     width: 100%;
     min-height: 100vh;
     font-family: var(--font);
-    background-color: var(--bg-deep);
+    background-color: var(--bg-base);
     color: var(--t1);
     line-height: 1.5;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
 }
 
-/* ── CINEMATIC BACKGROUND CANVAS ── */
+/* ── SUBTLE BACKGROUND DEPTH ── */
 .bg-canvas {
     position: fixed;
     inset: 0;
@@ -77,35 +78,25 @@ html, body {
     overflow: hidden;
 }
 
-.bg-radial-1 {
+.bg-radial-ambient {
     position: absolute;
-    top: -20%;
-    left: 20%;
-    width: 900px;
-    height: 900px;
-    background: radial-gradient(circle, rgba(14, 45, 90, 0.35) 0%, rgba(4, 7, 13, 0) 70%);
-    filter: blur(60px);
-}
-
-.bg-radial-2 {
-    position: absolute;
-    bottom: -15%;
-    right: 10%;
-    width: 700px;
-    height: 700px;
-    background: radial-gradient(circle, rgba(0, 229, 255, 0.07) 0%, rgba(4, 7, 13, 0) 70%);
-    filter: blur(50px);
+    top: -10%;
+    left: 25%;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(14, 28, 48, 0.3) 0%, rgba(6, 8, 12, 0) 70%);
+    filter: blur(80px);
 }
 
 .bg-grid {
     position: absolute;
     inset: 0;
     background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, #000 30%, transparent 85%);
-    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, #000 30%, transparent 85%);
+        linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 30%, transparent 90%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 30%, transparent 90%);
 }
 
 /* ── ROOT APP WRAPPER ── */
@@ -115,23 +106,23 @@ html, body {
     min-height: 100vh;
     display: grid;
     grid-template-columns: 1.15fr 1fr;
-    max-width: 1440px;
+    max-width: 1360px;
     margin: 0 auto;
-    padding: 2.5rem 3.5rem;
+    padding: 3rem 3.5rem;
     align-items: center;
-    gap: 4rem;
+    gap: 4.5rem;
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   LEFT HERO COLUMN: BRANDING & AI ECOSYSTEM VISUAL
+   LEFT HERO COLUMN: BRANDING & AI ARCHITECTURE
    ═════════════════════════════════════════════════════════════════════ */
 .hero-col {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
-    max-width: 620px;
-    padding: 2rem 0;
+    max-width: 580px;
+    padding: 1.5rem 0;
 }
 
 .brand-badge-wrap {
@@ -142,16 +133,15 @@ html, body {
 }
 
 .brand-icon-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(0, 229, 255, 0.15), rgba(56, 189, 248, 0.05));
-    border: 1px solid rgba(0, 229, 255, 0.35);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #0b111a;
+    border: 1px solid var(--border-mid);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--cyan);
-    box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+    color: var(--accent-blue);
 }
 
 .status-live-tag {
@@ -160,13 +150,13 @@ html, body {
     gap: 0.45rem;
     padding: 0.3rem 0.75rem;
     border-radius: 99px;
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.25);
-    font-size: 0.7rem;
+    background: #090e15;
+    border: 1px solid var(--border-subtle);
+    font-size: 0.68rem;
     font-weight: 700;
     font-family: var(--mono);
-    letter-spacing: 0.06em;
-    color: #6ee7b7;
+    letter-spacing: 0.08em;
+    color: var(--t2);
     text-transform: uppercase;
 }
 
@@ -175,131 +165,125 @@ html, body {
     height: 6px;
     border-radius: 50%;
     background: var(--success);
-    box-shadow: 0 0 8px var(--success);
-    animation: livePulse 2s infinite ease-in-out;
-}
-
-@keyframes livePulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.4); opacity: 0.5; }
+    box-shadow: 0 0 6px var(--success);
 }
 
 .hero-heading {
-    font-size: 3rem;
+    font-size: 3.25rem;
     font-weight: 900;
-    letter-spacing: -0.035em;
-    line-height: 1.08;
-    margin-bottom: 1rem;
-    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 55%, #38bdf8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin-bottom: 0.85rem;
+    color: #ffffff;
+}
+
+.hero-subhead {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent-blue);
+    margin-bottom: 1.25rem;
+    font-family: var(--mono);
 }
 
 .hero-lead {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     color: var(--t2);
     font-weight: 400;
     line-height: 1.6;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2.25rem;
 }
 
-/* ── DECORATIVE AI RETICLE SCHEMATIC ── */
+/* ── ABSTRACT SCHEMATIC FRAME ── */
 .ai-reticle-canvas {
     position: relative;
     width: 100%;
-    height: 220px;
-    background: rgba(10, 18, 32, 0.4);
+    height: 190px;
+    background: #080c13;
     border: 1px solid var(--border-subtle);
-    border-radius: 18px;
+    border-radius: 14px;
     overflow: hidden;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(12px);
 }
 
 /* Corner Reticle Ticks */
 .reticle-corner {
     position: absolute;
-    width: 14px;
-    height: 14px;
-    border: 2px solid var(--cyan);
-    opacity: 0.6;
+    width: 12px;
+    height: 12px;
+    border: 1.5px solid var(--t3);
+    opacity: 0.5;
     pointer-events: none;
 }
-.rc-tl { top: 12px; left: 12px; border-right: none; border-bottom: none; }
-.rc-tr { top: 12px; right: 12px; border-left: none; border-bottom: none; }
-.rc-bl { bottom: 12px; left: 12px; border-right: none; border-top: none; }
-.rc-br { bottom: 12px; right: 12px; border-left: none; border-top: none; }
+.rc-tl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
+.rc-tr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
+.rc-bl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
+.rc-br { bottom: 10px; right: 10px; border-left: none; border-top: none; }
 
-/* Laser Scan Line */
+/* Subtle Laser Scan Line */
 .laser-scan-line {
     position: absolute;
     left: 0;
     right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-    box-shadow: 0 0 12px var(--cyan);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+    opacity: 0.6;
     animation: laserScan 4s ease-in-out infinite;
     pointer-events: none;
 }
 
 @keyframes laserScan {
-    0% { top: 5%; opacity: 0; }
-    15% { opacity: 0.9; }
-    85% { opacity: 0.9; }
-    100% { top: 95%; opacity: 0; }
+    0% { top: 10%; opacity: 0; }
+    20% { opacity: 0.7; }
+    80% { opacity: 0.7; }
+    100% { top: 90%; opacity: 0; }
 }
 
-/* Optical Crosshair Matrix */
+/* Optical Reticle Center */
 .optical-center-box {
     position: relative;
-    width: 90px;
-    height: 90px;
-    border: 1px dashed rgba(0, 229, 255, 0.35);
-    border-radius: 12px;
+    width: 74px;
+    height: 74px;
+    border: 1px dashed var(--t4);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: reticleSpin 24s linear infinite;
-}
-
-@keyframes reticleSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
 }
 
 .optical-center-inner {
-    width: 46px;
-    height: 46px;
-    border: 1px solid rgba(56, 189, 248, 0.4);
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--t3);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--cyan);
+    color: var(--accent-blue);
 }
 
 .ai-spec-tag {
     position: absolute;
-    bottom: 12px;
-    left: 16px;
+    bottom: 10px;
+    left: 14px;
     font-family: var(--mono);
-    font-size: 0.65rem;
-    color: var(--t3);
+    font-size: 0.62rem;
+    color: var(--t4);
     letter-spacing: 0.08em;
     text-transform: uppercase;
 }
 
 .ai-lock-tag {
     position: absolute;
-    top: 12px;
-    right: 16px;
+    top: 10px;
+    right: 14px;
     font-family: var(--mono);
-    font-size: 0.65rem;
-    color: var(--cyan);
+    font-size: 0.62rem;
+    color: var(--t3);
     letter-spacing: 0.08em;
     font-weight: 700;
 }
@@ -308,32 +292,30 @@ html, body {
 .caps-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.85rem;
+    gap: 0.75rem;
 }
 
 .cap-item {
-    background: rgba(255, 255, 255, 0.02);
+    background: #080c14;
     border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: 0.9rem 0.85rem;
+    border-radius: 10px;
+    padding: 0.8rem 0.8rem;
     display: flex;
     align-items: center;
-    gap: 0.65rem;
-    transition: all 0.25s;
+    gap: 0.6rem;
+    transition: border-color 0.2s;
 }
 
 .cap-item:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(56, 189, 248, 0.25);
-    transform: translateY(-1px);
+    border-color: var(--border-mid);
 }
 
 .cap-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: rgba(0, 229, 255, 0.08);
-    color: var(--cyan);
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: #0d1420;
+    color: var(--accent-blue);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -346,14 +328,13 @@ html, body {
 }
 
 .cap-title {
-    font-size: 0.76rem;
+    font-size: 0.74rem;
     font-weight: 700;
     color: var(--t1);
-    letter-spacing: -0.01em;
 }
 
 .cap-sub {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--t3);
     font-family: var(--mono);
 }
@@ -371,18 +352,14 @@ html, body {
 .auth-card {
     position: relative;
     width: 100%;
-    max-width: 450px;
+    max-width: 440px;
     background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-top: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 24px;
-    backdrop-filter: blur(28px) saturate(170%);
-    -webkit-backdrop-filter: blur(28px) saturate(170%);
-    padding: 2.75rem 2.5rem;
-    box-shadow: 
-        0 24px 70px rgba(0, 0, 0, 0.65),
-        0 0 40px rgba(0, 229, 255, 0.03);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid var(--bg-card-border);
+    border-top: 1px solid var(--border-mid);
+    border-radius: 20px;
+    padding: 2.5rem 2.25rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+    transition: all 0.3s ease;
 }
 
 /* Card Header */
@@ -390,48 +367,48 @@ html, body {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.25rem 0.7rem;
+    padding: 0.25rem 0.65rem;
     border-radius: 99px;
-    background: rgba(0, 229, 255, 0.08);
-    border: 1px solid rgba(0, 229, 255, 0.25);
-    font-size: 0.68rem;
+    background: #080c14;
+    border: 1px solid var(--border-subtle);
+    font-size: 0.65rem;
     font-weight: 800;
     font-family: var(--mono);
-    color: var(--cyan);
-    letter-spacing: 0.06em;
+    color: var(--accent-blue);
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     margin-bottom: 1.25rem;
 }
 
 .card-title {
-    font-size: 1.65rem;
+    font-size: 1.5rem;
     font-weight: 800;
     letter-spacing: -0.025em;
     color: #ffffff;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.3rem;
 }
 
 .card-subtitle {
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     color: var(--t2);
-    margin-bottom: 2rem;
+    margin-bottom: 1.85rem;
     line-height: 1.5;
 }
 
 /* ── FORM ELEMENTS ── */
 .form-group {
-    margin-bottom: 1.35rem;
+    margin-bottom: 1.25rem;
     text-align: left;
 }
 
 .form-label {
     display: block;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     color: var(--t2);
-    margin-bottom: 0.45rem;
+    margin-bottom: 0.4rem;
 }
 
 .input-container {
@@ -442,7 +419,7 @@ html, body {
 
 .input-icon-leading {
     position: absolute;
-    left: 1rem;
+    left: 0.95rem;
     color: var(--t3);
     pointer-events: none;
     transition: color 0.2s;
@@ -450,85 +427,82 @@ html, body {
 
 .form-input {
     width: 100%;
-    padding: 0.88rem 1rem 0.88rem 2.85rem;
-    border-radius: 12px;
-    border: 1px solid var(--border-light);
+    padding: 0.85rem 1rem 0.85rem 2.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-mid);
     background: var(--bg-input);
     color: #ffffff;
     font-family: var(--font);
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     outline: none;
     transition: all 0.2s ease;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .form-input:hover {
-    border-color: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .form-input:focus {
-    border-color: var(--cyan);
-    background: rgba(10, 16, 28, 0.95);
-    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.18), inset 0 2px 5px rgba(0, 0, 0, 0.4);
+    border-color: var(--accent-blue);
+    background: var(--bg-input-focus);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
-.form-input:focus + .input-icon-leading,
-.form-input:focus ~ .input-icon-leading {
-    color: var(--cyan);
+.form-input:focus ~ .input-icon-leading,
+.form-input:focus + .input-icon-leading {
+    color: var(--accent-blue);
 }
 
 .form-input::placeholder {
     color: var(--t3);
-    font-size: 0.88rem;
+    font-size: 0.86rem;
 }
 
 /* Password Toggle Button */
 .pwd-toggle-btn {
     position: absolute;
-    right: 0.85rem;
+    right: 0.8rem;
     background: transparent;
     border: none;
     color: var(--t3);
     cursor: pointer;
-    padding: 0.35rem;
+    padding: 0.3rem;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: color 0.2s;
 }
 
 .pwd-toggle-btn:hover {
     color: var(--t1);
-    background: rgba(255, 255, 255, 0.06);
 }
 
 /* ── PRIMARY CTA BUTTON ── */
 .btn-submit {
     width: 100%;
-    background: linear-gradient(135deg, #1e40af 0%, #0284c7 55%, #00e5ff 100%);
+    background: #0284c7;
     color: #ffffff;
-    border: 1px solid rgba(56, 189, 248, 0.45);
-    padding: 0.95rem 1.5rem;
-    border-radius: 12px;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    padding: 0.9rem 1.4rem;
+    border-radius: 10px;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-family: var(--font);
     letter-spacing: 0.02em;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.55rem;
-    box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
-    margin-top: 0.75rem;
+    gap: 0.5rem;
+    margin-top: 0.65rem;
 }
 
 .btn-submit:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(0, 229, 255, 0.4);
-    border-color: var(--cyan);
+    background: #0369a1;
+    border-color: var(--accent-blue);
+    transform: translateY(-1px);
 }
 
 .btn-submit:active:not(:disabled) {
@@ -536,39 +510,37 @@ html, body {
 }
 
 .btn-submit:disabled {
-    opacity: 0.65;
+    opacity: 0.6;
     cursor: not-allowed;
-    filter: grayscale(20%);
 }
 
 /* ── 6-SLOT INDIVIDUAL 2FA INPUTS ── */
 .mfa-slots-wrap {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 0.5rem;
-    margin: 1.5rem 0 1.25rem 0;
+    gap: 0.45rem;
+    margin: 1.4rem 0 1.25rem 0;
 }
 
 .mfa-digit-slot {
     width: 100%;
-    height: 54px;
+    height: 50px;
     text-align: center;
     font-family: var(--mono);
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 800;
     color: #ffffff;
     background: var(--bg-input);
-    border: 1px solid var(--border-light);
-    border-radius: 10px;
+    border: 1px solid var(--border-mid);
+    border-radius: 8px;
     outline: none;
     transition: all 0.2s;
-    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .mfa-digit-slot:focus {
-    border-color: var(--cyan);
-    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.4);
-    background: rgba(14, 22, 38, 0.95);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    background: var(--bg-input-focus);
 }
 
 .mfa-back-link {
@@ -578,57 +550,56 @@ html, body {
     background: none;
     border: none;
     color: var(--t3);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 600;
     font-family: var(--font);
     cursor: pointer;
-    margin-top: 1.25rem;
-    transition: all 0.2s;
+    margin-top: 1.15rem;
+    transition: color 0.2s;
 }
 
 .mfa-back-link:hover {
-    color: var(--cyan);
-    transform: translateX(-2px);
+    color: var(--accent-blue);
 }
 
-/* ── STATUS & NOTIFICATION BANNERS ── */
+/* ── STATUS & ERROR NOTIFICATION BANNERS ── */
 .status-banner {
     display: none;
-    margin-top: 1.25rem;
-    padding: 0.85rem 1rem;
-    border-radius: 10px;
-    font-size: 0.82rem;
+    margin-top: 1.15rem;
+    padding: 0.8rem 0.95rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
     font-weight: 600;
-    line-height: 1.45;
+    line-height: 1.4;
     text-align: left;
-    animation: bannerFade 0.3s ease-out;
+    animation: bannerFade 0.25s ease-out;
 }
 
 @keyframes bannerFade {
-    from { opacity: 0; transform: translateY(-4px); }
+    from { opacity: 0; transform: translateY(-3px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .status-banner.error {
     display: flex;
     align-items: flex-start;
-    gap: 0.6rem;
+    gap: 0.55rem;
     background: var(--danger-dim);
     border: 1px solid var(--danger-border);
     color: #fecdd3;
-    animation: shakeError 0.35s ease-in-out;
+    animation: shakeError 0.3s ease-in-out;
 }
 
 @keyframes shakeError {
     0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-5px); }
-    40%, 80% { transform: translateX(5px); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
 }
 
 .status-banner.success {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.55rem;
     background: var(--success-dim);
     border: 1px solid var(--success-border);
     color: #a7f3d0;
@@ -639,32 +610,31 @@ html, body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1.75rem;
-    padding-top: 1.25rem;
+    margin-top: 1.65rem;
+    padding-top: 1.15rem;
     border-top: 1px solid var(--border-subtle);
 }
 
 .footer-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.35rem;
     color: var(--t3);
     text-decoration: none;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 600;
-    transition: all 0.2s;
+    transition: color 0.2s;
 }
 
 .footer-link:hover {
-    color: var(--cyan);
-    transform: translateX(-2px);
+    color: var(--accent-blue);
 }
 
 .footer-shield-tag {
     font-family: var(--mono);
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     color: var(--t4);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
 }
 
@@ -679,17 +649,17 @@ html, body {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   RESPONSIVE DESIGN ADAPTATIONS
+   RESPONSIVE ADAPTATIONS
    ═════════════════════════════════════════════════════════════════════ */
 @media (max-width: 1080px) {
     .app-layout {
         grid-template-columns: 1fr;
-        gap: 3rem;
-        padding: 2.5rem 2rem;
-        max-width: 580px;
+        gap: 2.5rem;
+        padding: 2.5rem 1.5rem;
+        max-width: 520px;
     }
     .hero-col {
-        padding: 1rem 0 0 0;
+        padding: 0;
         text-align: center;
         align-items: center;
     }
@@ -707,13 +677,13 @@ html, body {
     }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 480px) {
     .app-layout {
         padding: 1.5rem 1rem;
     }
     .auth-card {
-        padding: 2rem 1.5rem;
-        border-radius: 18px;
+        padding: 2rem 1.4rem;
+        border-radius: 16px;
     }
     .caps-grid {
         grid-template-columns: 1fr;
@@ -722,31 +692,30 @@ html, body {
         font-size: 2rem;
     }
     .mfa-digit-slot {
-        height: 46px;
-        font-size: 1.25rem;
+        height: 44px;
+        font-size: 1.2rem;
     }
 }
     </style>
 </head>
 <body>
 
-    <!-- Cinematic Background Ambient Layers -->
+    <!-- Subtle Background Ambient Grid Layer -->
     <div class="bg-canvas">
-        <div class="bg-radial-1"></div>
-        <div class="bg-radial-2"></div>
+        <div class="bg-radial-ambient"></div>
         <div class="bg-grid"></div>
     </div>
 
-    <!-- Main Two-Column Layout -->
+    <!-- Main Two-Column Enterprise Layout -->
     <main class="app-layout">
 
-        <!-- ═ LEFT COLUMN: VISUAL STORYTELLING & BRAND IDENTITY ═ -->
+        <!-- ═ LEFT COLUMN: BRANDING & AI ARCHITECTURE ═ -->
         <section class="hero-col">
             <div>
                 <!-- Brand Badge -->
                 <div class="brand-badge-wrap">
                     <div class="brand-icon-box">
-                        <i data-lucide="shield-check" style="width:24px;height:24px;"></i>
+                        <i data-lucide="shield-check" style="width:20px;height:20px;"></i>
                     </div>
                     <div class="status-live-tag">
                         <div class="pulse-dot"></div>
@@ -754,13 +723,14 @@ html, body {
                     </div>
                 </div>
 
-                <!-- Main Branding Heading -->
-                <h1 class="hero-heading">ProctorAI</h1>
+                <!-- Brand Typography -->
+                <h1 class="hero-heading">PROCTORAI</h1>
+                <div class="hero-subhead">AI-Powered Examination Security</div>
                 <p class="hero-lead">
-                    Enterprise AI-Powered Examination Security & Proctoring Operations Platform. Real-time neural biometrics, behavioral gaze tracking, and multi-tenant proctor command.
+                    Enterprise Examination Operations Platform. Continuous biometric verification, behavioral gaze estimation, and multi-tenant proctor command infrastructure.
                 </p>
 
-                <!-- Decorative AI Vision Reticle Schematic -->
+                <!-- Abstract Technical Schematic (Purely Decorative) -->
                 <div class="ai-reticle-canvas">
                     <div class="reticle-corner rc-tl"></div>
                     <div class="reticle-corner rc-tr"></div>
@@ -770,29 +740,29 @@ html, body {
 
                     <div class="optical-center-box">
                         <div class="optical-center-inner">
-                            <i data-lucide="scan-face" style="width:24px;height:24px;"></i>
+                            <i data-lucide="scan-face" style="width:20px;height:20px;"></i>
                         </div>
                     </div>
 
-                    <span class="ai-spec-tag">YOLOV8 + SFACE NEURAL PIPELINE</span>
-                    <span class="ai-lock-tag">INTEGRITY LOCK</span>
+                    <span class="ai-spec-tag">NEURAL BIOMETRIC PIPELINE</span>
+                    <span class="ai-lock-tag">SYSTEM LOCKED</span>
                 </div>
 
                 <!-- Core Capability Highlight Pills -->
                 <div class="caps-grid">
                     <div class="cap-item">
                         <div class="cap-icon">
-                            <i data-lucide="eye" style="width:15px;height:15px;"></i>
+                            <i data-lucide="eye" style="width:14px;height:14px;"></i>
                         </div>
                         <div class="cap-text">
                             <span class="cap-title">Gaze Vector</span>
-                            <span class="cap-sub">Pose Tracking</span>
+                            <span class="cap-sub">Pose Estimation</span>
                         </div>
                     </div>
 
                     <div class="cap-item">
                         <div class="cap-icon">
-                            <i data-lucide="smartphone" style="width:15px;height:15px;"></i>
+                            <i data-lucide="smartphone" style="width:14px;height:14px;"></i>
                         </div>
                         <div class="cap-text">
                             <span class="cap-title">Object Shield</span>
@@ -802,7 +772,7 @@ html, body {
 
                     <div class="cap-item">
                         <div class="cap-icon">
-                            <i data-lucide="building" style="width:15px;height:15px;"></i>
+                            <i data-lucide="building" style="width:14px;height:14px;"></i>
                         </div>
                         <div class="cap-text">
                             <span class="cap-title">Multi-Tenant</span>
@@ -813,8 +783,8 @@ html, body {
             </div>
 
             <!-- Footer Meta -->
-            <div style="font-size:0.75rem;color:var(--t3);margin-top:2rem;">
-                ProctorAI Platform Architecture &copy; 2026 &middot; Single Admin Governance &middot; Institutional SOC
+            <div style="font-size:0.72rem;color:var(--t3);margin-top:2rem;">
+                ProctorAI Platform Architecture &copy; 2026 &middot; Platform Governance &middot; Institutional SOC
             </div>
         </section>
 
@@ -823,9 +793,9 @@ html, body {
         <section class="auth-col">
             <div class="auth-card" id="authCard">
                 
-                <!-- Card Top Badge -->
+                <!-- Card Header Top Badge -->
                 <div class="card-header-badge">
-                    <i data-lucide="lock" style="width:12px;height:12px;"></i>
+                    <i data-lucide="lock" style="width:11px;height:11px;"></i>
                     <span>Authorized Clearance Only</span>
                 </div>
 
@@ -838,7 +808,6 @@ html, body {
                     <div class="form-group">
                         <label class="form-label" for="username">Username / Email</label>
                         <div class="input-container">
-                            <i data-lucide="user" class="input-icon-leading" style="width:16px;height:16px;"></i>
                             <input 
                                 type="text" 
                                 id="username" 
@@ -848,6 +817,7 @@ html, body {
                                 autocomplete="username"
                                 spellcheck="false"
                             >
+                            <i data-lucide="user" class="input-icon-leading" style="width:15px;height:15px;"></i>
                         </div>
                     </div>
 
@@ -855,7 +825,6 @@ html, body {
                     <div class="form-group">
                         <label class="form-label" for="password">Security Password</label>
                         <div class="input-container">
-                            <i data-lucide="key" class="input-icon-leading" style="width:16px;height:16px;"></i>
                             <input 
                                 type="password" 
                                 id="password" 
@@ -864,33 +833,34 @@ html, body {
                                 required 
                                 autocomplete="current-password"
                             >
+                            <i data-lucide="key" class="input-icon-leading" style="width:15px;height:15px;"></i>
                             <button 
                                 type="button" 
                                 class="pwd-toggle-btn" 
                                 id="pwdToggleBtn" 
                                 aria-label="Toggle password visibility"
                             >
-                                <i data-lucide="eye" id="pwdEyeIcon" style="width:16px;height:16px;"></i>
+                                <i data-lucide="eye" id="pwdEyeIcon" style="width:15px;height:15px;"></i>
                             </button>
                         </div>
                     </div>
 
                     <!-- Sign In Submit Button -->
                     <button type="submit" class="btn-submit" id="loginBtn">
-                        <i data-lucide="log-in" style="width:16px;height:16px;"></i>
-                        <span>Sign In to Platform</span>
+                        <i data-lucide="log-in" style="width:15px;height:15px;"></i>
+                        <span>Sign In</span>
                     </button>
                 </form>
 
                 <!-- STEP 2: Smooth 6-Slot Admin 2FA Verification Form -->
                 <form id="mfaForm" style="display:none;">
-                    <div style="background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.22);border-radius:12px;padding:0.9rem 1rem;margin-bottom:1.25rem;text-align:left;">
-                        <div style="font-size:0.75rem;font-weight:800;color:var(--cyan);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.4rem;">
-                            <i data-lucide="shield-alert" style="width:14px;height:14px;"></i>
-                            <span>Two-Factor Authenticator Required</span>
+                    <div style="background:#090d15;border:1px solid var(--border-subtle);border-radius:10px;padding:0.85rem 0.95rem;margin-bottom:1.15rem;text-align:left;">
+                        <div style="font-size:0.72rem;font-weight:800;color:var(--accent-blue);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.2rem;display:flex;align-items:center;gap:0.35rem;">
+                            <i data-lucide="shield-alert" style="width:13px;height:13px;"></i>
+                            <span>Two-Factor Authentication Required</span>
                         </div>
-                        <div style="font-size:0.76rem;color:var(--t2);line-height:1.4;">
-                            Enter the 6-digit verification code from your authenticator app (Google Authenticator, Microsoft Authenticator, or Authy).
+                        <div style="font-size:0.75rem;color:var(--t2);line-height:1.4;">
+                            Enter the 6-digit verification code from your authenticator application.
                         </div>
                     </div>
 
@@ -906,13 +876,13 @@ html, body {
 
                     <!-- Verify Button -->
                     <button type="submit" class="btn-submit" id="mfaBtn">
-                        <i data-lucide="shield-check" style="width:16px;height:16px;"></i>
-                        <span>Verify 2FA & Enter Platform</span>
+                        <i data-lucide="shield-check" style="width:15px;height:15px;"></i>
+                        <span>Verify & Continue</span>
                     </button>
 
                     <!-- Back to Sign In Link -->
                     <button type="button" class="mfa-back-link" id="mfaBackBtn">
-                        <i data-lucide="arrow-left" style="width:13px;height:13px;"></i>
+                        <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
                         <span>Return to credential login</span>
                     </button>
                 </form>
@@ -923,7 +893,7 @@ html, body {
                 <!-- Footer Navigation -->
                 <div class="card-footer-nav">
                     <a href="index.html" class="footer-link">
-                        <i data-lucide="arrow-left" style="width:13px;height:13px;"></i>
+                        <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
                         <span>Platform Overview</span>
                     </a>
                     <span class="footer-shield-tag">RBAC &bull; AES-256</span>
@@ -972,7 +942,7 @@ html, body {
             statusBanner.className = `status-banner ${type}`;
             const iconName = type === 'error' ? 'alert-circle' : 'check-circle-2';
             statusBanner.innerHTML = `
-                <i data-lucide="${iconName}" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;"></i>
+                <i data-lucide="${iconName}" style="width:15px;height:15px;flex-shrink:0;margin-top:2px;"></i>
                 <span>${msg}</span>
             `;
             statusBanner.style.display = 'flex';
@@ -994,7 +964,7 @@ html, body {
             if (!username || !password) return;
 
             loginBtn.disabled = true;
-            loginBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:16px;height:16px;"></i> <span>Authenticating...</span>';
+            loginBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Authenticating...</span>';
             lucide.createIcons();
 
             try {
@@ -1032,13 +1002,13 @@ html, body {
                     }
                     showBanner(errMsg, 'error');
                     loginBtn.disabled = false;
-                    loginBtn.innerHTML = '<i data-lucide="log-in" style="width:16px;height:16px;"></i> <span>Sign In to Platform</span>';
+                    loginBtn.innerHTML = '<i data-lucide="log-in" style="width:15px;height:15px;"></i> <span>Sign In</span>';
                     lucide.createIcons();
                 }
             } catch (err) {
                 showBanner('Authentication service is currently unavailable. Please verify server status.', 'error');
                 loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i data-lucide="log-in" style="width:16px;height:16px;"></i> <span>Sign In to Platform</span>';
+                loginBtn.innerHTML = '<i data-lucide="log-in" style="width:15px;height:15px;"></i> <span>Sign In</span>';
                 lucide.createIcons();
             }
         });
@@ -1091,7 +1061,7 @@ html, body {
             mfaForm.style.display = 'none';
             loginForm.style.display = 'block';
             loginBtn.disabled = false;
-            loginBtn.innerHTML = '<i data-lucide="log-in" style="width:16px;height:16px;"></i> <span>Sign In to Platform</span>';
+            loginBtn.innerHTML = '<i data-lucide="log-in" style="width:15px;height:15px;"></i> <span>Sign In</span>';
             hideBanner();
             passwordInput.focus();
             lucide.createIcons();
@@ -1109,7 +1079,7 @@ html, body {
             }
 
             mfaBtn.disabled = true;
-            mfaBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:16px;height:16px;"></i> <span>Verifying 2FA Token...</span>';
+            mfaBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Verifying 2FA Token...</span>';
             lucide.createIcons();
 
             try {
@@ -1130,7 +1100,7 @@ html, body {
                 } else {
                     showBanner(data.error || 'Verification failed. Enter the current authenticator code.', 'error');
                     mfaBtn.disabled = false;
-                    mfaBtn.innerHTML = '<i data-lucide="shield-check" style="width:16px;height:16px;"></i> <span>Verify 2FA & Enter Platform</span>';
+                    mfaBtn.innerHTML = '<i data-lucide="shield-check" style="width:15px;height:15px;"></i> <span>Verify & Continue</span>';
                     mfaSlots.forEach(s => s.value = '');
                     mfaSlots[0].focus();
                     lucide.createIcons();
@@ -1138,7 +1108,7 @@ html, body {
             } catch (err) {
                 showBanner('Authentication service is currently unavailable.', 'error');
                 mfaBtn.disabled = false;
-                mfaBtn.innerHTML = '<i data-lucide="shield-check" style="width:16px;height:16px;"></i> <span>Verify 2FA & Enter Platform</span>';
+                mfaBtn.innerHTML = '<i data-lucide="shield-check" style="width:15px;height:15px;"></i> <span>Verify & Continue</span>';
                 lucide.createIcons();
             }
         });
