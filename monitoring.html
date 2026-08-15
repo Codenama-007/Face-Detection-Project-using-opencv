@@ -724,6 +724,157 @@ body::before {
 .alerts-empty-sub { font-size: 0.67rem; color: var(--t4); line-height: 1.45; }
 
 /* ════════════════════════════════════
+   AI ENGINES LIST (in Security Overview)
+════════════════════════════════════ */
+.engines-section {
+    border-top: 1px solid var(--border);
+    padding: 0.55rem 0.65rem;
+}
+.engines-title {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--t4);
+    margin-bottom: 0.4rem;
+}
+.engine-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.28rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.engine-row:last-child { border-bottom: none; }
+.engine-name {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--t2);
+}
+.engine-status {
+    display: flex; align-items: center; gap: 0.3rem;
+    font-size: 0.62rem; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--t4);
+    transition: color 0.3s;
+}
+.engine-status.on  { color: var(--success); }
+.engine-status.off { color: var(--t4); }
+.eng-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--t4); transition: background 0.3s, box-shadow 0.3s;
+    flex-shrink: 0;
+}
+.engine-status.on  .eng-dot { background: var(--success); box-shadow: 0 0 4px rgba(16,185,129,0.5); }
+
+/* ════════════════════════════════════
+   EXAM SECURITY SCORE CARD
+════════════════════════════════════ */
+.exam-score-panel { flex-shrink: 0; }
+
+.score-body {
+    padding: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.score-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+.score-row-hd {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.score-row-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t3);
+}
+.score-row-val {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+.score-bar-track {
+    height: 5px;
+    background: rgba(255,255,255,0.055);
+    border-radius: 99px;
+    overflow: hidden;
+}
+.score-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    width: 0%;
+}
+.score-bar-fill.trust { background: linear-gradient(90deg, #0d9488, var(--success)); }
+.score-bar-fill.risk  { background: linear-gradient(90deg, #b45309, var(--warning)); }
+.score-bar-fill.risk-high { background: linear-gradient(90deg, #991b1b, var(--danger)); }
+
+.score-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 99px;
+    font-size: 0.62rem; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    border: 1px solid;
+    margin-top: 0.2rem;
+    transition: all 0.3s;
+}
+.score-status-pill.secure   { color: var(--success); background: var(--success-dim); border-color: var(--success-bd); }
+.score-status-pill.warning  { color: var(--warning); background: var(--warning-dim); border-color: var(--warning-bd); }
+.score-status-pill.danger   { color: var(--danger);  background: var(--danger-dim);  border-color: var(--danger-bd); }
+.score-status-pill.na       { color: var(--t3); background: rgba(255,255,255,0.03); border-color: var(--border); }
+
+/* ════════════════════════════════════
+   LIVE ACTIVITY PANEL
+════════════════════════════════════ */
+.activity-panel { flex-shrink: 0; max-height: 200px; }
+
+.activity-body {
+    padding: 0.5rem 0.65rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+.act-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.22rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.025);
+    animation: aleIn 0.2s ease-out;
+}
+.act-row:last-child { border-bottom: none; }
+.act-time {
+    font-size: 0.6rem;
+    font-family: var(--mono);
+    color: var(--t4);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 50px;
+}
+.act-msg {
+    font-size: 0.68rem;
+    color: var(--t3);
+    line-height: 1.3;
+}
+.act-empty {
+    font-size: 0.68rem;
+    color: var(--t4);
+    padding: 0.75rem 0;
+    text-align: center;
+}
+
+/* ════════════════════════════════════
    BOTTOM — METRICS STRIP
 ════════════════════════════════════ */
 .metrics-strip {
@@ -731,21 +882,21 @@ body::before {
     align-items: center;
     gap: 0.5rem;
     padding: 0 0.85rem;
-    height: 38px;
+    height: 36px;
     flex-shrink: 0;
     border-radius: var(--r-md);
-    background: rgba(255,255,255,0.018);
+    background: rgba(255,255,255,0.016);
     border: 1px solid var(--border);
 }
 
 .ms-item {
     display: flex; align-items: center; gap: 0.35rem;
-    font-size: 0.62rem; font-weight: 600;
+    font-size: 0.6rem; font-weight: 600;
     color: var(--t3);
     letter-spacing: 0.03em;
     text-transform: uppercase;
     white-space: nowrap;
-    padding: 0 0.6rem;
+    padding: 0 0.55rem;
     border-right: 1px solid var(--border);
 }
 .ms-item:last-child { border-right: none; }
@@ -753,15 +904,16 @@ body::before {
 .ms-dot {
     width: 5px; height: 5px; border-radius: 50%;
     flex-shrink: 0;
+    background: var(--t4);
+    transition: background 0.4s, box-shadow 0.4s;
 }
-.ms-dot.on  { background: var(--success); box-shadow: 0 0 5px rgba(16,185,129,0.5); }
-.ms-dot.off { background: var(--t4); }
+.ms-dot.on  { background: var(--success); box-shadow: 0 0 5px rgba(16,185,129,0.45); }
 
-.ms-label { color: var(--t3); }
+.ms-label { color: inherit; }
 
 .ms-spacer { flex: 1; }
 .ms-time-label {
-    font-size: 0.62rem; color: var(--t4);
+    font-size: 0.6rem; color: var(--t4);
     font-family: var(--mono); letter-spacing: 0.04em;
 }
 
@@ -860,8 +1012,8 @@ body::before {
                         <div class="empty-st" id="stuEmptyState">
                             <svg class="empty-st-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                             <div>
-                                <span class="empty-st-title">No Active Students</span>
-                                <span class="empty-st-sub">Waiting for students to enter the camera frame...</span>
+                                <span class="empty-st-title">Monitoring Standby</span>
+                                <span class="empty-st-sub">No students currently detected.<br>Waiting for students to enter the camera frame...</span>
                             </div>
                         </div>
                     </div>
@@ -948,7 +1100,7 @@ body::before {
             <div class="panel sec-overview-panel" id="secOverview">
                 <div class="panel-hd">
                     <span class="panel-title">Security Overview</span>
-                    <div id="roomStatusBadge" style="font-size:0.62rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--t3);background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:0.15rem 0.55rem;border-radius:99px;">STANDBY</div>
+                    <div id="roomStatusBadge" style="font-size:0.62rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--t3);background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:0.15rem 0.55rem;border-radius:99px;transition:all 0.3s;">STANDBY</div>
                 </div>
                 <div class="overview-grid">
                     <div class="ov-metric">
@@ -972,6 +1124,58 @@ body::before {
                         <span class="ov-sub">Critical</span>
                     </div>
                 </div>
+                <!-- AI Engines section -->
+                <div class="engines-section">
+                    <div class="engines-title">AI Security Engines</div>
+                    <div class="engine-row">
+                        <span class="engine-name">Face Verification</span>
+                        <span class="engine-status off" id="eng-face"><span class="eng-dot"></span>Offline</span>
+                    </div>
+                    <div class="engine-row">
+                        <span class="engine-name">Phone Detection</span>
+                        <span class="engine-status off" id="eng-phone"><span class="eng-dot"></span>Offline</span>
+                    </div>
+                    <div class="engine-row">
+                        <span class="engine-name">Gaze Monitoring</span>
+                        <span class="engine-status off" id="eng-gaze"><span class="eng-dot"></span>Offline</span>
+                    </div>
+                    <div class="engine-row">
+                        <span class="engine-name">Multi-Person AI</span>
+                        <span class="engine-status off" id="eng-multi"><span class="eng-dot"></span>Offline</span>
+                    </div>
+                    <div class="engine-row">
+                        <span class="engine-name">Risk Engine</span>
+                        <span class="engine-status off" id="eng-risk"><span class="eng-dot"></span>Offline</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exam Security Score -->
+            <div class="panel exam-score-panel" id="examScorePanel">
+                <div class="panel-hd">
+                    <span class="panel-title">Exam Security Status</span>
+                    <span class="score-status-pill na" id="scoreStatusPill">N/A</span>
+                </div>
+                <div class="score-body">
+                    <div class="score-row">
+                        <div class="score-row-hd">
+                            <span class="score-row-label">Overall Trust</span>
+                            <span class="score-row-val" id="avgTrustVal" style="color:var(--success);">N/A</span>
+                        </div>
+                        <div class="score-bar-track">
+                            <div class="score-bar-fill trust" id="trustBar"></div>
+                        </div>
+                    </div>
+                    <div class="score-row">
+                        <div class="score-row-hd">
+                            <span class="score-row-label">Overall Risk</span>
+                            <span class="score-row-val" id="avgRiskVal" style="color:var(--t2);">N/A</span>
+                        </div>
+                        <div class="score-bar-track">
+                            <div class="score-bar-fill risk" id="riskBar"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Alert Center -->
@@ -990,12 +1194,24 @@ body::before {
                 <div class="panel-body">
                     <div id="alertsList" class="alerts-body">
                         <div class="alerts-empty" id="alertsEmpty">
-                            <svg class="alerts-empty-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <svg class="alerts-empty-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                             <div>
-                                <div class="alerts-empty-title">No Active Alerts</div>
-                                <div class="alerts-empty-sub">Monitoring system is operating normally.</div>
+                                <div class="alerts-empty-title">✓ No Active Security Alerts</div>
+                                <div class="alerts-empty-sub">System monitoring normally.</div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Activity -->
+            <div class="panel activity-panel" id="activityPanel">
+                <div class="panel-hd">
+                    <span class="panel-title">Live Activity</span>
+                </div>
+                <div class="panel-body">
+                    <div id="activityList" class="activity-body">
+                        <div class="act-empty" id="activityEmpty">Waiting for activity...</div>
                     </div>
                 </div>
             </div>
@@ -1006,24 +1222,24 @@ body::before {
     <!-- ══ BOTTOM METRICS STRIP ═══════════════════════ -->
     <div class="metrics-strip">
         <div class="ms-item">
-            <div class="ms-dot on"></div>
+            <div class="ms-dot" id="ms-face"></div>
             <span class="ms-label">Face Verification</span>
         </div>
         <div class="ms-item">
-            <div class="ms-dot on"></div>
+            <div class="ms-dot" id="ms-phone"></div>
             <span class="ms-label">Phone Detection</span>
         </div>
         <div class="ms-item">
-            <div class="ms-dot on"></div>
+            <div class="ms-dot" id="ms-gaze"></div>
             <span class="ms-label">Gaze Monitoring</span>
         </div>
         <div class="ms-item">
-            <div class="ms-dot on"></div>
-            <span class="ms-label">Multi-Person Detection</span>
+            <div class="ms-dot" id="ms-multi"></div>
+            <span class="ms-label">Multi-Person AI</span>
         </div>
         <div class="ms-item">
-            <div class="ms-dot on"></div>
-            <span class="ms-label">Risk Analysis</span>
+            <div class="ms-dot" id="ms-risk"></div>
+            <span class="ms-label">Risk Engine</span>
         </div>
         <div class="ms-spacer"></div>
         <span class="ms-time-label" id="clockDisplay">--:--:--</span>
@@ -1069,23 +1285,107 @@ let sessionTimerInt   = null;
 let feedOnline        = false;
 let activeFilter      = 'all';
 let alertCount        = 0;
+let backendOnline     = false;
+
+// Activity log
+const $actList  = document.getElementById('activityList');
+const $actEmpty = document.getElementById('activityEmpty');
+
+function logActivity(msg) {
+    if ($actEmpty.parentElement) $actEmpty.remove();
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const row = document.createElement('div');
+    row.className = 'act-row';
+    row.innerHTML = `<span class="act-time">${time}</span><span class="act-msg">${msg}</span>`;
+    $actList.insertBefore(row, $actList.firstChild);
+    if ($actList.children.length > 15) $actList.lastElementChild.remove();
+}
+
+// Engine / strip dot helpers
+const engineIds = [
+    ['eng-face',  'ms-face'],
+    ['eng-phone', 'ms-phone'],
+    ['eng-gaze',  'ms-gaze'],
+    ['eng-multi', 'ms-multi'],
+    ['eng-risk',  'ms-risk'],
+];
+function setEnginesState(online) {
+    engineIds.forEach(([engId, msId]) => {
+        const eng = document.getElementById(engId);
+        const ms  = document.getElementById(msId);
+        if (eng) { eng.className = `engine-status ${online ? 'on' : 'off'}`; eng.innerHTML = `<span class="eng-dot"></span>${online ? 'Ready' : 'Offline'}`; }
+        if (ms)  { ms.classList.toggle('on', online); }
+    });
+}
+
+// Exam score refs
+const $avgTrustVal   = document.getElementById('avgTrustVal');
+const $avgRiskVal    = document.getElementById('avgRiskVal');
+const $trustBar      = document.getElementById('trustBar');
+const $riskBar       = document.getElementById('riskBar');
+const $scoreStatus   = document.getElementById('scoreStatusPill');
+
+function updateExamScore(students) {
+    if (students.length === 0) {
+        $avgTrustVal.textContent = 'N/A';
+        $avgRiskVal.textContent  = 'N/A';
+        $avgTrustVal.style.color = 'var(--t3)';
+        $avgRiskVal.style.color  = 'var(--t3)';
+        $trustBar.style.width    = '0%';
+        $riskBar.style.width     = '0%';
+        $riskBar.className       = 'score-bar-fill risk';
+        $scoreStatus.className   = 'score-status-pill na';
+        $scoreStatus.textContent = 'N/A';
+        return;
+    }
+    const avgRisk  = students.reduce((s, x) => s + x.risk_score, 0) / students.length;
+    const avgTrust = 100 - avgRisk;
+    $avgTrustVal.textContent = `${avgTrust.toFixed(0)}%`;
+    $avgRiskVal.textContent  = `${avgRisk.toFixed(0)}`;
+    $trustBar.style.width    = `${Math.min(100, avgTrust).toFixed(0)}%`;
+    $riskBar.style.width     = `${Math.min(100, avgRisk).toFixed(0)}%`;
+
+    if (avgRisk > 75) {
+        $avgRiskVal.style.color = 'var(--danger)';
+        $riskBar.className = 'score-bar-fill risk-high';
+        $scoreStatus.className = 'score-status-pill danger';
+        $scoreStatus.textContent = 'Critical';
+    } else if (avgRisk > 40) {
+        $avgRiskVal.style.color = 'var(--warning)';
+        $riskBar.className = 'score-bar-fill risk';
+        $scoreStatus.className = 'score-status-pill warning';
+        $scoreStatus.textContent = 'Attention';
+    } else {
+        $avgRiskVal.style.color = 'var(--success)';
+        $riskBar.className = 'score-bar-fill risk';
+        $scoreStatus.className = 'score-status-pill secure';
+        $scoreStatus.textContent = 'Secure';
+    }
+    $avgTrustVal.style.color = avgTrust > 60 ? 'var(--success)' : avgTrust > 30 ? 'var(--warning)' : 'var(--danger)';
+}
 
 // ── FEED STATE ────────────────────────────────
 function onFeedLoaded() {
-    feedOnline = true;
+    feedOnline    = true;
+    backendOnline = true;
     $feedOffline.classList.remove('show');
-    $feedImg.style.display = 'block';
-    $cctvDot.style.background = 'var(--danger)'; // red = LIVE recording indicator
+    $feedImg.style.display       = 'block';
+    $cctvDot.style.background    = 'var(--danger)';  // red = REC indicator
     $backendDot.style.background = 'var(--success)';
-    $backendText.textContent    = 'AI Backend Active';
+    $backendText.textContent     = 'AI Backend Active';
+    setEnginesState(true);
+    logActivity('Camera connected — AI monitoring started');
 }
 function onFeedError() {
-    feedOnline = false;
+    feedOnline    = false;
+    backendOnline = false;
     $feedOffline.classList.add('show');
-    $feedImg.style.display = 'none';
-    $cctvDot.style.background = 'var(--t4)';
+    $feedImg.style.display       = 'none';
+    $cctvDot.style.background    = 'var(--t4)';
     $backendDot.style.background = 'var(--t4)';
-    $backendText.textContent    = 'Backend Offline';
+    $backendText.textContent     = 'Backend Offline';
+    setEnginesState(false);
+    updateExamScore([]);
 }
 
 // ── CLOCK ─────────────────────────────────────
@@ -1135,10 +1435,10 @@ async function checkSessionStatus() {
 
 // ── OVERVIEW METRICS UPDATE ───────────────────
 function updateOverview(students) {
-    const total   = students.length;
-    const safe    = students.filter(s => s.risk_score <= 25).length;
-    const review  = students.filter(s => s.risk_score > 25 && s.risk_score <= 75).length;
-    const high    = students.filter(s => s.risk_score > 75).length;
+    const total  = students.length;
+    const safe   = students.filter(s => s.risk_score <= 25).length;
+    const review = students.filter(s => s.risk_score > 25 && s.risk_score <= 75).length;
+    const high   = students.filter(s => s.risk_score > 75).length;
 
     $ovActive.textContent   = total;
     $ovVerified.textContent = safe;
@@ -1147,26 +1447,21 @@ function updateOverview(students) {
     $stuCount.textContent   = total;
 
     if (high > 0) {
-        $roomBadge.textContent    = 'HIGH RISK';
-        $roomBadge.style.color    = 'var(--danger)';
-        $roomBadge.style.background = 'var(--danger-dim)';
-        $roomBadge.style.borderColor = 'var(--danger-bd)';
+        setRoomBadge('HIGH RISK', 'var(--danger)', 'var(--danger-dim)', 'var(--danger-bd)');
     } else if (review > 0) {
-        $roomBadge.textContent    = 'ATTENTION';
-        $roomBadge.style.color    = 'var(--warning)';
-        $roomBadge.style.background = 'var(--warning-dim)';
-        $roomBadge.style.borderColor = 'var(--warning-bd)';
+        setRoomBadge('ATTENTION', 'var(--warning)', 'var(--warning-dim)', 'var(--warning-bd)');
     } else if (total > 0) {
-        $roomBadge.textContent    = 'SECURE';
-        $roomBadge.style.color    = 'var(--success)';
-        $roomBadge.style.background = 'var(--success-dim)';
-        $roomBadge.style.borderColor = 'var(--success-bd)';
+        setRoomBadge('SECURE', 'var(--success)', 'var(--success-dim)', 'var(--success-bd)');
     } else {
-        $roomBadge.textContent    = 'STANDBY';
-        $roomBadge.style.color    = '';
-        $roomBadge.style.background = '';
-        $roomBadge.style.borderColor = '';
+        setRoomBadge('STANDBY', '', '', '');
     }
+    updateExamScore(students);
+}
+function setRoomBadge(txt, col, bg, bd) {
+    $roomBadge.textContent       = txt;
+    $roomBadge.style.color       = col;
+    $roomBadge.style.background  = bg;
+    $roomBadge.style.borderColor = bd;
 }
 
 // ── ROOM STATUS BANNER ────────────────────────
@@ -1309,48 +1604,72 @@ document.getElementById('alertFilters').addEventListener('click', e => {
 async function fetchLiveStatus() {
     try {
         const res  = await fetch(`${BASE}/api/status`, { credentials: 'include' });
+        if (!res.ok) throw new Error('non-2xx');
         const data = await res.json();
+
+        // Backend is reachable — activate engines if not already
+        if (!backendOnline) {
+            backendOnline = true;
+            setEnginesState(true);
+            $backendDot.style.background = 'var(--success)';
+            $backendText.textContent     = 'AI Backend Active';
+            logActivity('Backend connected — AI engines ready');
+        }
 
         updateRoomStatus(data.room_status, data.unknown_count, data.phone_detected, data.book_detected);
         updateStudentsGrid(data.students);
         updateOverview(data.students);
 
-        // Event-based alerts
+        // Event-based alerts + activity log
         if (data.phone_detected && !prevAlerts.includes('phone')) {
             addAlert('Critical: Cell phone detected in frame!', 'danger');
+            logActivity('Phone detection triggered');
             prevAlerts.push('phone');
         } else if (!data.phone_detected && prevAlerts.includes('phone')) {
             addAlert('Phone removed from frame.', 'success');
+            logActivity('Phone no longer detected');
             prevAlerts = prevAlerts.filter(a => a !== 'phone');
         }
 
         if (data.book_detected && !prevAlerts.includes('book')) {
             addAlert('Critical: Prohibited book detected!', 'danger');
+            logActivity('Book detection triggered');
             prevAlerts.push('book');
         } else if (!data.book_detected && prevAlerts.includes('book')) {
             addAlert('Book removed from frame.', 'success');
+            logActivity('Book no longer in frame');
             prevAlerts = prevAlerts.filter(a => a !== 'book');
         }
 
         if (data.unknown_count > 0 && !prevAlerts.includes('unknown')) {
             addAlert('Warning: Unknown person entered the room!', 'danger');
+            logActivity('Unknown person detected in frame');
             prevAlerts.push('unknown');
         } else if (data.unknown_count === 0 && prevAlerts.includes('unknown')) {
             addAlert('Room secure — unknown person left.', 'success');
+            logActivity('Room secure — unknown person left');
             prevAlerts = prevAlerts.filter(a => a !== 'unknown');
         }
 
         data.students.forEach(s => {
             if (s.risk_score > 25 && !prevAlerts.includes(`risk_${s.id}`)) {
-                addAlert(`Warning: ${s.name} is accumulating high risk!`, 'warning');
+                addAlert(`Warning: ${s.name} accumulating high risk!`, 'warning');
+                logActivity(`Risk score updated — ${s.name}`);
                 prevAlerts.push(`risk_${s.id}`);
             } else if (s.risk_score <= 10 && prevAlerts.includes(`risk_${s.id}`)) {
                 prevAlerts = prevAlerts.filter(a => a !== `risk_${s.id}`);
             }
         });
 
-    } catch (err) {
-        // Backend unreachable — silent (feed-offline state handles UI)
+    } catch {
+        // Backend unreachable
+        if (backendOnline) {
+            backendOnline = false;
+            setEnginesState(false);
+            updateExamScore([]);
+            $backendDot.style.background = 'var(--t4)';
+            $backendText.textContent     = 'Backend Offline';
+        }
     }
 }
 
@@ -1395,7 +1714,10 @@ function showToast(message, type = 'info', duration = 2800) {
 
 // ── INIT ──────────────────────────────────────
 function init() {
+    logActivity('Dashboard initialized — monitoring standby');
     addAlert('Dashboard initialized — waiting for feed...', 'info');
+    setEnginesState(false); // start offline; onFeedLoaded / fetchLiveStatus will flip
+    updateExamScore([]);
     checkSessionStatus();
     setInterval(fetchLiveStatus,    1000);
     setInterval(checkSessionStatus, 3000);
