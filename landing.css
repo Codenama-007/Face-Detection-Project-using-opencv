@@ -303,14 +303,68 @@ a { text-decoration: none; color: inherit; }
 .feature-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.65rem; letter-spacing: -0.01em; color: #f8fafc; }
 .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
 
-/* 3. How It Works */
-.steps-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
-.step-card { padding: 1.75rem 1.25rem; border-top: 2px solid var(--border-color); position: relative; transition: border-color 0.3s; }
-.step-card:hover { border-color: var(--accent); }
-.step-number { font-size: 2.2rem; font-weight: 800; color: var(--border-color); margin-bottom: 0.85rem; font-family: var(--mono); transition: color 0.3s;}
-.step-card:hover .step-number { color: var(--accent); }
-.step-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.65rem; }
-.step-card p { color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6; }
+/* 3. How It Works — Process Section Visual Refinement */
+.steps-container { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 1.5rem; 
+    perspective: 1200px;
+}
+
+.step-card { 
+    padding: 2rem 1.4rem; 
+    position: relative;
+    background: linear-gradient(135deg, rgba(14, 20, 34, 0.75) 0%, rgba(8, 12, 20, 0.85) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: var(--radius-md);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    transform: perspective(1200px) translateZ(0);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.step-card:hover { 
+    transform: perspective(1200px) translateY(-4px) rotateX(1deg) rotateY(-1deg);
+    box-shadow: 0 22px 48px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.35);
+}
+
+.step-number { 
+    font-size: 2.5rem; 
+    font-weight: 800; 
+    font-family: var(--mono); 
+    color: rgba(125, 178, 255, 0.65);
+    text-shadow: 0 2px 12px rgba(0, 229, 255, 0.20), 0 0 1px rgba(255, 255, 255, 0.3);
+    margin-bottom: 0.85rem; 
+    line-height: 1;
+    letter-spacing: -0.02em;
+    transition: color 0.35s cubic-bezier(0.16, 1, 0.3, 1), text-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.step-card:hover .step-number { 
+    color: #00e5ff;
+    text-shadow: 0 0 18px rgba(0, 229, 255, 0.45), 0 2px 8px rgba(0, 229, 255, 0.3);
+}
+
+.step-card h3 { 
+    font-size: 1.1rem; 
+    font-weight: 700; 
+    margin-bottom: 0.65rem; 
+    color: #f8fafc;
+    transition: color 0.3s ease;
+}
+
+.step-card:hover h3 {
+    color: #ffffff;
+}
+
+.step-card p { 
+    color: var(--text-secondary); 
+    font-size: 0.88rem; 
+    line-height: 1.6; 
+}
 
 /* 5. Showcase */
 .showcase-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }

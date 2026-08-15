@@ -216,15 +216,26 @@ p.subtitle {
     background: rgba(6, 9, 14, 0.6);
     border: 1px solid var(--border-subtle);
     border-radius: 10px;
-    padding: 0.6rem 0.85rem;
-    margin-bottom: 1.4rem;
+    padding: 0.75rem 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.stage-status-sub {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--cyan);
+    font-family: var(--mono);
+    margin-bottom: 1.25rem;
+    letter-spacing: 0.03em;
+    min-height: 1.2rem;
+    transition: color 0.2s ease;
 }
 
 .stage-step {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     position: relative;
     flex: 1;
 }
@@ -232,22 +243,27 @@ p.subtitle {
 .stage-step::after {
     content: '';
     position: absolute;
-    top: 7px;
+    top: 8px;
     left: 60%;
     width: 80%;
-    height: 1px;
+    height: 2px;
     background: rgba(255, 255, 255, 0.08);
+    transition: background 0.3s ease;
 }
 
 .stage-step:last-child::after {
     display: none;
 }
 
+.stage-step.complete::after {
+    background: var(--success);
+}
+
 .stage-dot {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
     border: 2px solid var(--t4);
     display: flex;
     align-items: center;
@@ -256,10 +272,21 @@ p.subtitle {
     transition: all 0.3s ease;
 }
 
+.stage-step.waiting .stage-dot {
+    opacity: 0.4;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
 .stage-step.active .stage-dot {
     background: var(--cyan);
     border-color: #ffffff;
-    box-shadow: 0 0 10px var(--cyan);
+    box-shadow: 0 0 12px var(--cyan);
+    animation: stagePulse 2s infinite ease-in-out;
+}
+
+@keyframes stagePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 10px var(--cyan); }
+    50%      { transform: scale(1.15); box-shadow: 0 0 18px var(--cyan); }
 }
 
 .stage-step.complete .stage-dot {
@@ -268,21 +295,39 @@ p.subtitle {
     box-shadow: 0 0 8px var(--success);
 }
 
+.stage-step.error .stage-dot {
+    background: var(--danger);
+    border-color: var(--danger);
+    box-shadow: 0 0 10px var(--danger);
+}
+
 .stage-label {
-    font-size: 0.56rem;
+    font-size: 0.58rem;
     font-weight: 800;
     font-family: var(--mono);
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--t3);
+    transition: color 0.3s ease;
+}
+
+.stage-step.waiting .stage-label {
+    opacity: 0.45;
 }
 
 .stage-step.active .stage-label {
     color: var(--cyan);
+    opacity: 1;
 }
 
 .stage-step.complete .stage-label {
     color: var(--success);
+    opacity: 1;
+}
+
+.stage-step.error .stage-label {
+    color: var(--danger);
+    opacity: 1;
 }
 
 /* Tabs */
@@ -629,28 +674,29 @@ video {
         <p class="subtitle">Biometric facial feature enrollment for ProctorAI Security Operations Center.</p>
 
         <!-- Stage Progress Tracker -->
-        <div class="stage-tracker">
-            <div class="stage-step active">
+        <div class="stage-tracker" id="stageTracker">
+            <div class="stage-step active" id="step-identity">
                 <div class="stage-dot"></div>
                 <span class="stage-label">Identity</span>
             </div>
-            <div class="stage-step active">
+            <div class="stage-step waiting" id="step-facescan">
                 <div class="stage-dot"></div>
                 <span class="stage-label">Face Scan</span>
             </div>
-            <div class="stage-step">
+            <div class="stage-step waiting" id="step-align">
                 <div class="stage-dot"></div>
                 <span class="stage-label">Align</span>
             </div>
-            <div class="stage-step">
+            <div class="stage-step waiting" id="step-enroll">
                 <div class="stage-dot"></div>
                 <span class="stage-label">Enroll</span>
             </div>
-            <div class="stage-step">
+            <div class="stage-step waiting" id="step-ready">
                 <div class="stage-dot"></div>
                 <span class="stage-label">Ready</span>
             </div>
         </div>
+        <div class="stage-status-sub" id="timelineStatus">Identity profile required — enter name & student ID</div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
@@ -717,15 +763,85 @@ video {
         const studentName = document.getElementById('studentName');
         const studentId = document.getElementById('studentId');
         const statusMsg = document.getElementById('statusMsg');
+        const timelineStatus = document.getElementById('timelineStatus');
+
+        const steps = {
+            identity: document.getElementById('step-identity'),
+            facescan: document.getElementById('step-facescan'),
+            align: document.getElementById('step-align'),
+            enroll: document.getElementById('step-enroll'),
+            ready: document.getElementById('step-ready')
+        };
+
+        function updateTimeline(states, message, isError = false) {
+            Object.keys(states).forEach(key => {
+                if (steps[key]) {
+                    steps[key].className = 'stage-step ' + states[key];
+                }
+            });
+            if (timelineStatus && message) {
+                timelineStatus.textContent = message;
+                timelineStatus.style.color = isError ? 'var(--danger)' : (states.ready === 'complete' ? 'var(--success)' : 'var(--cyan)');
+            }
+        }
+
+        // Check identity inputs
+        function checkIdentityState() {
+            const name = studentName.value.trim();
+            const id = studentId.value.trim();
+            const isCamReady = (video.readyState >= 2 && !video.paused);
+            
+            if (name && id) {
+                if (isCamReady) {
+                    updateTimeline({
+                        identity: 'complete',
+                        facescan: 'complete',
+                        align: 'active',
+                        enroll: 'waiting',
+                        ready: 'waiting'
+                    }, 'Identity profile verified · Align face with camera');
+                } else {
+                    updateTimeline({
+                        identity: 'complete',
+                        facescan: 'active',
+                        align: 'waiting',
+                        enroll: 'waiting',
+                        ready: 'waiting'
+                    }, 'Identity profile entered · Connecting camera stream...');
+                }
+            } else {
+                updateTimeline({
+                    identity: 'active',
+                    facescan: 'waiting',
+                    align: 'waiting',
+                    enroll: 'waiting',
+                    ready: 'waiting'
+                }, 'Enter Student Full Name and Identification ID');
+            }
+        }
+
+        studentName.addEventListener('input', checkIdentityState);
+        studentId.addEventListener('input', checkIdentityState);
 
         // Access webcam
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => {
                 video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play();
+                    checkIdentityState();
+                };
             })
             .catch(err => {
                 showMsg('Error accessing webcam: ' + err.message, 'error');
                 captureBtn.disabled = true;
+                updateTimeline({
+                    identity: 'active',
+                    facescan: 'error',
+                    align: 'waiting',
+                    enroll: 'waiting',
+                    ready: 'waiting'
+                }, 'Camera connection failed: ' + err.message, true);
             });
 
         captureBtn.addEventListener('click', async () => {
@@ -734,6 +850,13 @@ video {
 
             if (!name || !id) {
                 showMsg('Please enter both Full Name and Student ID.', 'error');
+                updateTimeline({
+                    identity: 'error',
+                    facescan: 'waiting',
+                    align: 'waiting',
+                    enroll: 'waiting',
+                    ready: 'waiting'
+                }, 'Both Student Name and ID are required to proceed', true);
                 return;
             }
 
@@ -741,10 +864,18 @@ video {
             captureBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Processing Neural Alignment...';
             lucide.createIcons();
 
+            updateTimeline({
+                identity: 'complete',
+                facescan: 'complete',
+                align: 'complete',
+                enroll: 'active',
+                ready: 'waiting'
+            }, 'Extracting facial landmarks & registering biometric template...');
+
             // Capture frame from video
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
@@ -766,15 +897,36 @@ video {
                     showMsg('Successfully enrolled Face ID for ' + name + ' (' + id + ')!', 'success');
                     studentName.value = '';
                     studentId.value = '';
+                    updateTimeline({
+                        identity: 'complete',
+                        facescan: 'complete',
+                        align: 'complete',
+                        enroll: 'complete',
+                        ready: 'complete'
+                    }, '✓ Biometric enrollment complete — template stored in database');
                 } else {
                     if (response.status === 401) {
                         window.location.href = 'supervisor_login.html';
                         return;
                     }
                     showMsg(result.error || 'Failed to enroll face.', 'error');
+                    updateTimeline({
+                        identity: 'complete',
+                        facescan: 'complete',
+                        align: 'error',
+                        enroll: 'error',
+                        ready: 'waiting'
+                    }, result.error || 'Enrollment failed — please realign and retry', true);
                 }
             } catch (err) {
                 showMsg('Network error. Is the server running?', 'error');
+                updateTimeline({
+                    identity: 'complete',
+                    facescan: 'complete',
+                    align: 'active',
+                    enroll: 'error',
+                    ready: 'waiting'
+                }, 'Network error communicating with AI server', true);
             } finally {
                 captureBtn.disabled = false;
                 captureBtn.innerHTML = '<i data-lucide="camera"></i> Register Biometric Face ID';

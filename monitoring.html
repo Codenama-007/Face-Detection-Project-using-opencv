@@ -2362,9 +2362,9 @@ function updateExamScore(students) {
         $trustStatusTag.style.color = 'var(--t3)';
         $trustStatusTag.style.background = 'rgba(255,255,255,0.04)';
 
-        $scoreStatusPill.textContent = 'NOMINAL';
-        $scoreStatusPill.style.color = 'var(--cyan)';
-        $scoreStatusPill.style.background = 'var(--accent-dim)';
+        $scoreStatusPill.textContent = 'STANDBY';
+        $scoreStatusPill.style.color = 'var(--t3)';
+        $scoreStatusPill.style.background = 'rgba(255,255,255,0.04)';
         return;
     }
 
@@ -2840,8 +2840,6 @@ function init() {
         lucide.createIcons();
     }
 
-    logActivity('ProctorAI Security Operations Center initialized');
-    addAlert('SOC initialized — awaiting camera stream...', 'info');
     setEnginesState(false);
     updateExamScore([]);
     checkSessionStatus();
