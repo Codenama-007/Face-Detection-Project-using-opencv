@@ -1910,10 +1910,10 @@ body::after {
             <div class="h-divider"></div>
             
             <div class="sup-profile">
-                <img src="https://i.pravatar.cc/150?img=11" alt="Supervisor Avatar" class="sup-avatar">
+                <div class="sup-avatar" style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#0284c7);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;" id="supAvatarInitial">S</div>
                 <div class="sup-meta">
-                    <span class="sup-name">Supervisor</span>
-                    <span class="sup-role">Command Admin</span>
+                    <span class="sup-name" id="supNameDisplay">Supervisor</span>
+                    <span class="sup-role" id="supInstDisplay">Apex Institute</span>
                 </div>
             </div>
 
@@ -2866,12 +2866,39 @@ $endSessionBtn.addEventListener('click', async () => {
     }
 });
 
+// ── SUPERVISOR AUTH & CONTEXT ────────────────
+async function checkAuthContext() {
+    try {
+        const res = await fetch(`${BASE}/api/auth/me`, { credentials: 'include' });
+        const data = await res.json();
+        if (!data.authenticated) {
+            window.location.href = 'login.html';
+            return;
+        }
+        if (data.user.role === 'STUDENT') {
+            window.location.href = 'student_dashboard.html';
+            return;
+        }
+        if (document.getElementById('supNameDisplay')) {
+            document.getElementById('supNameDisplay').textContent = data.user.name || 'Supervisor';
+        }
+        if (document.getElementById('supInstDisplay')) {
+            document.getElementById('supInstDisplay').textContent = `${data.user.role} · ${data.user.institution_name || 'Apex Institute'}`;
+        }
+        if (document.getElementById('supAvatarInitial')) {
+            document.getElementById('supAvatarInitial').textContent = (data.user.name || 'S').charAt(0).toUpperCase();
+        }
+    } catch {
+        // Continue in dev
+    }
+}
+
 // ── SUPERVISOR LOGOUT ────────────────────────
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     try {
-        await fetch(`${BASE}/api/supervisor_logout`, { method: 'POST', credentials: 'include' });
+        await fetch(`${BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     } catch {}
-    window.location.href = 'supervisor_login.html';
+    window.location.href = 'login.html';
 });
 
 // ── INITIALIZATION ───────────────────────────
@@ -2881,6 +2908,7 @@ function init() {
         lucide.createIcons();
     }
 
+    checkAuthContext();
     setEnginesState(false);
     updateExamScore([]);
     checkSessionStatus();

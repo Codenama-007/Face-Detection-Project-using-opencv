@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Command & Multi-Institution Administration | ProctorAI</title>
+    <meta name="description" content="ProctorAI Enterprise Multi-Institution Administration Dashboard.">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — ENTERPRISE ADMIN COMMAND CENTER
+   ═════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg-base:        #06090e;
+    --bg-surface:     #080c14;
+    --bg-elevated:    #0e1422;
+    --panel-glass:    rgba(14, 20, 34, 0.75);
+    
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-light:   rgba(255, 255, 255, 0.12);
+    --border-hover:   rgba(56, 189, 248, 0.35);
+    
+    --cyan:           #00e5ff;
+    --cyan-glow:      rgba(0, 229, 255, 0.35);
+    --accent:         #38bdf8;
+    
+    --success:        #10b981;
+    --success-dim:    rgba(16, 185, 129, 0.12);
+    --warning:        #f59e0b;
+    --warning-dim:    rgba(245, 158, 11, 0.12);
+    --danger:         #ef4444;
+    --danger-dim:     rgba(239, 68, 68, 0.12);
+    
+    --t1:             #f8fafc;
+    --t2:             #94a3b8;
+    --t3:             #64748b;
+    --t4:             #334155;
+    
+    --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
+}
+
+body {
+    font-family: var(--font);
+    background-color: var(--bg-base);
+    color: var(--t1);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Background Grids & Glow */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(0, 229, 255, 0.05) 0%, transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.05) 0%, transparent 45%),
+        var(--bg-base);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Top Navigation Bar ── */
+.top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: 68px;
+    background: rgba(6, 9, 14, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+}
+
+.brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.brand-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.2);
+}
+
+.brand-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, #a5f3fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-sub {
+    font-size: 0.68rem;
+    font-family: var(--mono);
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.inst-select-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 0.35rem 0.75rem;
+}
+
+.inst-select-wrap label {
+    font-size: 0.68rem;
+    font-family: var(--mono);
+    color: var(--t3);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.inst-select {
+    background: transparent;
+    border: none;
+    color: var(--cyan);
+    font-family: var(--font);
+    font-size: 0.82rem;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+}
+
+.inst-select option {
+    background: var(--bg-surface);
+    color: #fff;
+}
+
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    padding: 0.4rem 0.85rem;
+    border-radius: 99px;
+    font-size: 0.78rem;
+    color: var(--t1);
+}
+
+.user-badge-role {
+    font-size: 0.65rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: var(--cyan);
+    letter-spacing: 0.05em;
+}
+
+.btn-signout {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s;
+}
+
+.btn-signout:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: var(--danger);
+    color: #fff;
+}
+
+/* ── Main Container ── */
+.main-wrap {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* ── Stats Grid ── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--panel-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 1.5rem;
+    backdrop-filter: blur(16px);
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+}
+
+.stat-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.stat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.stat-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--t3);
+}
+
+.stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    letter-spacing: -0.03em;
+    color: var(--t1);
+    line-height: 1;
+    margin-bottom: 0.35rem;
+}
+
+.stat-sub {
+    font-size: 0.75rem;
+    color: var(--t2);
+}
+
+/* ── Tab Navigation ── */
+.tabs-nav {
+    display: flex;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    color: var(--t2);
+    padding: 0.65rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    border-color: var(--border-light);
+}
+
+.tab-btn.active {
+    background: rgba(0, 229, 255, 0.12);
+    border-color: rgba(0, 229, 255, 0.4);
+    color: var(--cyan);
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.15);
+}
+
+/* ── Content Card & Tables ── */
+.panel-card {
+    background: var(--panel-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    padding: 1.75rem;
+    backdrop-filter: blur(16px);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.panel-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #fff;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 100%);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #fff;
+    padding: 0.6rem 1.15rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 229, 255, 0.4);
+    border-color: var(--cyan);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+.data-table th {
+    padding: 0.85rem 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--t3);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--t1);
+}
+
+.data-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.status-badge.active {
+    background: var(--success-dim);
+    color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.disabled {
+    background: var(--danger-dim);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.tag-pill {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.btn-action {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle);
+    color: var(--t2);
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-action:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.btn-action.toggle-btn:hover {
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+/* ── Modals ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.modal-overlay.open {
+    display: flex;
+}
+
+.modal-box {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 480px;
+    padding: 2rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: var(--t3);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+.form-group {
+    margin-bottom: 1.15rem;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t2);
+    margin-bottom: 0.4rem;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: rgba(6, 9, 14, 0.85);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 0.88rem;
+    outline: none;
+}
+
+.form-group input:focus, .form-group select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+}
+
+@media (max-width: 900px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .top-nav {
+        padding: 0 1rem;
+    }
+}
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <header class="top-nav">
+        <div class="brand-wrap">
+            <div class="brand-badge">
+                <i data-lucide="shield-alert"></i>
+            </div>
+            <div>
+                <div class="brand-title">ProctorAI</div>
+                <div class="brand-sub">Platform Command Core</div>
+            </div>
+        </div>
+
+        <div class="nav-actions">
+            <!-- Global Institution Switcher for Admin -->
+            <div class="inst-select-wrap">
+                <label for="globalInstFilter">Scope:</label>
+                <select id="globalInstFilter" class="inst-select" onchange="onInstitutionFilterChange()">
+                    <option value="ALL">ALL INSTITUTIONS (GLOBAL)</option>
+                </select>
+            </div>
+
+            <div class="user-badge">
+                <i data-lucide="user-check" style="width:14px;height:14px;color:var(--cyan);"></i>
+                <span id="adminName">Administrator</span>
+                <span class="user-badge-role">ADMIN</span>
+            </div>
+
+            <button class="btn-signout" onclick="handleSignOut()">
+                <i data-lucide="log-out" style="width:13px;height:13px;"></i> Sign Out
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-wrap">
+        
+        <!-- Platform Metrics Overview -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Institutions</span>
+                    <div class="stat-icon"><i data-lucide="building"></i></div>
+                </div>
+                <div class="stat-value" id="statInstitutions">-</div>
+                <div class="stat-sub" id="statActiveInst">Active Platforms</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Supervisors</span>
+                    <div class="stat-icon"><i data-lucide="shield-check"></i></div>
+                </div>
+                <div class="stat-value" id="statSupervisors">-</div>
+                <div class="stat-sub">Active Proctor Leads</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Monitored Students</span>
+                    <div class="stat-icon"><i data-lucide="users"></i></div>
+                </div>
+                <div class="stat-value" id="statStudents">-</div>
+                <div class="stat-sub">Biometric Profiles</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <span class="stat-label">Global Trust Score</span>
+                    <div class="stat-icon"><i data-lucide="activity"></i></div>
+                </div>
+                <div class="stat-value" style="color:var(--success);" id="statTrust">98.4%</div>
+                <div class="stat-sub" id="statEvents">Real-Time Security Events</div>
+            </div>
+        </section>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('institutions')">
+                <i data-lucide="landmark"></i> Institutions
+            </button>
+            <button class="tab-btn" onclick="switchTab('supervisors')">
+                <i data-lucide="shield-alert"></i> Supervisors
+            </button>
+            <button class="tab-btn" onclick="switchTab('students')">
+                <i data-lucide="graduation-cap"></i> Students
+            </button>
+            <button class="tab-btn" onclick="switchTab('audit')">
+                <i data-lucide="terminal"></i> Security Audit Stream
+            </button>
+        </div>
+
+        <!-- TAB 1: INSTITUTIONS -->
+        <div id="tab-institutions" class="panel-card">
+            <div class="panel-header">
+                <h3 class="panel-title">Registered Educational & Examination Institutions</h3>
+                <button class="btn-primary" onclick="openModal('createInstModal')">
+                    <i data-lucide="plus"></i> Add New Institution
+                </button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Institution Code</th>
+                        <th>Institution Name</th>
+                        <th>Supervisors</th>
+                        <th>Students</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="institutionsTableBody">
+                    <tr><td colspan="7" style="text-align:center;color:var(--t3);">Loading institutions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB 2: SUPERVISORS -->
+        <div id="tab-supervisors" class="panel-card" style="display:none;">
+            <div class="panel-header">
+                <h3 class="panel-title">Active Supervisors & Proctor Commanders</h3>
+                <button class="btn-primary" onclick="openModal('createSupervisorModal')">
+                    <i data-lucide="user-plus"></i> Create Supervisor
+                </button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Assigned Institution</th>
+                        <th>Status</th>
+                        <th>Registered</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="supervisorsTableBody">
+                    <tr><td colspan="6" style="text-align:center;color:var(--t3);">Loading supervisors...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB 3: STUDENTS -->
+        <div id="tab-students" class="panel-card" style="display:none;">
+            <div class="panel-header">
+                <h3 class="panel-title">Enrolled Students & Candidates</h3>
+                <button class="btn-primary" onclick="openModal('createStudentModal')">
+                    <i data-lucide="user-plus"></i> Enroll Student Account
+                </button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Institution</th>
+                        <th>Status</th>
+                        <th>Enrolled Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTableBody">
+                    <tr><td colspan="7" style="text-align:center;color:var(--t3);">Loading students...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TAB 4: AUDIT STREAM -->
+        <div id="tab-audit" class="panel-card" style="display:none;">
+            <div class="panel-header">
+                <h3 class="panel-title">Platform-Wide Multi-Tenant Security Event Feed</h3>
+                <button class="btn-primary" onclick="loadAuditLogs()">
+                    <i data-lucide="refresh-cw"></i> Refresh Telemetry
+                </button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Institution</th>
+                        <th>Subject ID</th>
+                        <th>Security Event</th>
+                        <th>Posture</th>
+                        <th>Risk Score</th>
+                    </tr>
+                </thead>
+                <tbody id="auditTableBody">
+                    <tr><td colspan="6" style="text-align:center;color:var(--t3);">Loading security events...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <!-- MODAL 1: Create Institution -->
+    <div id="createInstModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Institution</h3>
+                <button class="modal-close" onclick="closeModal('createInstModal')">&times;</button>
+            </div>
+            <form onsubmit="handleCreateInstitution(event)">
+                <div class="form-group">
+                    <label>Institution Name</label>
+                    <input type="text" id="newInstName" placeholder="e.g. Stanford Technological University" required>
+                </div>
+                <div class="form-group">
+                    <label>Institution Code</label>
+                    <input type="text" id="newInstCode" placeholder="e.g. STAN-TECH" required>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:1rem;">
+                    Provision Institution Platform
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Create Supervisor -->
+    <div id="createSupervisorModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Provision Supervisor Account</h3>
+                <button class="modal-close" onclick="closeModal('createSupervisorModal')">&times;</button>
+            </div>
+            <form onsubmit="handleCreateSupervisor(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="newSupName" placeholder="e.g. Dr. John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="newSupUsername" placeholder="e.g. supervisor.stanford" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="newSupPassword" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label>Assign Institution</label>
+                    <select id="newSupInstitution" required></select>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:1rem;">
+                    Create Supervisor Clearance
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Create Student -->
+    <div id="createStudentModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Register Student User</h3>
+                <button class="modal-close" onclick="closeModal('createStudentModal')">&times;</button>
+            </div>
+            <form onsubmit="handleCreateStudent(event)">
+                <div class="form-group">
+                    <label>Student ID</label>
+                    <input type="text" id="newStuId" placeholder="e.g. STU-1092" required>
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="newStuName" placeholder="e.g. Sarah Jenkins" required>
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="newStuUsername" placeholder="e.g. student.sarah" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="newStuPassword" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label>Institution</label>
+                    <select id="newStuInstitution" required></select>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:1rem;">
+                    Enroll Student Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Reset Password -->
+    <div id="resetPwdModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Reset User Password</h3>
+                <button class="modal-close" onclick="closeModal('resetPwdModal')">&times;</button>
+            </div>
+            <form onsubmit="handleResetPassword(event)">
+                <input type="hidden" id="resetUserId">
+                <div class="form-group">
+                    <label>User Target</label>
+                    <input type="text" id="resetTargetName" disabled style="opacity:0.7;">
+                </div>
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" id="resetNewPassword" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:1rem;">
+                    Update User Credentials
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'institutions';
+        let institutionsData = [];
+
+        async function init() {
+            lucide.createIcons();
+            await checkAuth();
+            await loadOverviewStats();
+            await loadInstitutions();
+            await loadSupervisors();
+            await loadStudents();
+            await loadAuditLogs();
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/me', { credentials: 'include' });
+                const data = await res.json();
+                if (!data.authenticated || data.user.role !== 'ADMIN') {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                document.getElementById('adminName').textContent = data.user.name || 'Admin';
+            } catch {
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadOverviewStats() {
+            try {
+                const res = await fetch('/api/admin/overview', { credentials: 'include' });
+                const stats = await res.json();
+                document.getElementById('statInstitutions').textContent = stats.total_institutions || 0;
+                document.getElementById('statActiveInst').textContent = `${stats.active_institutions || 0} Active / ${stats.total_institutions || 0} Total`;
+                document.getElementById('statSupervisors').textContent = stats.total_supervisors || 0;
+                document.getElementById('statStudents').textContent = stats.total_students || 0;
+                document.getElementById('statTrust').textContent = `${stats.platform_trust_score || 98.4}%`;
+                document.getElementById('statEvents').textContent = `${stats.total_events || 0} Monitored Audit Logs`;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadInstitutions() {
+            try {
+                const res = await fetch('/api/admin/institutions', { credentials: 'include' });
+                institutionsData = await res.json();
+                
+                // Populate global selector & dropdowns
+                const $select = document.getElementById('globalInstFilter');
+                const $supSelect = document.getElementById('newSupInstitution');
+                const $stuSelect = document.getElementById('newStuInstitution');
+
+                $select.innerHTML = '<option value="ALL">ALL INSTITUTIONS (GLOBAL)</option>';
+                $supSelect.innerHTML = '';
+                $stuSelect.innerHTML = '';
+
+                institutionsData.forEach(inst => {
+                    $select.innerHTML += `<option value="${inst.institution_id}">${inst.institution_name} (${inst.institution_code})</option>`;
+                    $supSelect.innerHTML += `<option value="${inst.institution_id}">${inst.institution_name}</option>`;
+                    $stuSelect.innerHTML += `<option value="${inst.institution_id}">${inst.institution_name}</option>`;
+                });
+
+                // Render table
+                const tbody = document.getElementById('institutionsTableBody');
+                if (institutionsData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No institutions created yet.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = institutionsData.map(inst => `
+                    <tr>
+                        <td><span class="tag-pill">${inst.institution_code}</span></td>
+                        <td style="font-weight:700;color:#fff;">${inst.institution_name}</td>
+                        <td>${inst.supervisor_count || 0} Supervisors</td>
+                        <td>${inst.student_count || 0} Students</td>
+                        <td><span class="status-badge ${inst.status.toLowerCase()}">${inst.status}</span></td>
+                        <td style="color:var(--t3);font-size:0.75rem;">${inst.created_at}</td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="btn-action toggle-btn" onclick="toggleInstStatus('${inst.institution_id}', '${inst.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'}')">
+                                    ${inst.status === 'ACTIVE' ? 'Disable' : 'Enable'}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+                lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadSupervisors() {
+            try {
+                const inst = document.getElementById('globalInstFilter').value;
+                const url = inst === 'ALL' ? '/api/admin/users?role=SUPERVISOR' : `/api/admin/users?role=SUPERVISOR&institution_id=${inst}`;
+                const res = await fetch(url, { credentials: 'include' });
+                const users = await res.json();
+                const tbody = document.getElementById('supervisorsTableBody');
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No supervisors found for this selection.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = users.map(u => `
+                    <tr>
+                        <td style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${u.username}</td>
+                        <td style="font-weight:600;">${u.name}</td>
+                        <td><span class="tag-pill">${u.institution_name || 'General'}</span></td>
+                        <td><span class="status-badge ${u.status.toLowerCase()}">${u.status}</span></td>
+                        <td style="color:var(--t3);font-size:0.75rem;">${u.created_at}</td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="btn-action" onclick="openResetPassword(${u.user_id}, '${u.name}')">Reset Pwd</button>
+                                <button class="btn-action toggle-btn" onclick="toggleUserStatus(${u.user_id}, '${u.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'}')">
+                                    ${u.status === 'ACTIVE' ? 'Disable' : 'Enable'}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadStudents() {
+            try {
+                const inst = document.getElementById('globalInstFilter').value;
+                const url = inst === 'ALL' ? '/api/admin/users?role=STUDENT' : `/api/admin/users?role=STUDENT&institution_id=${inst}`;
+                const res = await fetch(url, { credentials: 'include' });
+                const users = await res.json();
+                const tbody = document.getElementById('studentsTableBody');
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No students found for this selection.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = users.map(u => `
+                    <tr>
+                        <td style="font-family:var(--mono);color:var(--accent);font-weight:700;">${u.student_id || '-'}</td>
+                        <td style="font-family:var(--mono);">${u.username}</td>
+                        <td style="font-weight:600;">${u.name}</td>
+                        <td><span class="tag-pill">${u.institution_name || 'General'}</span></td>
+                        <td><span class="status-badge ${u.status.toLowerCase()}">${u.status}</span></td>
+                        <td style="color:var(--t3);font-size:0.75rem;">${u.created_at}</td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="btn-action" onclick="openResetPassword(${u.user_id}, '${u.name}')">Reset Pwd</button>
+                                <button class="btn-action toggle-btn" onclick="toggleUserStatus(${u.user_id}, '${u.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'}')">
+                                    ${u.status === 'ACTIVE' ? 'Disable' : 'Enable'}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadAuditLogs() {
+            try {
+                const inst = document.getElementById('globalInstFilter').value;
+                const url = inst === 'ALL' ? '/api/alerts' : `/api/alerts?institution_id=${inst}`;
+                const res = await fetch(url, { credentials: 'include' });
+                const logs = await res.json();
+                const tbody = document.getElementById('auditTableBody');
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--t3);">No security events recorded.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = logs.map(l => `
+                    <tr>
+                        <td style="font-family:var(--mono);font-size:0.75rem;color:var(--t3);">${l.timestamp}</td>
+                        <td><span class="tag-pill">${l.institution_id || 'Global'}</span></td>
+                        <td style="font-family:var(--mono);font-weight:700;">${l.student_id || 'Unknown'}</td>
+                        <td style="font-weight:600;color:#fff;">${l.status}</td>
+                        <td style="font-size:0.78rem;color:var(--accent);">${l.direction || 'CENTER'}</td>
+                        <td style="font-family:var(--mono);font-weight:700;color:${l.risk_score > 50 ? 'var(--danger)' : 'var(--success)'};">${l.risk_score}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-institutions').style.display = tabId === 'institutions' ? 'block' : 'none';
+            document.getElementById('tab-supervisors').style.display = tabId === 'supervisors' ? 'block' : 'none';
+            document.getElementById('tab-students').style.display = tabId === 'students' ? 'block' : 'none';
+            document.getElementById('tab-audit').style.display = tabId === 'audit' ? 'block' : 'none';
+            lucide.createIcons();
+        }
+
+        function onInstitutionFilterChange() {
+            loadSupervisors();
+            loadStudents();
+            loadAuditLogs();
+        }
+
+        // Modal Handlers
+        function openModal(id) {
+            document.getElementById(id).classList.add('open');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+
+        function openResetPassword(userId, name) {
+            document.getElementById('resetUserId').value = userId;
+            document.getElementById('resetTargetName').value = name;
+            document.getElementById('resetNewPassword').value = '';
+            openModal('resetPwdModal');
+        }
+
+        async function handleCreateInstitution(e) {
+            e.preventDefault();
+            const name = document.getElementById('newInstName').value.trim();
+            const code = document.getElementById('newInstCode').value.trim();
+            const res = await fetch('/api/admin/institutions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ institution_name: name, institution_code: code })
+            });
+            if (res.ok) {
+                closeModal('createInstModal');
+                document.getElementById('newInstName').value = '';
+                document.getElementById('newInstCode').value = '';
+                await loadInstitutions();
+                await loadOverviewStats();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to create institution');
+            }
+        }
+
+        async function handleCreateSupervisor(e) {
+            e.preventDefault();
+            const name = document.getElementById('newSupName').value.trim();
+            const username = document.getElementById('newSupUsername').value.trim();
+            const password = document.getElementById('newSupPassword').value.trim();
+            const institution_id = document.getElementById('newSupInstitution').value;
+            const res = await fetch('/api/admin/users/supervisor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ name, username, password, institution_id })
+            });
+            if (res.ok) {
+                closeModal('createSupervisorModal');
+                await loadSupervisors();
+                await loadOverviewStats();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to create supervisor');
+            }
+        }
+
+        async function handleCreateStudent(e) {
+            e.preventDefault();
+            const student_id = document.getElementById('newStuId').value.trim();
+            const name = document.getElementById('newStuName').value.trim();
+            const username = document.getElementById('newStuUsername').value.trim();
+            const password = document.getElementById('newStuPassword').value.trim();
+            const institution_id = document.getElementById('newStuInstitution').value;
+            const res = await fetch('/api/admin/users/student', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ student_id, name, username, password, institution_id })
+            });
+            if (res.ok) {
+                closeModal('createStudentModal');
+                await loadStudents();
+                await loadOverviewStats();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to enroll student');
+            }
+        }
+
+        async function toggleInstStatus(instId, status) {
+            await fetch(`/api/admin/institutions/${instId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ status })
+            });
+            await loadInstitutions();
+            await loadOverviewStats();
+        }
+
+        async function toggleUserStatus(userId, status) {
+            await fetch(`/api/admin/users/${userId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ status })
+            });
+            await loadSupervisors();
+            await loadStudents();
+        }
+
+        async function handleResetPassword(e) {
+            e.preventDefault();
+            const userId = document.getElementById('resetUserId').value;
+            const new_password = document.getElementById('resetNewPassword').value.trim();
+            const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ new_password })
+            });
+            if (res.ok) {
+                closeModal('resetPwdModal');
+                alert('Password reset successfully');
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to reset password');
+            }
+        }
+
+        async function handleSignOut() {
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+            window.location.href = 'login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

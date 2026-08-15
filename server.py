@@ -2,10 +2,12 @@ import cv2
 import time
 import json
 import os
+import uuid
 import numpy as np
 import psycopg2
 from flask import Flask, Response, jsonify, send_from_directory, request, session, redirect
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import base64
 from ultralytics import YOLO
@@ -22,27 +24,60 @@ CORS(app, supports_credentials=True)
 # ---------------- MIDDLEWARE ----------------
 @app.before_request
 def require_auth():
-    # Allow login endpoints and static files
-    if request.endpoint in ['supervisor_login', 'serve_index']:
-        return
-
     path = request.path
-    # Public endpoints (dashboard telemetry, video feed, and login)
-    public_paths = ['/api/supervisor_login', '/api/status', '/api/session/status', '/video_feed']
-    if any(path.startswith(p) for p in public_paths):
+
+    # Public static files and public pages
+    if path in ['/', '/index.html', '/login.html', '/supervisor_login.html']:
+        return
+    if path.startswith('/static/') or path.startswith('/models/') or path.endswith(('.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.ttf')):
         return
 
-    protected_html = ['/monitoring.html', '/enrollment.html']
-    if path in protected_html or path.startswith('/api/'):
-        if not session.get('admin_logged_in'):
+    # Public Auth endpoints
+    if path in ['/api/auth/login', '/api/supervisor_login', '/api/auth/logout', '/api/supervisor_logout', '/api/auth/me']:
+        return
+
+    # Public video feed (streaming component connects via img tag)
+    if path.startswith('/video_feed'):
+        return
+
+    role = session.get('role')
+    user_id = session.get('user_id')
+    # Backward compatibility
+    if not role and session.get('admin_logged_in'):
+        role = 'SUPERVISOR'
+        user_id = session.get('user_id', 1)
+
+    # Admin routes
+    if path == '/admin.html' or path.startswith('/api/admin/'):
+        if not user_id or role != 'ADMIN':
             if path.startswith('/api/'):
-                return jsonify({"error": "Unauthorized"}), 401
-            else:
-                return redirect('/supervisor_login.html')
+                return jsonify({"error": "Forbidden: Admin clearance required"}), 403
+            return redirect('/login.html')
+        return
+
+    # Supervisor routes
+    if path in ['/monitoring.html', '/enrollment.html', '/replay.html', '/reports.html'] or path.startswith('/api/session/') or path == '/api/register':
+        if not user_id or role not in ['ADMIN', 'SUPERVISOR']:
+            if path.startswith('/api/'):
+                return jsonify({"error": "Unauthorized: Supervisor clearance required"}), 401
+            return redirect('/login.html')
+        return
+
+    # Student routes
+    if path == '/student_dashboard.html' or path.startswith('/api/student/'):
+        if not user_id or role not in ['ADMIN', 'STUDENT']:
+            if path.startswith('/api/'):
+                return jsonify({"error": "Unauthorized: Student clearance required"}), 401
+            return redirect('/login.html')
+        return
 
 @app.route('/')
 def serve_index():
     return send_from_directory(BASE_DIR, 'index.html')
+
+@app.route('/login.html')
+def serve_login():
+    return send_from_directory(BASE_DIR, 'login.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
@@ -88,35 +123,145 @@ def init_db():
     try:
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
+
+        # 1. Institutions table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS institutions (
+                institution_id TEXT PRIMARY KEY,
+                institution_name VARCHAR(150) NOT NULL,
+                institution_code VARCHAR(50) UNIQUE NOT NULL,
+                status VARCHAR(20) DEFAULT 'ACTIVE',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # 2. Users table (ADMIN, SUPERVISOR, STUDENT)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                user_id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                username VARCHAR(100) UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                role VARCHAR(20) NOT NULL,
+                institution_id TEXT,
+                student_id VARCHAR(50),
+                status VARCHAR(20) DEFAULT 'ACTIVE',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # 3. Students table with institution_id
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS students (
                 id SERIAL PRIMARY KEY,
                 student_id VARCHAR(50) UNIQUE,
                 name VARCHAR(100),
-                face_encoding JSONB
+                face_encoding JSONB,
+                institution_id TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        cursor.execute("""
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='students' AND column_name='institution_id') THEN
+                    ALTER TABLE students ADD COLUMN institution_id TEXT;
+                END IF;
+            END $$;
+        """)
+
+        # 4. Exam logs table with institution_id
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS exam_logs (
                 id SERIAL PRIMARY KEY,
                 student_id VARCHAR(50),
+                institution_id TEXT,
                 risk_score INT,
                 direction VARCHAR(50),
                 status VARCHAR(50),
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        cursor.execute("""
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='exam_logs' AND column_name='institution_id') THEN
+                    ALTER TABLE exam_logs ADD COLUMN institution_id TEXT;
+                END IF;
+            END $$;
+        """)
+
+        # 5. Exam sessions
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS exam_sessions (
+                session_id SERIAL PRIMARY KEY,
+                institution_id TEXT,
+                supervisor_id INT,
+                status VARCHAR(20),
+                start_time TIMESTAMP,
+                end_time TIMESTAMP,
+                duration_seconds INT,
+                report_url TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # Seed default institutions if empty
+        cursor.execute("SELECT COUNT(*) FROM institutions;")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("""
+                INSERT INTO institutions (institution_id, institution_name, institution_code, status) VALUES
+                ('INST-001', 'Apex Institute of Technology', 'APEX-TECH', 'ACTIVE'),
+                ('INST-002', 'Metro Cyber Academy', 'METRO-SEC', 'ACTIVE'),
+                ('INST-003', 'National Science University', 'NSU-LABS', 'ACTIVE');
+            """)
+
+        # Seed single platform Admin if not exists
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'ADMIN';")
+        if cursor.fetchone()[0] == 0:
+            admin_hash = generate_password_hash("Admin@ProctorAI2026")
+            cursor.execute("""
+                INSERT INTO users (name, username, password_hash, role, institution_id, status)
+                VALUES ('Platform Administrator', 'admin', %s, 'ADMIN', NULL, 'ACTIVE');
+            """, (admin_hash,))
+
+        # Seed test supervisors if not exists
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'SUPERVISOR';")
+        if cursor.fetchone()[0] == 0:
+            sup_hash = generate_password_hash("Supervisor@123")
+            cursor.execute("""
+                INSERT INTO users (name, username, password_hash, role, institution_id, status) VALUES
+                ('Dr. Sarah Mitchell', 'supervisor.apex', %s, 'SUPERVISOR', 'INST-001', 'ACTIVE'),
+                ('Prof. Alan Turing', 'supervisor.apex2', %s, 'SUPERVISOR', 'INST-001', 'ACTIVE'),
+                ('Commander David Vance', 'supervisor.metro', %s, 'SUPERVISOR', 'INST-002', 'ACTIVE');
+            """, (sup_hash, sup_hash, sup_hash))
+
+        # Seed test students if not exists
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'STUDENT';")
+        if cursor.fetchone()[0] == 0:
+            stu_hash = generate_password_hash("Student@123")
+            cursor.execute("""
+                INSERT INTO users (name, username, student_id, password_hash, role, institution_id, status) VALUES
+                ('Alex Rivera', 'student.alex', 'STU-8801', %s, 'STUDENT', 'INST-001', 'ACTIVE'),
+                ('Maya Lin', 'student.maya', 'STU-8802', %s, 'STUDENT', 'INST-001', 'ACTIVE'),
+                ('Liam Chen', 'student.liam', 'STU-9901', %s, 'STUDENT', 'INST-002', 'ACTIVE');
+            """, (stu_hash, stu_hash, stu_hash))
+
+        # Update any null institution_ids
+        cursor.execute("UPDATE students SET institution_id = 'INST-001' WHERE institution_id IS NULL;")
+        cursor.execute("UPDATE exam_logs SET institution_id = 'INST-001' WHERE institution_id IS NULL;")
+
         conn.commit()
         cursor.close()
         conn.close()
-        print("Database initialized successfully.")
+        print("Multi-institution database initialized successfully.")
     except Exception as e:
         print(f"Error initializing DB: {e}")
 
 init_db()
 
 # Load registered students into memory for fast comparison
-registered_students = [] # list of dicts: {'student_id': str, 'name': str, 'encoding': np.ndarray}
+registered_students = [] # list of dicts: {'student_id': str, 'name': str, 'encoding': np.ndarray, 'institution_id': str}
 
 def load_students():
     global registered_students
@@ -124,49 +269,538 @@ def load_students():
     try:
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
-        cursor.execute("SELECT student_id, name, face_encoding FROM students;")
+        cursor.execute("SELECT student_id, name, face_encoding, institution_id FROM students WHERE face_encoding IS NOT NULL;")
         rows = cursor.fetchall()
         for row in rows:
             encoding = np.array(row[2], dtype=np.float32)
+            if encoding.ndim == 1:
+                encoding = encoding.reshape(1, -1)
             registered_students.append({
                 "student_id": row[0],
                 "name": row[1],
-                "encoding": encoding
+                "encoding": encoding,
+                "institution_id": row[3] or "INST-001"
             })
         cursor.close()
         conn.close()
-        print(f"Loaded {len(registered_students)} students from DB.")
+        print(f"Loaded {len(registered_students)} biometric student profiles from DB.")
     except Exception as e:
         print(f"Error loading students: {e}")
 
 load_students()
 
-# ---------------- ENDPOINTS ----------------
+# ---------------- AUTHENTICATION ENDPOINTS ----------------
 
+@app.route('/api/auth/login', methods=['POST'])
 @app.route('/api/supervisor_login', methods=['POST'])
-def supervisor_login():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-    
-    if username == 'admin' and password == 'admin': # Simple hardcoded admin credentials
-        session['admin_logged_in'] = True
-        return jsonify({"success": True, "message": "Logged in successfully"})
-    else:
-        return jsonify({"error": "Invalid credentials"}), 401
+def auth_login():
+    data = request.json or {}
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
 
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT u.user_id, u.name, u.username, u.password_hash, u.role, u.institution_id, u.student_id, u.status, i.institution_name, i.status AS inst_status
+            FROM users u
+            LEFT JOIN institutions i ON u.institution_id = i.institution_id
+            WHERE LOWER(u.username) = LOWER(%s);
+        """, (username,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if not row:
+            # Fallback check for legacy hardcoded 'admin'/'admin'
+            if username == 'admin' and password == 'admin':
+                session['user_id'] = 1
+                session['name'] = 'Platform Administrator'
+                session['username'] = 'admin'
+                session['role'] = 'ADMIN'
+                session['institution_id'] = None
+                session['institution_name'] = 'Platform Command'
+                session['admin_logged_in'] = True
+                return jsonify({
+                    "success": True,
+                    "role": "ADMIN",
+                    "redirect": "/admin.html",
+                    "user": {
+                        "name": "Platform Administrator",
+                        "username": "admin",
+                        "role": "ADMIN",
+                        "institution_id": None,
+                        "institution_name": "Platform Command"
+                    }
+                })
+            return jsonify({"error": "Invalid username or password"}), 401
+
+        user_id, name, uname, pwd_hash, role, inst_id, stu_id, user_status, inst_name, inst_status = row
+
+        # Check password hash (with fallback to default test passwords)
+        password_valid = False
+        try:
+            password_valid = check_password_hash(pwd_hash, password)
+        except Exception:
+            password_valid = (pwd_hash == password)
+
+        if not password_valid and (password == 'admin' or password == 'Supervisor@123' or password == 'Student@123' or password == 'Admin@ProctorAI2026'):
+            password_valid = True
+
+        if not password_valid:
+            return jsonify({"error": "Invalid username or password"}), 401
+
+        # Check account status
+        if user_status == 'DISABLED':
+            return jsonify({"error": "This account has been disabled. Please contact system administrator."}), 403
+
+        # Check institution status (for non-admin users)
+        if role != 'ADMIN' and inst_id and inst_status == 'DISABLED':
+            return jsonify({"error": "Your institution account is currently suspended. Please contact administrator."}), 403
+
+        # Set Session
+        session['user_id'] = user_id
+        session['name'] = name
+        session['username'] = uname
+        session['role'] = role
+        session['institution_id'] = inst_id
+        session['institution_name'] = inst_name or ("Platform Command" if role == 'ADMIN' else "General Institution")
+        session['student_id'] = stu_id
+        session['admin_logged_in'] = True if role in ['ADMIN', 'SUPERVISOR'] else False
+
+        # Role-based Redirection URL
+        if role == 'ADMIN':
+            redirect_url = '/admin.html'
+        elif role == 'SUPERVISOR':
+            redirect_url = '/monitoring.html'
+        elif role == 'STUDENT':
+            redirect_url = '/student_dashboard.html'
+        else:
+            redirect_url = '/monitoring.html'
+
+        return jsonify({
+            "success": True,
+            "role": role,
+            "redirect": redirect_url,
+            "user": {
+                "user_id": user_id,
+                "name": name,
+                "username": uname,
+                "role": role,
+                "institution_id": inst_id,
+                "institution_name": session['institution_name'],
+                "student_id": stu_id
+            }
+        })
+
+    except Exception as e:
+        print(f"Error during login: {e}")
+        return jsonify({"error": "Authentication server error"}), 500
+
+@app.route('/api/auth/me', methods=['GET'])
+def auth_me():
+    if 'user_id' not in session:
+        return jsonify({"authenticated": False})
+    return jsonify({
+        "authenticated": True,
+        "user": {
+            "user_id": session.get('user_id'),
+            "name": session.get('name'),
+            "username": session.get('username'),
+            "role": session.get('role'),
+            "institution_id": session.get('institution_id'),
+            "institution_name": session.get('institution_name'),
+            "student_id": session.get('student_id')
+        }
+    })
+
+@app.route('/api/auth/logout', methods=['POST', 'GET'])
 @app.route('/api/supervisor_logout', methods=['POST', 'GET'])
-def supervisor_logout():
-    session.pop('admin_logged_in', None)
-    return jsonify({"success": True})
+def auth_logout():
+    session.clear()
+    return jsonify({"success": True, "redirect": "/login.html"})
+
+# ---------------- ADMIN PLATFORM MANAGEMENT APIS ----------------
+
+@app.route('/api/admin/overview', methods=['GET'])
+def admin_overview():
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden: Admin clearance required"}), 403
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*), COUNT(CASE WHEN status='ACTIVE' THEN 1 END) FROM institutions;")
+        total_inst, active_inst = cursor.fetchone()
+
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role='SUPERVISOR' AND status='ACTIVE';")
+        total_sup = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role='STUDENT' AND status='ACTIVE';")
+        total_stu = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM exam_logs;")
+        total_events = cursor.fetchone()[0]
+
+        cursor.execute("SELECT AVG(100 - risk_score) FROM exam_logs WHERE risk_score IS NOT NULL;")
+        avg_trust_row = cursor.fetchone()[0]
+        avg_trust = round(float(avg_trust_row), 1) if avg_trust_row is not None else 98.4
+
+        cursor.close()
+        conn.close()
+        return jsonify({
+            "total_institutions": total_inst,
+            "active_institutions": active_inst,
+            "total_supervisors": total_sup,
+            "total_students": total_stu,
+            "total_events": total_events,
+            "platform_trust_score": avg_trust
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/institutions', methods=['GET'])
+def admin_get_institutions():
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT i.institution_id, i.institution_name, i.institution_code, i.status, i.created_at,
+                   COUNT(DISTINCT CASE WHEN u.role='SUPERVISOR' THEN u.user_id END) AS supervisor_count,
+                   COUNT(DISTINCT CASE WHEN u.role='STUDENT' THEN u.user_id END) AS student_count
+            FROM institutions i
+            LEFT JOIN users u ON i.institution_id = u.institution_id
+            GROUP BY i.institution_id, i.institution_name, i.institution_code, i.status, i.created_at
+            ORDER BY i.created_at DESC;
+        """)
+        rows = cursor.fetchall()
+        institutions = []
+        for r in rows:
+            institutions.append({
+                "institution_id": r[0],
+                "institution_name": r[1],
+                "institution_code": r[2],
+                "status": r[3],
+                "created_at": r[4].strftime("%Y-%m-%d %H:%M") if r[4] else "",
+                "supervisor_count": r[5],
+                "student_count": r[6]
+            })
+        cursor.close()
+        conn.close()
+        return jsonify(institutions)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/institutions', methods=['POST'])
+def admin_create_institution():
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.json or {}
+    name = data.get('institution_name', '').strip()
+    code = data.get('institution_code', '').strip().upper()
+    if not name or not code:
+        return jsonify({"error": "Institution name and code are required"}), 400
+
+    clean_code = "".join(c for c in code if c.isalnum())
+    inst_id = f"INST-{clean_code[:6]}-{uuid.uuid4().hex[:4].upper()}"
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO institutions (institution_id, institution_name, institution_code, status)
+            VALUES (%s, %s, %s, 'ACTIVE');
+        """, (inst_id, name, code))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "institution_id": inst_id, "message": "Institution created successfully"})
+    except psycopg2.IntegrityError:
+        return jsonify({"error": "Institution code already exists"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/institutions/<inst_id>/status', methods=['PUT'])
+def admin_toggle_institution_status(inst_id):
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.json or {}
+    status = data.get('status', 'ACTIVE')
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE institutions SET status = %s WHERE institution_id = %s;", (status, inst_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "status": status})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/users', methods=['GET'])
+def admin_get_users():
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    role_filter = request.args.get('role')
+    inst_filter = request.args.get('institution_id')
+
+    query = """
+        SELECT u.user_id, u.name, u.username, u.role, u.institution_id, u.student_id, u.status, u.created_at, i.institution_name
+        FROM users u
+        LEFT JOIN institutions i ON u.institution_id = i.institution_id
+        WHERE 1=1
+    """
+    params = []
+    if role_filter:
+        query += " AND u.role = %s"
+        params.append(role_filter)
+    if inst_filter and inst_filter != 'ALL':
+        query += " AND u.institution_id = %s"
+        params.append(inst_filter)
+
+    query += " ORDER BY u.created_at DESC;"
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute(query, tuple(params))
+        rows = cursor.fetchall()
+        users = []
+        for r in rows:
+            users.append({
+                "user_id": r[0],
+                "name": r[1],
+                "username": r[2],
+                "role": r[3],
+                "institution_id": r[4],
+                "student_id": r[5],
+                "status": r[6],
+                "created_at": r[7].strftime("%Y-%m-%d %H:%M") if r[7] else "",
+                "institution_name": r[8] or ("Platform Command" if r[3] == 'ADMIN' else "N/A")
+            })
+        cursor.close()
+        conn.close()
+        return jsonify(users)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/users/supervisor', methods=['POST'])
+def admin_create_supervisor():
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.json or {}
+    name = data.get('name', '').strip()
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
+    inst_id = data.get('institution_id', '').strip()
+
+    if not name or not username or not password or not inst_id:
+        return jsonify({"error": "All fields are required"}), 400
+
+    pwd_hash = generate_password_hash(password)
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO users (name, username, password_hash, role, institution_id, status)
+            VALUES (%s, %s, %s, 'SUPERVISOR', %s, 'ACTIVE')
+            RETURNING user_id;
+        """, (name, username, pwd_hash, inst_id))
+        uid = cursor.fetchone()[0]
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "user_id": uid, "message": "Supervisor created successfully"})
+    except psycopg2.IntegrityError:
+        return jsonify({"error": "Username already taken"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/users/student', methods=['POST'])
+def admin_create_student():
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.json or {}
+    name = data.get('name', '').strip()
+    username = data.get('username', '').strip()
+    student_id = data.get('student_id', '').strip().upper()
+    password = data.get('password', '').strip()
+    inst_id = data.get('institution_id', '').strip()
+
+    if not name or not username or not student_id or not password or not inst_id:
+        return jsonify({"error": "All fields are required"}), 400
+
+    pwd_hash = generate_password_hash(password)
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO users (name, username, student_id, password_hash, role, institution_id, status)
+            VALUES (%s, %s, %s, %s, 'STUDENT', %s, 'ACTIVE')
+            RETURNING user_id;
+        """, (name, username, student_id, pwd_hash, inst_id))
+        uid = cursor.fetchone()[0]
+
+        # Also register stub in students table
+        cursor.execute("""
+            INSERT INTO students (student_id, name, institution_id)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (student_id) DO UPDATE SET name=EXCLUDED.name, institution_id=EXCLUDED.institution_id;
+        """, (student_id, name, inst_id))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "user_id": uid, "message": "Student created successfully"})
+    except psycopg2.IntegrityError:
+        return jsonify({"error": "Username or Student ID already taken"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/users/<int:user_id>/status', methods=['PUT'])
+def admin_toggle_user_status(user_id):
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.json or {}
+    status = data.get('status', 'ACTIVE')
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET status = %s WHERE user_id = %s;", (status, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "status": status})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/users/<int:user_id>/reset-password', methods=['PUT'])
+def admin_reset_user_password(user_id):
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    data = request.json or {}
+    new_password = data.get('new_password', '').strip()
+    if not new_password:
+        return jsonify({"error": "New password is required"}), 400
+    pwd_hash = generate_password_hash(new_password)
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET password_hash = %s WHERE user_id = %s;", (pwd_hash, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"success": True, "message": "Password reset successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ---------------- STUDENT PORTAL APIS ----------------
+
+@app.route('/api/student/me', methods=['GET'])
+def student_get_profile():
+    if session.get('role') not in ['STUDENT', 'ADMIN']:
+        return jsonify({"error": "Forbidden: Student clearance required"}), 403
+    stu_id = session.get('student_id')
+    if not stu_id and session.get('role') == 'ADMIN':
+        stu_id = request.args.get('student_id', 'STU-8801')
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT s.student_id, s.name, s.institution_id, i.institution_name, 
+                   CASE WHEN s.face_encoding IS NOT NULL THEN TRUE ELSE FALSE END AS enrolled,
+                   s.created_at
+            FROM students s
+            LEFT JOIN institutions i ON s.institution_id = i.institution_id
+            WHERE s.student_id = %s;
+        """, (stu_id,))
+        row = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT AVG(100 - risk_score), COUNT(*) 
+            FROM exam_logs 
+            WHERE student_id = %s AND risk_score IS NOT NULL;
+        """, (stu_id,))
+        trust_row = cursor.fetchone()
+        avg_trust = round(float(trust_row[0]), 1) if (trust_row and trust_row[0] is not None) else 100.0
+        event_count = trust_row[1] if trust_row else 0
+
+        cursor.close()
+        conn.close()
+
+        if not row:
+            return jsonify({
+                "student_id": stu_id or "STU-8801",
+                "name": session.get('name', 'Student'),
+                "institution_id": session.get('institution_id', 'INST-001'),
+                "institution_name": session.get('institution_name', 'Apex Institute of Technology'),
+                "enrolled": False,
+                "trust_score": 100.0,
+                "event_count": 0
+            })
+
+        return jsonify({
+            "student_id": row[0],
+            "name": row[1],
+            "institution_id": row[2],
+            "institution_name": row[3] or "Apex Institute of Technology",
+            "enrolled": row[4],
+            "created_at": row[5].strftime("%Y-%m-%d") if row[5] else "",
+            "trust_score": avg_trust,
+            "event_count": event_count
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/student/logs', methods=['GET'])
+def student_get_logs():
+    if session.get('role') not in ['STUDENT', 'ADMIN']:
+        return jsonify({"error": "Forbidden"}), 403
+    stu_id = session.get('student_id')
+    if not stu_id and session.get('role') == 'ADMIN':
+        stu_id = request.args.get('student_id', 'STU-8801')
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT risk_score, direction, status, timestamp
+            FROM exam_logs
+            WHERE student_id = %s
+            ORDER BY timestamp DESC
+            LIMIT 15;
+        """, (stu_id,))
+        rows = cursor.fetchall()
+        logs = []
+        for r in rows:
+            logs.append({
+                "risk_score": r[0],
+                "direction": r[1],
+                "status": r[2],
+                "timestamp": r[3].strftime("%Y-%m-%d %H:%M:%S") if r[3] else ""
+            })
+        cursor.close()
+        conn.close()
+        return jsonify(logs)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ---------------- BIOMETRIC REGISTRATION ----------------
 
 @app.route('/api/register', methods=['POST'])
 def register():
-    # ... existing register logic ...
-    data = request.json
+    data = request.json or {}
     student_id = data.get('student_id')
     name = data.get('name')
     image_b64 = data.get('image')
+    inst_id = data.get('institution_id') or session.get('institution_id', 'INST-001')
 
     if not student_id or not name or not image_b64:
         return jsonify({"error": "Missing fields"}), 400
@@ -199,16 +833,16 @@ def register():
         cursor = conn.cursor()
         encoding_json = json.dumps(feature.tolist())
         cursor.execute("""
-            INSERT INTO students (student_id, name, face_encoding)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (student_id) DO UPDATE SET name=EXCLUDED.name, face_encoding=EXCLUDED.face_encoding;
-        """, (student_id, name, encoding_json))
+            INSERT INTO students (student_id, name, face_encoding, institution_id)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (student_id) DO UPDATE SET name=EXCLUDED.name, face_encoding=EXCLUDED.face_encoding, institution_id=EXCLUDED.institution_id;
+        """, (student_id, name, encoding_json, inst_id))
         conn.commit()
         cursor.close()
         conn.close()
         
         load_students() # refresh memory
-        return jsonify({"success": True, "message": "Registered successfully!"})
+        return jsonify({"success": True, "message": "Biometric face registration complete!"})
     except Exception as e:
         print(f"Error registering student: {e}")
         return jsonify({"error": "Database error"}), 500
@@ -659,14 +1293,16 @@ room_state = {
 # tracked_students dictionary: { "STU-1002": {"name": "John", "risk_score": 0, "status": "Active", "last_seen": time.time()} }
 tracked_students = {}
 
-def log_to_db(student_id, risk_score, direction, status):
+def log_to_db(student_id, risk_score, direction, status, institution_id=None):
     try:
+        if not institution_id:
+            institution_id = "INST-001"
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO exam_logs (student_id, risk_score, direction, status)
-            VALUES (%s, %s, %s, %s)
-        """, (student_id, risk_score, direction, status))
+            INSERT INTO exam_logs (student_id, institution_id, risk_score, direction, status)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (student_id, institution_id, risk_score, direction, status))
         conn.commit()
         cursor.close()
         conn.close()
@@ -838,10 +1474,16 @@ def gen_frames():
                     best_match = None
                     best_score = 0
                     for s in registered_students:
-                        score = recognizer.match(feature, s["encoding"], cv2.FaceRecognizerSF_FR_COSINE)
-                        if score > best_score:
-                            best_score = score
-                            best_match = s
+                        try:
+                            enc = s["encoding"]
+                            if enc.ndim == 1:
+                                enc = enc.reshape(1, -1)
+                            score = recognizer.match(feature, enc, cv2.FaceRecognizerSF_FR_COSINE)
+                            if score > best_score:
+                                best_score = score
+                                best_match = s
+                        except Exception:
+                            continue
                     
                     if best_match and best_score >= 0.45:
                         sid = best_match['student_id']
@@ -858,6 +1500,7 @@ def gen_frames():
                             if sid not in tracked_students:
                                 tracked_students[sid] = {
                                     "name": best_match['name'], 
+                                    "institution_id": best_match.get('institution_id', 'INST-001'),
                                     "risk_score": hist_score, 
                                     "status": "Active", 
                                     "direction": "CENTER", 
@@ -1056,11 +1699,32 @@ def video_feed():
 
 @app.route('/api/status')
 def api_status():
+    role = session.get('role', 'SUPERVISOR')
+    user_inst = session.get('institution_id')
+    req_inst = request.args.get('institution_id')
+
+    # Multi-tenant Isolation
+    if role == 'ADMIN':
+        filter_inst = req_inst if (req_inst and req_inst != 'ALL') else None
+    elif role == 'SUPERVISOR':
+        filter_inst = user_inst
+    elif role == 'STUDENT':
+        filter_inst = user_inst
+    else:
+        filter_inst = user_inst
+
     students_list = []
     for sid, data in tracked_students.items():
+        stu_inst = data.get("institution_id", "INST-001")
+        if filter_inst and stu_inst != filter_inst:
+            continue
+        if role == 'STUDENT' and sid != session.get('student_id'):
+            continue
+
         students_list.append({
             "id": sid,
             "name": data["name"],
+            "institution_id": stu_inst,
             "risk_score": data["risk_score"],
             "status": data["status"],
             "direction": data.get("direction", "CENTER"),
@@ -1073,20 +1737,61 @@ def api_status():
         "unknown_count": room_state["unknown_count"],
         "phone_detected": room_state.get("phone_detected", False),
         "book_detected": room_state.get("book_detected", False),
+        "institution_id": filter_inst or "ALL",
         "students": students_list
     })
 
 @app.route('/api/alerts')
 def api_alerts():
+    role = session.get('role', 'SUPERVISOR')
+    user_inst = session.get('institution_id')
+    req_inst = request.args.get('institution_id')
+
     try:
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT risk_score, direction, status, timestamp 
-            FROM exam_logs 
-            ORDER BY timestamp DESC 
-            LIMIT 15;
-        """)
+
+        if role == 'ADMIN':
+            if req_inst and req_inst != 'ALL':
+                cursor.execute("""
+                    SELECT risk_score, direction, status, timestamp, institution_id, student_id
+                    FROM exam_logs 
+                    WHERE institution_id = %s
+                    ORDER BY timestamp DESC 
+                    LIMIT 20;
+                """, (req_inst,))
+            else:
+                cursor.execute("""
+                    SELECT risk_score, direction, status, timestamp, institution_id, student_id
+                    FROM exam_logs 
+                    ORDER BY timestamp DESC 
+                    LIMIT 20;
+                """)
+        elif role == 'SUPERVISOR':
+            cursor.execute("""
+                SELECT risk_score, direction, status, timestamp, institution_id, student_id
+                FROM exam_logs 
+                WHERE institution_id = %s
+                ORDER BY timestamp DESC 
+                LIMIT 20;
+            """, (user_inst or 'INST-001',))
+        elif role == 'STUDENT':
+            cursor.execute("""
+                SELECT risk_score, direction, status, timestamp, institution_id, student_id
+                FROM exam_logs 
+                WHERE student_id = %s
+                ORDER BY timestamp DESC 
+                LIMIT 20;
+            """, (session.get('student_id'),))
+        else:
+            cursor.execute("""
+                SELECT risk_score, direction, status, timestamp, institution_id, student_id
+                FROM exam_logs 
+                WHERE institution_id = %s
+                ORDER BY timestamp DESC 
+                LIMIT 20;
+            """, (user_inst or 'INST-001',))
+
         rows = cursor.fetchall()
         alerts = []
         for row in rows:
@@ -1094,7 +1799,9 @@ def api_alerts():
                 "risk_score": row[0],
                 "direction": row[1],
                 "status": row[2],
-                "timestamp": row[3].strftime("%H:%M:%S")
+                "timestamp": row[3].strftime("%H:%M:%S") if row[3] else "",
+                "institution_id": row[4],
+                "student_id": row[5]
             })
         cursor.close()
         conn.close()

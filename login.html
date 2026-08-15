@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Command Authentication | ProctorAI SOC</title>
-    <meta name="description" content="Supervisor Command Authentication Portal for ProctorAI Security Operations Center.">
+    <title>Command Authentication | ProctorAI Platform</title>
+    <meta name="description" content="Secure Unified Authentication Portal for ProctorAI Platform — Admin, Supervisor, and Student Access.">
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,10 +13,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
 /* ═════════════════════════════════════════════════════════════════════
-   PROCTORAI — SUPERVISOR COMMAND AUTHENTICATION
-   National Examination Security Operations Center Access Portal
+   PROCTORAI — UNIFIED COMMAND AUTHENTICATION PORTAL
    ═════════════════════════════════════════════════════════════════════ */
-
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -28,7 +26,7 @@
     --bg-surface:     #080c14;
     --bg-elevated:    #0e1422;
     
-    --panel-glass:    rgba(14, 20, 34, 0.85);
+    --panel-glass:    rgba(14, 20, 34, 0.88);
     --border-subtle:  rgba(255, 255, 255, 0.06);
     --border-light:   rgba(255, 255, 255, 0.12);
     --border-hover:   rgba(56, 189, 248, 0.32);
@@ -38,6 +36,8 @@
     --accent:         #38bdf8;
     
     --success:        #10b981;
+    --success-dim:    rgba(16, 185, 129, 0.14);
+    --warning:        #f59e0b;
     --danger:         #ef4444;
     --danger-dim:     rgba(239, 68, 68, 0.14);
     --danger-bd:      rgba(239, 68, 68, 0.35);
@@ -49,10 +49,6 @@
     
     --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
-}
-
-html {
-    scroll-behavior: smooth;
 }
 
 body {
@@ -69,7 +65,6 @@ body {
     overflow-x: hidden;
 }
 
-/* Background Atmosphere */
 body::before {
     content: '';
     position: fixed;
@@ -108,7 +103,7 @@ body::after {
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 229, 255, 0.05);
     padding: 2.5rem;
     width: 100%;
-    max-width: 440px;
+    max-width: 460px;
     text-align: center;
 }
 
@@ -132,7 +127,7 @@ body::after {
 }
 
 h2 {
-    font-size: 1.4rem;
+    font-size: 1.45rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #38bdf8 100%);
@@ -144,7 +139,7 @@ h2 {
 
 p {
     color: var(--t2);
-    margin-bottom: 2rem;
+    margin-bottom: 1.75rem;
     font-size: 0.82rem;
     line-height: 1.5;
 }
@@ -189,6 +184,7 @@ p {
 }
 
 .btn {
+    width: 100%;
     background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #00e5ff 100%);
     color: #ffffff;
     border: 1px solid rgba(56, 189, 248, 0.4);
@@ -199,55 +195,114 @@ p {
     font-family: var(--font);
     letter-spacing: 0.02em;
     cursor: pointer;
-    width: 100%;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex;
+    transition: all 0.25s ease;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
+    box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
     margin-top: 0.5rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .btn:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(0, 229, 255, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 229, 255, 0.45);
+    border-color: var(--cyan);
 }
 
 .btn:disabled {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: var(--border-subtle);
+    opacity: 0.6;
     cursor: not-allowed;
-    color: var(--t3);
-    box-shadow: none;
-    transform: none;
 }
 
 .message {
-    margin-top: 1rem;
-    font-size: 0.78rem;
-    font-weight: 600;
+    margin-top: 1.25rem;
     padding: 0.75rem 1rem;
     border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
     display: none;
-    background: var(--danger-dim);
-    color: #f87171;
-    border: 1px solid var(--danger-bd);
-    box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
-    animation: fadeIn 0.3s ease;
+    text-align: left;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
+.message.error {
+    display: block;
+    background: var(--danger-dim);
+    border: 1px solid var(--danger-bd);
+    color: #fca5a5;
+}
+
+.message.success {
+    display: block;
+    background: var(--success-dim);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #6ee7b7;
+}
+
+/* Quick Fill Selector Chips */
+.quick-fill-wrap {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-subtle);
+    text-align: left;
+}
+
+.quick-fill-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--t3);
+    margin-bottom: 0.6rem;
+}
+
+.chips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.chip-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    color: var(--t2);
+    font-size: 0.72rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.chip-btn:hover {
+    background: rgba(56, 189, 248, 0.08);
+    border-color: rgba(56, 189, 248, 0.3);
+    color: var(--cyan);
+}
+
+.chip-role {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.chip-uname {
+    font-family: var(--mono);
+    color: var(--t1);
+    font-size: 0.7rem;
 }
 
 .back-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    margin-top: 1.75rem;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
     color: var(--t3);
     text-decoration: none;
     font-size: 0.78rem;
@@ -268,14 +323,6 @@ p {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
-
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
     </style>
 </head>
 <body>
@@ -284,26 +331,49 @@ p {
         <div class="logo-badge">
             <i data-lucide="shield-check"></i>
         </div>
-        <h2>Supervisor Command Access</h2>
-        <p>Authenticate with credentials to access the ProctorAI Examination Defense Matrix.</p>
+        <h2>Command Authentication</h2>
+        <p>ProctorAI Enterprise Access Portal · Admin, Supervisor & Student Clearance</p>
 
         <form id="loginForm">
             <div class="input-group">
-                <label for="username">Command Username</label>
-                <input type="text" id="username" placeholder="admin" required autocomplete="off">
+                <label for="username">Username / Email / Student ID</label>
+                <input type="text" id="username" placeholder="admin / supervisor.apex / student.alex" required autocomplete="username">
             </div>
 
             <div class="input-group">
                 <label for="password">Security Password</label>
-                <input type="password" id="password" placeholder="••••••••" required>
+                <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
             </div>
 
             <button type="submit" class="btn" id="loginBtn">
-                <i data-lucide="log-in"></i> Authenticate & Enter SOC
+                <i data-lucide="log-in"></i> Sign In & Verify Clearance
             </button>
 
             <div id="statusMsg" class="message"></div>
         </form>
+
+        <!-- Quick Demo Credentials for Evaluation -->
+        <div class="quick-fill-wrap">
+            <div class="quick-fill-title">Demo Test Credentials:</div>
+            <div class="chips-grid">
+                <button type="button" class="chip-btn" onclick="fillCreds('admin', 'Admin@ProctorAI2026')">
+                    <span class="chip-role">Platform Admin</span>
+                    <span class="chip-uname">admin</span>
+                </button>
+                <button type="button" class="chip-btn" onclick="fillCreds('supervisor.apex', 'Supervisor@123')">
+                    <span class="chip-role">Supervisor (Apex)</span>
+                    <span class="chip-uname">supervisor.apex</span>
+                </button>
+                <button type="button" class="chip-btn" onclick="fillCreds('supervisor.metro', 'Supervisor@123')">
+                    <span class="chip-role">Supervisor (Metro)</span>
+                    <span class="chip-uname">supervisor.metro</span>
+                </button>
+                <button type="button" class="chip-btn" onclick="fillCreds('student.alex', 'Student@123')">
+                    <span class="chip-role">Student (Alex)</span>
+                    <span class="chip-uname">student.alex</span>
+                </button>
+            </div>
+        </div>
         
         <a href="index.html" class="back-link">
             <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
@@ -317,11 +387,19 @@ p {
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');
         const statusMsg = document.getElementById('statusMsg');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+
+        function fillCreds(u, p) {
+            usernameInput.value = u;
+            passwordInput.value = p;
+            statusMsg.style.display = 'none';
+        }
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
 
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Verifying Command Clearance...';
@@ -340,25 +418,26 @@ p {
 
                 if (response.ok && result.success) {
                     statusMsg.className = 'message success';
-                    statusMsg.textContent = `Clearance Verified: ${result.role} (${result.user.institution_name}). Redirecting...`;
+                    statusMsg.textContent = `Clearance Granted: ${result.role} (${result.user.institution_name}). Redirecting...`;
                     statusMsg.style.display = 'block';
+
                     setTimeout(() => {
                         window.location.href = result.redirect || 'monitoring.html';
                     }, 400);
                 } else {
-                    statusMsg.className = 'message';
+                    statusMsg.className = 'message error';
                     statusMsg.textContent = result.error || 'Invalid credentials. Access denied.';
                     statusMsg.style.display = 'block';
                     loginBtn.disabled = false;
-                    loginBtn.innerHTML = '<i data-lucide="log-in"></i> Authenticate & Enter SOC';
+                    loginBtn.innerHTML = '<i data-lucide="log-in"></i> Sign In & Verify Clearance';
                     lucide.createIcons();
                 }
             } catch (err) {
-                statusMsg.className = 'message';
-                statusMsg.textContent = 'Network error. Is the AI backend server running?';
+                statusMsg.className = 'message error';
+                statusMsg.textContent = 'Network error: Unable to contact ProctorAI security server.';
                 statusMsg.style.display = 'block';
                 loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i data-lucide="log-in"></i> Authenticate & Enter SOC';
+                loginBtn.innerHTML = '<i data-lucide="log-in"></i> Sign In & Verify Clearance';
                 lucide.createIcons();
             }
         });

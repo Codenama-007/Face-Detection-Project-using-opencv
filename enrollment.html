@@ -906,7 +906,7 @@ video {
                     }, '✓ Biometric enrollment complete — template stored in database');
                 } else {
                     if (response.status === 401) {
-                        window.location.href = 'supervisor_login.html';
+                        window.location.href = 'login.html';
                         return;
                     }
                     showMsg(result.error || 'Failed to enroll face.', 'error');
@@ -950,7 +950,7 @@ video {
                     window.location.href = 'monitoring.html';
                 } else {
                     if (res.status === 401) {
-                        window.location.href = 'supervisor_login.html';
+                        window.location.href = 'login.html';
                         return;
                     }
                     let errText = await res.text();
