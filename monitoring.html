@@ -2874,36 +2874,55 @@ $endSessionBtn.addEventListener('click', async () => {
     }
 });
 
-// ── SUPERVISOR AUTH & CONTEXT ────────────────
+// ── SUPERVISOR / PROCTOR CONTEXT ────────────────
 async function checkAuthContext() {
+    const demoAuth = sessionStorage.getItem('proctorai_demo_auth') || localStorage.getItem('proctorai_demo_auth');
+    const demoEmail = sessionStorage.getItem('proctorai_demo_email') || localStorage.getItem('proctorai_demo_email') || 'Proctor Lead';
+
+    if (demoAuth === 'true') {
+        const displayName = demoEmail.split('@')[0];
+        if (document.getElementById('supNameDisplay')) {
+            document.getElementById('supNameDisplay').textContent = displayName;
+        }
+        if (document.getElementById('supInstDisplay')) {
+            document.getElementById('supInstDisplay').textContent = 'Proctor · Examination Operations';
+        }
+        if (document.getElementById('supAvatarInitial')) {
+            document.getElementById('supAvatarInitial').textContent = displayName.charAt(0).toUpperCase();
+        }
+        return;
+    }
+
     try {
         const res = await fetch(`${BASE}/api/auth/me`, { credentials: 'include' });
         const data = await res.json();
-        if (!data.authenticated || data.user.role === 'STUDENT') {
-            window.location.href = 'login.html';
-            return;
-        }
-        if (document.getElementById('supNameDisplay')) {
-            document.getElementById('supNameDisplay').textContent = data.user.name || 'Teacher';
-        }
-        if (document.getElementById('supInstDisplay')) {
-            const roleName = (data.user.role === 'SUPERVISOR' || data.user.role === 'TEACHER') ? 'Teacher / Proctor' : data.user.role;
-            document.getElementById('supInstDisplay').textContent = `${roleName} · ${data.user.institution_name || 'Institutional SOC'}`;
-        }
-        if (document.getElementById('supAvatarInitial')) {
-            document.getElementById('supAvatarInitial').textContent = (data.user.name || 'T').charAt(0).toUpperCase();
+        if (data.authenticated) {
+            if (document.getElementById('supNameDisplay')) {
+                document.getElementById('supNameDisplay').textContent = data.user.name || 'Proctor';
+            }
+            if (document.getElementById('supInstDisplay')) {
+                const roleName = (data.user.role === 'SUPERVISOR' || data.user.role === 'TEACHER') ? 'Proctor' : data.user.role;
+                document.getElementById('supInstDisplay').textContent = `${roleName} · ${data.user.institution_name || 'Examination Operations'}`;
+            }
+            if (document.getElementById('supAvatarInitial')) {
+                document.getElementById('supAvatarInitial').textContent = (data.user.name || 'P').charAt(0).toUpperCase();
+            }
         }
     } catch {
-        // Continue in dev
+        // Continue in demo mode
     }
 }
 
 // ── SUPERVISOR LOGOUT ────────────────────────
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     try {
+        sessionStorage.removeItem('proctorai_demo_auth');
+        sessionStorage.removeItem('proctorai_demo_email');
+        localStorage.removeItem('proctorai_demo_auth');
+        localStorage.removeItem('proctorai_demo_email');
         await fetch(`${BASE}/api/auth/logout`, { method: 'POST', credentials: 'include' });
     } catch {}
-    window.location.href = 'login.html';
+    window.location.href = 'login.html?logged_out=1';
 });
 
 // ── INITIALIZATION ───────────────────────────

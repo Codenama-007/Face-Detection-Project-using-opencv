@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProctorAI — Secure AI Examination Operations Platform</title>
-    <meta name="description" content="Enterprise AI Examination Security & Operations Platform. Real-Time Biometric Integrity, Multi-Tenant Architecture, and Institutional SOC.">
+    <title>ProctorAI — AI-Powered Examination Operations Platform</title>
+    <meta name="description" content="ProctorAI Demo Access Portal — AI-Powered Examination Security & Live Monitoring Operations.">
     
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,8 +16,8 @@
 
     <style>
 /* ═════════════════════════════════════════════════════════════════════
-   PROCTORAI — ENTERPRISE SECURITY OPERATIONS AUTHENTICATION SYSTEM
-   RESTRAINED MONOCHROMATIC + STEEL BLUE PALETTE
+   PROCTORAI — HACKATHON DEMO AUTHENTICATION GATE
+   MONOCHROMATIC & DEEP GRAPHITE WITH STEEL BLUE ACCENTS
    ═════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -340,7 +340,7 @@ html, body {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   RIGHT AUTH COLUMN: LOGIN & MFA PANEL CARD
+   RIGHT AUTH COLUMN: LOGIN & DEMO GATE CARD
    ═════════════════════════════════════════════════════════════════════ */
 .auth-col {
     display: flex;
@@ -514,54 +514,6 @@ html, body {
     cursor: not-allowed;
 }
 
-/* ── 6-SLOT INDIVIDUAL 2FA INPUTS ── */
-.mfa-slots-wrap {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 0.45rem;
-    margin: 1.4rem 0 1.25rem 0;
-}
-
-.mfa-digit-slot {
-    width: 100%;
-    height: 50px;
-    text-align: center;
-    font-family: var(--mono);
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #ffffff;
-    background: var(--bg-input);
-    border: 1px solid var(--border-mid);
-    border-radius: 8px;
-    outline: none;
-    transition: all 0.2s;
-}
-
-.mfa-digit-slot:focus {
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
-    background: var(--bg-input-focus);
-}
-
-.mfa-back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    background: none;
-    border: none;
-    color: var(--t3);
-    font-size: 0.76rem;
-    font-weight: 600;
-    font-family: var(--font);
-    cursor: pointer;
-    margin-top: 1.15rem;
-    transition: color 0.2s;
-}
-
-.mfa-back-link:hover {
-    color: var(--accent-blue);
-}
-
 /* ── STATUS & ERROR NOTIFICATION BANNERS ── */
 .status-banner {
     display: none;
@@ -691,10 +643,6 @@ html, body {
     .hero-heading {
         font-size: 2rem;
     }
-    .mfa-digit-slot {
-        height: 44px;
-        font-size: 1.2rem;
-    }
 }
     </style>
 </head>
@@ -719,7 +667,7 @@ html, body {
                     </div>
                     <div class="status-live-tag">
                         <div class="pulse-dot"></div>
-                        <span>Secure Operations Active</span>
+                        <span>Demo Operations Active</span>
                     </div>
                 </div>
 
@@ -745,7 +693,7 @@ html, body {
                     </div>
 
                     <span class="ai-spec-tag">NEURAL BIOMETRIC PIPELINE</span>
-                    <span class="ai-lock-tag">SYSTEM LOCKED</span>
+                    <span class="ai-lock-tag">SYSTEM READY</span>
                 </div>
 
                 <!-- Core Capability Highlight Pills -->
@@ -784,50 +732,50 @@ html, body {
 
             <!-- Footer Meta -->
             <div style="font-size:0.72rem;color:var(--t3);margin-top:2rem;">
-                ProctorAI Platform Architecture &copy; 2026 &middot; Platform Governance &middot; Institutional SOC
+                ProctorAI Platform Architecture &copy; 2026 &middot; Hackathon Demonstration Environment
             </div>
         </section>
 
 
-        <!-- ═ RIGHT COLUMN: AUTHENTICATION PANEL CARD ═ -->
+        <!-- ═ RIGHT COLUMN: DEMO ACCESS GATE CARD ═ -->
         <section class="auth-col">
             <div class="auth-card" id="authCard">
                 
                 <!-- Card Header Top Badge -->
                 <div class="card-header-badge">
-                    <i data-lucide="lock" style="width:11px;height:11px;"></i>
-                    <span>Authorized Clearance Only</span>
+                    <i data-lucide="sparkles" style="width:11px;height:11px;"></i>
+                    <span>Hackathon Demo Access</span>
                 </div>
 
-                <h2 class="card-title">Welcome Back</h2>
-                <p class="card-subtitle">Secure authentication portal for Platform Admin and Proctor Teachers.</p>
+                <h2 class="card-title">Welcome to ProctorAI</h2>
+                <p class="card-subtitle">Enter your email and any password to access the live examination operations console.</p>
 
-                <!-- STEP 1: Standard Username & Password Form -->
-                <form id="loginForm">
-                    <!-- Username Input Field -->
+                <!-- Demo Entry Form -->
+                <form id="demoLoginForm" novalidate>
+                    <!-- Email Input Field -->
                     <div class="form-group">
-                        <label class="form-label" for="username">Username / Email</label>
+                        <label class="form-label" for="userEmail">Email / Gmail Address</label>
                         <div class="input-container">
                             <input 
-                                type="text" 
-                                id="username" 
+                                type="email" 
+                                id="userEmail" 
                                 class="form-input" 
-                                placeholder="Enter username or email" 
+                                placeholder="name@domain.com" 
                                 required 
-                                autocomplete="username"
+                                autocomplete="email"
                                 spellcheck="false"
                             >
-                            <i data-lucide="user" class="input-icon-leading" style="width:15px;height:15px;"></i>
+                            <i data-lucide="mail" class="input-icon-leading" style="width:15px;height:15px;"></i>
                         </div>
                     </div>
 
                     <!-- Password Input Field with Show/Hide Toggle -->
                     <div class="form-group">
-                        <label class="form-label" for="password">Security Password</label>
+                        <label class="form-label" for="userPassword">Password</label>
                         <div class="input-container">
                             <input 
                                 type="password" 
-                                id="password" 
+                                id="userPassword" 
                                 class="form-input" 
                                 placeholder="••••••••••••" 
                                 required 
@@ -845,45 +793,10 @@ html, body {
                         </div>
                     </div>
 
-                    <!-- Sign In Submit Button -->
-                    <button type="submit" class="btn-submit" id="loginBtn">
-                        <i data-lucide="log-in" style="width:15px;height:15px;"></i>
-                        <span>Sign In</span>
-                    </button>
-                </form>
-
-                <!-- STEP 2: Smooth 6-Slot Admin 2FA Verification Form -->
-                <form id="mfaForm" style="display:none;">
-                    <div style="background:#090d15;border:1px solid var(--border-subtle);border-radius:10px;padding:0.85rem 0.95rem;margin-bottom:1.15rem;text-align:left;">
-                        <div style="font-size:0.72rem;font-weight:800;color:var(--accent-blue);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:0.2rem;display:flex;align-items:center;gap:0.35rem;">
-                            <i data-lucide="shield-alert" style="width:13px;height:13px;"></i>
-                            <span>Two-Factor Authentication Required</span>
-                        </div>
-                        <div style="font-size:0.75rem;color:var(--t2);line-height:1.4;">
-                            Enter the 6-digit verification code from your authenticator application.
-                        </div>
-                    </div>
-
-                    <!-- 6-Slot Visual Digit Inputs -->
-                    <div class="mfa-slots-wrap" id="mfaSlotsWrap">
-                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="0" autofocus>
-                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="1">
-                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="2">
-                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="3">
-                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="4">
-                        <input type="text" maxlength="1" inputmode="numeric" class="mfa-digit-slot" data-index="5">
-                    </div>
-
-                    <!-- Verify Button -->
-                    <button type="submit" class="btn-submit" id="mfaBtn">
-                        <i data-lucide="shield-check" style="width:15px;height:15px;"></i>
-                        <span>Verify & Continue</span>
-                    </button>
-
-                    <!-- Back to Sign In Link -->
-                    <button type="button" class="mfa-back-link" id="mfaBackBtn">
-                        <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
-                        <span>Return to credential login</span>
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-submit" id="enterBtn">
+                        <i data-lucide="arrow-right" style="width:15px;height:15px;"></i>
+                        <span>Enter ProctorAI</span>
                     </button>
                 </form>
 
@@ -896,7 +809,7 @@ html, body {
                         <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
                         <span>Platform Overview</span>
                     </a>
-                    <span class="footer-shield-tag">RBAC &bull; AES-256</span>
+                    <span class="footer-shield-tag">DEMO GATE &bull; ACCESS PASS</span>
                 </div>
 
             </div>
@@ -909,24 +822,18 @@ html, body {
         lucide.createIcons();
 
         // DOM Element Selectors
-        const loginForm = document.getElementById('loginForm');
-        const mfaForm = document.getElementById('mfaForm');
-        const loginBtn = document.getElementById('loginBtn');
-        const mfaBtn = document.getElementById('mfaBtn');
-        const mfaBackBtn = document.getElementById('mfaBackBtn');
+        const form = document.getElementById('demoLoginForm');
+        const emailInput = document.getElementById('userEmail');
+        const passwordInput = document.getElementById('userPassword');
+        const enterBtn = document.getElementById('enterBtn');
         const statusBanner = document.getElementById('statusBanner');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
         const pwdToggleBtn = document.getElementById('pwdToggleBtn');
         const pwdEyeIcon = document.getElementById('pwdEyeIcon');
-        const mfaSlots = document.querySelectorAll('.mfa-digit-slot');
 
-        // Check for URL-passed session state parameters
+        // Check for URL parameters
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('expired')) {
-            showBanner('Your session timed out due to inactivity. Please sign in again.', 'error');
-        } else if (urlParams.has('disabled')) {
-            showBanner('This account has been disabled. Contact your platform administrator.', 'error');
+        if (urlParams.has('logged_out')) {
+            showBanner('Signed out successfully. Enter email to resume.', 'success');
         }
 
         // ── PASSWORD VISIBILITY TOGGLE ──
@@ -937,7 +844,7 @@ html, body {
             lucide.createIcons();
         });
 
-        // ── BANNER HELPER FUNCTIONS ──
+        // ── BANNER NOTIFICATION HELPERS ──
         function showBanner(msg, type = 'error') {
             statusBanner.className = `status-banner ${type}`;
             const iconName = type === 'error' ? 'alert-circle' : 'check-circle-2';
@@ -953,164 +860,64 @@ html, body {
             statusBanner.style.display = 'none';
         }
 
-        // ── STEP 1: CREDENTIALS SUBMISSION ──
-        loginForm.addEventListener('submit', async (e) => {
+        // Email regex pattern for validation
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        // ── FORM SUBMISSION & CLIENT-SIDE DEMO VALIDATION ──
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
             hideBanner();
 
-            const username = usernameInput.value.trim();
-            const password = passwordInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
 
-            if (!username || !password) return;
-
-            loginBtn.disabled = true;
-            loginBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Authenticating...</span>';
-            lucide.createIcons();
-
-            try {
-                const res = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ username, password })
-                });
-
-                const data = await res.json();
-
-                if (res.ok && data.success) {
-                    if (data.mfa_required) {
-                        // Smooth transition to 2FA step
-                        loginForm.style.display = 'none';
-                        mfaForm.style.display = 'block';
-                        mfaSlots.forEach(s => s.value = '');
-                        mfaSlots[0].focus();
-                        showBanner('Password verified. Enter your 6-digit Authenticator code.', 'success');
-                        return;
-                    }
-
-                    // Direct Teacher clearance
-                    showBanner(`Clearance Granted: ${data.role} (${data.user.institution_name || 'Institutional SOC'}). Redirecting...`, 'success');
-                    setTimeout(() => {
-                        window.location.href = data.redirect || 'monitoring.html';
-                    }, 350);
-                } else {
-                    let errMsg = 'Unable to authenticate. Check your credentials and try again.';
-                    if (res.status === 429) {
-                        errMsg = data.error || 'Too many attempts. Please wait 60 seconds before retrying.';
-                    } else if (res.status === 403) {
-                        errMsg = data.error || 'This account has been disabled. Contact your administrator.';
-                    }
-                    showBanner(errMsg, 'error');
-                    loginBtn.disabled = false;
-                    loginBtn.innerHTML = '<i data-lucide="log-in" style="width:15px;height:15px;"></i> <span>Sign In</span>';
-                    lucide.createIcons();
-                }
-            } catch (err) {
-                showBanner('Authentication service is currently unavailable. Please verify server status.', 'error');
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i data-lucide="log-in" style="width:15px;height:15px;"></i> <span>Sign In</span>';
-                lucide.createIcons();
-            }
-        });
-
-        // ── STEP 2: 6-SLOT MFA INPUT CONTROLLER ──
-        mfaSlots.forEach((slot, index) => {
-            slot.addEventListener('input', (e) => {
-                const val = e.target.value.replace(/\D/g, '');
-                e.target.value = val ? val[0] : '';
-                if (val && index < 5) {
-                    mfaSlots[index + 1].focus();
-                }
-                checkAutoSubmitMfa();
-            });
-
-            slot.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && !slot.value && index > 0) {
-                    mfaSlots[index - 1].focus();
-                }
-            });
-
-            slot.addEventListener('paste', (e) => {
-                e.preventDefault();
-                const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim().replace(/\D/g, '');
-                if (!pasteData) return;
-                for (let i = 0; i < Math.min(pasteData.length, 6); i++) {
-                    mfaSlots[i].value = pasteData[i];
-                }
-                const nextFocus = Math.min(pasteData.length, 5);
-                mfaSlots[nextFocus].focus();
-                checkAutoSubmitMfa();
-            });
-        });
-
-        function getFullMfaCode() {
-            let code = '';
-            mfaSlots.forEach(s => code += s.value.trim());
-            return code;
-        }
-
-        function checkAutoSubmitMfa() {
-            const code = getFullMfaCode();
-            if (code.length === 6) {
-                mfaForm.dispatchEvent(new Event('submit'));
-            }
-        }
-
-        // Return from 2FA to credential form
-        mfaBackBtn.addEventListener('click', () => {
-            mfaForm.style.display = 'none';
-            loginForm.style.display = 'block';
-            loginBtn.disabled = false;
-            loginBtn.innerHTML = '<i data-lucide="log-in" style="width:15px;height:15px;"></i> <span>Sign In</span>';
-            hideBanner();
-            passwordInput.focus();
-            lucide.createIcons();
-        });
-
-        // ── MFA FORM SUBMISSION ──
-        mfaForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideBanner();
-
-            const code = getFullMfaCode();
-            if (code.length !== 6) {
-                showBanner('Please enter all 6 digits of your authenticator code.', 'error');
+            // 1. Validate Email
+            if (!email) {
+                showBanner('Please enter an email address.', 'error');
+                emailInput.focus();
                 return;
             }
 
-            mfaBtn.disabled = true;
-            mfaBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Verifying 2FA Token...</span>';
+            if (!EMAIL_REGEX.test(email)) {
+                showBanner('Please enter a valid email address (e.g. name@gmail.com).', 'error');
+                emailInput.focus();
+                return;
+            }
+
+            // 2. Validate Password
+            if (!password) {
+                showBanner('Password is required.', 'error');
+                passwordInput.focus();
+                return;
+            }
+
+            if (password.length < 3) {
+                showBanner('Password is too short (minimum 3 characters required).', 'error');
+                passwordInput.focus();
+                return;
+            }
+
+            // 3. Successful Demo Authentication
+            enterBtn.disabled = true;
+            enterBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Entering ProctorAI...</span>';
             lucide.createIcons();
 
+            // Store temporary session state (no passwords or secrets stored)
             try {
-                const res = await fetch('/api/auth/mfa-verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ code })
-                });
-
-                const data = await res.json();
-
-                if (res.ok && data.success) {
-                    showBanner('2FA Verified. Entering Platform Command Core...', 'success');
-                    setTimeout(() => {
-                        window.location.href = data.redirect || '/admin.html';
-                    }, 350);
-                } else {
-                    showBanner(data.error || 'Verification failed. Enter the current authenticator code.', 'error');
-                    mfaBtn.disabled = false;
-                    mfaBtn.innerHTML = '<i data-lucide="shield-check" style="width:15px;height:15px;"></i> <span>Verify & Continue</span>';
-                    mfaSlots.forEach(s => s.value = '');
-                    mfaSlots[0].focus();
-                    lucide.createIcons();
-                }
+                sessionStorage.setItem('proctorai_demo_auth', 'true');
+                sessionStorage.setItem('proctorai_demo_email', email);
+                localStorage.setItem('proctorai_demo_auth', 'true');
+                localStorage.setItem('proctorai_demo_email', email);
             } catch (err) {
-                showBanner('Authentication service is currently unavailable.', 'error');
-                mfaBtn.disabled = false;
-                mfaBtn.innerHTML = '<i data-lucide="shield-check" style="width:15px;height:15px;"></i> <span>Verify & Continue</span>';
-                lucide.createIcons();
+                console.warn('Session storage unavailable', err);
             }
+
+            showBanner(`Access granted for ${email}. Initializing ProctorAI console...`, 'success');
+
+            // Smooth transition into existing ProctorAI monitoring dashboard
+            setTimeout(() => {
+                window.location.href = 'monitoring.html';
+            }, 400);
         });
     </script>
 </body>

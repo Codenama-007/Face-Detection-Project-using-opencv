@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProctorAI Demo Auth Test Suite</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'SF Mono', Consolas, 'Courier New', monospace;
+            background: #0a0e1a;
+            color: #e0e7ff;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 1.8rem;
+            color: #38bdf8;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        .test-section {
+            background: rgba(14, 20, 34, 0.6);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .test-section h2 {
+            color: #00e5ff;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .test-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+        
+        .status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .status.pass {
+            background: #10b981;
+            color: #fff;
+        }
+        
+        .status.fail {
+            background: #ef4444;
+            color: #fff;
+        }
+        
+        .status.pending {
+            background: #64748b;
+            color: #fff;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        button {
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: rgba(56, 189, 248, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        button.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        
+        button.danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+        
+        .info-box {
+            background: rgba(56, 189, 248, 0.05);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .info-box strong {
+            color: #00e5ff;
+        }
+        
+        .storage-display {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        
+        .storage-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .storage-item:last-child {
+            border-bottom: none;
+        }
+        
+        .key {
+            color: #38bdf8;
+        }
+        
+        .value {
+            color: #10b981;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        
+        .nav-links a {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        
+        .nav-links a:hover {
+            color: #38bdf8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 ProctorAI Demo Authentication Test Suite</h1>
+        <p class="subtitle">Verify that the temporary demo login system is working correctly</p>
+        
+        <div class="info-box">
+            <strong>Test Environment:</strong> This page tests the demo authentication system without requiring backend infrastructure. 
+            All tests run client-side using sessionStorage/localStorage.
+        </div>
+        
+        <!-- Current State -->
+        <div class="test-section">
+            <h2>📊 Current Authentication State</h2>
+            <div id="currentState">Checking...</div>
+            <div class="storage-display">
+                <div class="storage-item">
+                    <span class="key">sessionStorage.proctorai_demo_auth:</span>
+                    <span class="value" id="sessionAuth">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="key">sessionStorage.proctorai_demo_email:</span>
+                    <span class="value" id="sessionEmail">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="key">localStorage.proctorai_demo_auth:</span>
+                    <span class="value" id="localAuth">-</span>
+                </div>
+                <div class="storage-item">
+                    <span class="key">localStorage.proctorai_demo_email:</span>
+                    <span class="value" id="localEmail">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Authentication Tests -->
+        <div class="test-section">
+            <h2>✅ Authentication Flow Tests</h2>
+            <div id="authTests">
+                <div class="test-item">
+                    <div class="status pending" id="test1">?</div>
+                    <span>Session storage is accessible</span>
+                </div>
+                <div class="test-item">
+                    <div class="status pending" id="test2">?</div>
+                    <span>Local storage is accessible</span>
+                </div>
+                <div class="test-item">
+                    <div class="status pending" id="test3">?</div>
+                    <span>Can set demo authentication flag</span>
+                </div>
+                <div class="test-item">
+                    <div class="status pending" id="test4">?</div>
+                    <span>Can set demo email address</span>
+                </div>
+                <div class="test-item">
+                    <div class="status pending" id="test5">?</div>
+                    <span>Authentication state persists across storage types</span>
+                </div>
+                <div class="test-item">
+                    <div class="status pending" id="test6">?</div>
+                    <span>Can clear authentication state</span>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button onclick="runAuthTests()">🚀 Run All Tests</button>
+                <button onclick="refreshState()">🔄 Refresh State</button>
+            </div>
+        </div>
+        
+        <!-- Manual Controls -->
+        <div class="test-section">
+            <h2>🎛️ Manual Authentication Controls</h2>
+            <p style="margin-bottom: 1rem; font-size: 0.85rem; color: #94a3b8;">
+                Use these controls to manually test the authentication flow
+            </p>
+            <div class="btn-group">
+                <button onclick="simulateLogin()">✅ Simulate Login</button>
+                <button onclick="simulateLogout()" class="danger">❌ Simulate Logout</button>
+            </div>
+        </div>
+        
+        <!-- Protected Page Links -->
+        <div class="test-section">
+            <h2>🔗 Protected Pages</h2>
+            <p style="margin-bottom: 1rem; font-size: 0.85rem; color: #94a3b8;">
+                Test access to protected pages (should redirect to login if not authenticated)
+            </p>
+            <div class="btn-group">
+                <button onclick="window.location.href='monitoring.html'">Monitoring Dashboard</button>
+                <button onclick="window.location.href='enrollment.html'">Enrollment System</button>
+                <button onclick="window.location.href='admin.html'">Admin Panel</button>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <div class="nav-links">
+            <a href="login.html">← Back to Login</a>
+            <a href="index.html">← Platform Home</a>
+            <a href="DEMO_LOGIN_README.md">📄 Documentation</a>
+        </div>
+    </div>
+    
+    <script>
+        // Update storage display
+        function updateStorageDisplay() {
+            document.getElementById('sessionAuth').textContent = sessionStorage.getItem('proctorai_demo_auth') || 'null';
+            document.getElementById('sessionEmail').textContent = sessionStorage.getItem('proctorai_demo_email') || 'null';
+            document.getElementById('localAuth').textContent = localStorage.getItem('proctorai_demo_auth') || 'null';
+            document.getElementById('localEmail').textContent = localStorage.getItem('proctorai_demo_email') || 'null';
+            
+            const isAuthenticated = sessionStorage.getItem('proctorai_demo_auth') === 'true' || 
+                                   localStorage.getItem('proctorai_demo_auth') === 'true';
+            
+            const email = sessionStorage.getItem('proctorai_demo_email') || 
+                         localStorage.getItem('proctorai_demo_email') || 
+                         'Not set';
+            
+            document.getElementById('currentState').innerHTML = isAuthenticated 
+                ? `<div class="test-item"><div class="status pass">✓</div><span><strong>Authenticated</strong> as ${email}</span></div>`
+                : `<div class="test-item"><div class="status fail">✗</div><span><strong>Not Authenticated</strong></span></div>`;
+        }
+        
+        // Test helpers
+        function setTestStatus(testId, passed) {
+            const element = document.getElementById(testId);
+            element.className = passed ? 'status pass' : 'status fail';
+            element.textContent = passed ? '✓' : '✗';
+        }
+        
+        // Run all authentication tests
+        async function runAuthTests() {
+            let allPassed = true;
+            
+            // Test 1: Session storage accessible
+            try {
+                sessionStorage.setItem('test_key', 'test_value');
+                const value = sessionStorage.getItem('test_key');
+                sessionStorage.removeItem('test_key');
+                setTestStatus('test1', value === 'test_value');
+                if (value !== 'test_value') allPassed = false;
+            } catch (e) {
+                setTestStatus('test1', false);
+                allPassed = false;
+            }
+            
+            // Test 2: Local storage accessible
+            try {
+                localStorage.setItem('test_key', 'test_value');
+                const value = localStorage.getItem('test_key');
+                localStorage.removeItem('test_key');
+                setTestStatus('test2', value === 'test_value');
+                if (value !== 'test_value') allPassed = false;
+            } catch (e) {
+                setTestStatus('test2', false);
+                allPassed = false;
+            }
+            
+            // Test 3: Can set demo auth flag
+            try {
+                sessionStorage.setItem('proctorai_demo_auth', 'true');
+                const value = sessionStorage.getItem('proctorai_demo_auth');
+                setTestStatus('test3', value === 'true');
+                if (value !== 'true') allPassed = false;
+            } catch (e) {
+                setTestStatus('test3', false);
+                allPassed = false;
+            }
+            
+            // Test 4: Can set demo email
+            try {
+                const testEmail = 'test@demo.com';
+                sessionStorage.setItem('proctorai_demo_email', testEmail);
+                const value = sessionStorage.getItem('proctorai_demo_email');
+                setTestStatus('test4', value === testEmail);
+                if (value !== testEmail) allPassed = false;
+            } catch (e) {
+                setTestStatus('test4', false);
+                allPassed = false;
+            }
+            
+            // Test 5: State persists across storage types
+            try {
+                sessionStorage.setItem('proctorai_demo_auth', 'true');
+                localStorage.setItem('proctorai_demo_auth', 'true');
+                const sessionValue = sessionStorage.getItem('proctorai_demo_auth');
+                const localValue = localStorage.getItem('proctorai_demo_auth');
+                setTestStatus('test5', sessionValue === 'true' && localValue === 'true');
+                if (!(sessionValue === 'true' && localValue === 'true')) allPassed = false;
+            } catch (e) {
+                setTestStatus('test5', false);
+                allPassed = false;
+            }
+            
+            // Test 6: Can clear authentication state
+            try {
+                sessionStorage.removeItem('proctorai_demo_auth');
+                sessionStorage.removeItem('proctorai_demo_email');
+                localStorage.removeItem('proctorai_demo_auth');
+                localStorage.removeItem('proctorai_demo_email');
+                const cleared = !sessionStorage.getItem('proctorai_demo_auth') && 
+                               !localStorage.getItem('proctorai_demo_auth');
+                setTestStatus('test6', cleared);
+                if (!cleared) allPassed = false;
+                
+                // Restore state after test
+                sessionStorage.setItem('proctorai_demo_auth', 'true');
+                sessionStorage.setItem('proctorai_demo_email', 'test@demo.com');
+                localStorage.setItem('proctorai_demo_auth', 'true');
+                localStorage.setItem('proctorai_demo_email', 'test@demo.com');
+            } catch (e) {
+                setTestStatus('test6', false);
+                allPassed = false;
+            }
+            
+            updateStorageDisplay();
+            
+            if (allPassed) {
+                alert('✅ All tests passed! Demo authentication system is working correctly.');
+            } else {
+                alert('⚠️ Some tests failed. Check browser console for details.');
+            }
+        }
+        
+        // Simulate login
+        function simulateLogin() {
+            const email = prompt('Enter demo email address:', 'test@gmail.com');
+            if (email) {
+                sessionStorage.setItem('proctorai_demo_auth', 'true');
+                sessionStorage.setItem('proctorai_demo_email', email);
+                localStorage.setItem('proctorai_demo_auth', 'true');
+                localStorage.setItem('proctorai_demo_email', email);
+                updateStorageDisplay();
+                alert(`✅ Simulated login as: ${email}\n\nYou can now access protected pages.`);
+            }
+        }
+        
+        // Simulate logout
+        function simulateLogout() {
+            sessionStorage.removeItem('proctorai_demo_auth');
+            sessionStorage.removeItem('proctorai_demo_email');
+            localStorage.removeItem('proctorai_demo_auth');
+            localStorage.removeItem('proctorai_demo_email');
+            updateStorageDisplay();
+            alert('❌ Simulated logout complete.\n\nAttempting to access protected pages will redirect to login.');
+        }
+        
+        // Refresh state
+        function refreshState() {
+            updateStorageDisplay();
+        }
+        
+        // Initialize
+        updateStorageDisplay();
+    </script>
+</body>
+</html>

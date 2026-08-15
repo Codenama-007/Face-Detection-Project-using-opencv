@@ -226,6 +226,17 @@
     <!-- Scripts -->
     <script src="reports.js"></script>
     <script>
+        // ═══════════════════════════════════════════════════════════════════
+        // DEMO AUTHENTICATION CHECK
+        // Redirect to login if not authenticated
+        // ═══════════════════════════════════════════════════════════════════
+        (function checkAuth() {
+            const demoAuth = sessionStorage.getItem('proctorai_demo_auth') || localStorage.getItem('proctorai_demo_auth');
+            if (demoAuth !== 'true') {
+                window.location.href = 'login.html';
+            }
+        })();
+
         // Initialize Lucide Icons
         lucide.createIcons();
     </script>
