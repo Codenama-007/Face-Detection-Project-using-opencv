@@ -83,6 +83,10 @@
     --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, monospace;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 html, body {
     height: 100%;
     width: 100%;
@@ -943,6 +947,7 @@ body::after {
 .cctv-feed-area::after {
     content: '';
     position: absolute;
+    top: 0;
     left: 0;
     right: 0;
     height: 2px;
@@ -958,13 +963,14 @@ body::after {
     animation: laserScan 6s linear infinite;
     pointer-events: none;
     z-index: 5;
+    will-change: transform, opacity;
 }
 
 @keyframes laserScan {
-    0%   { top: 0%;   opacity: 0; }
+    0%   { transform: translateY(0); opacity: 0; }
     5%   { opacity: 1; }
     95%  { opacity: 1; }
-    100% { top: 100%; opacity: 0; }
+    100% { transform: translateY(500px); opacity: 0; }
 }
 
 .cctv-img {
@@ -1578,8 +1584,8 @@ body::after {
 }
 
 @keyframes aleSlideIn {
-    from { transform: translateX(16px); opacity: 0; }
-    to   { transform: translateX(0);    opacity: 1; }
+    from { transform: translateY(-6px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
 }
 
 .ale.danger {

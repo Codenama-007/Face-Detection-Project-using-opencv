@@ -117,26 +117,26 @@ function showToast(message, type = 'success', duration = 3000) {
 }
 
 // ─── Page Transition Overlay ────────────────────────────────
-function navigateWithTransition(url, delay = 900) {
+function navigateWithTransition(url, delay = 200) {
     let overlay = document.getElementById('page-transition');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'page-transition';
         overlay.style.cssText = `
-            position: fixed; inset: 0; background: #000;
+            position: fixed; inset: 0; background: #06090e;
             z-index: 99998; opacity: 0;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.2s ease;
             display: flex; align-items: center; justify-content: center;
             pointer-events: none;
         `;
         overlay.innerHTML = `
             <div style="display:flex;flex-direction:column;align-items:center;gap:1rem">
                 <div style="
-                    width:40px;height:40px;border:3px solid rgba(255,255,255,0.1);
-                    border-top-color:#0a84ff;border-radius:50%;
-                    animation:spin 0.8s linear infinite;
+                    width:36px;height:36px;border:3px solid rgba(255,255,255,0.1);
+                    border-top-color:#00e5ff;border-radius:50%;
+                    animation:spin 0.6s linear infinite;
                 "></div>
-                <span style="color:rgba(255,255,255,0.5);font-family:'Inter',sans-serif;font-size:0.875rem;">Loading...</span>
+                <span style="color:rgba(255,255,255,0.6);font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:600;letter-spacing:0.04em;">AUTHENTICATING...</span>
             </div>
         `;
         const style = document.createElement('style');
@@ -342,8 +342,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ).forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            showToast('Launching Platform…', 'info', 1200);
-            navigateWithTransition('monitoring.html', 900);
+            showToast('Launching Platform…', 'info', 800);
+            navigateWithTransition('monitoring.html', 200);
         });
     });
 
@@ -354,14 +354,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (href && href.includes('monitoring')) {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                showToast('Launching Platform…', 'info', 1200);
-                navigateWithTransition('monitoring.html', 900);
+                showToast('Launching Platform…', 'info', 800);
+                navigateWithTransition('monitoring.html', 200);
             });
         }
         if (href && href.includes('reports')) {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                navigateWithTransition('reports.html', 600);
+                navigateWithTransition('reports.html', 200);
             });
         }
     });
@@ -372,8 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (href && href.includes('monitoring')) {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                showToast('Launching Platform…', 'info', 1200);
-                navigateWithTransition('monitoring.html', 900);
+                showToast('Launching Platform…', 'info', 800);
+                navigateWithTransition('monitoring.html', 200);
             });
         }
         if (href && href.includes('features') || href === '#features') {
@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 sessionStorage.setItem('navSource', 'unified-suite');
                 sessionStorage.setItem('scrollPos', window.scrollY);
-                navigateWithTransition(href, 500);
+                navigateWithTransition(href, 200);
             });
         }
     });
@@ -402,10 +402,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedPos) {
             setTimeout(() => {
                 window.scrollTo({ top: parseInt(savedPos, 10), behavior: 'smooth' });
-            }, 100);
+            }, 50);
         } else {
             const el = document.getElementById('unified-suite');
-            if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+            if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 50);
         }
     }
 
@@ -421,8 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'Terms of Service': () => showToast('Terms of Service — Coming Soon', 'info'),
         'Security Overview': () => showToast('Security Overview — Coming Soon', 'info'),
         'Privacy Policy': () => showToast('Privacy Policy — Coming Soon', 'info'),
-        'Live Monitoring': () => navigateWithTransition('monitoring.html', 500),
-        'Identity Enrollment': () => navigateWithTransition('enrollment.html', 500),
+        'Live Monitoring': () => navigateWithTransition('monitoring.html', 200),
+        'Identity Enrollment': () => navigateWithTransition('enrollment.html', 200),
     };
 
     document.querySelectorAll('.footer-links-group a').forEach(link => {
