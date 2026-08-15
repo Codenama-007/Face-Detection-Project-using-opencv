@@ -751,15 +751,17 @@ body::before {
                 <thead>
                     <tr>
                         <th>Timestamp</th>
+                        <th>Action / Event</th>
+                        <th>User</th>
+                        <th>Role</th>
                         <th>Institution</th>
-                        <th>Subject ID</th>
-                        <th>Security Event</th>
-                        <th>Posture</th>
-                        <th>Risk Score</th>
+                        <th>IP Address</th>
+                        <th>Result</th>
+                        <th>Audit Details</th>
                     </tr>
                 </thead>
                 <tbody id="auditTableBody">
-                    <tr><td colspan="6" style="text-align:center;color:var(--t3);">Loading security events...</td></tr>
+                    <tr><td colspan="8" style="text-align:center;color:var(--t3);">Loading security events...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -1041,22 +1043,28 @@ body::before {
         async function loadAuditLogs() {
             try {
                 const inst = document.getElementById('globalInstFilter').value;
-                const url = inst === 'ALL' ? '/api/alerts' : `/api/alerts?institution_id=${inst}`;
+                const url = inst === 'ALL' ? '/api/admin/audit-logs' : `/api/admin/audit-logs?institution_id=${inst}`;
                 const res = await fetch(url, { credentials: 'include' });
                 const logs = await res.json();
                 const tbody = document.getElementById('auditTableBody');
                 if (logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--t3);">No security events recorded.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--t3);">No security events recorded.</td></tr>';
                     return;
                 }
                 tbody.innerHTML = logs.map(l => `
                     <tr>
-                        <td style="font-family:var(--mono);font-size:0.75rem;color:var(--t3);">${l.timestamp}</td>
-                        <td><span class="tag-pill">${l.institution_id || 'Global'}</span></td>
-                        <td style="font-family:var(--mono);font-weight:700;">${l.student_id || 'Unknown'}</td>
-                        <td style="font-weight:600;color:#fff;">${l.status}</td>
-                        <td style="font-size:0.78rem;color:var(--accent);">${l.direction || 'CENTER'}</td>
-                        <td style="font-family:var(--mono);font-weight:700;color:${l.risk_score > 50 ? 'var(--danger)' : 'var(--success)'};">${l.risk_score}</td>
+                        <td style="font-family:var(--mono);font-size:0.75rem;color:var(--t3);white-space:nowrap;">${l.timestamp}</td>
+                        <td style="font-weight:700;color:var(--cyan);"><span class="tag-pill">${l.action}</span></td>
+                        <td style="font-family:var(--mono);font-weight:600;">${l.username || 'System'}</td>
+                        <td style="font-size:0.75rem;font-weight:700;color:var(--t2);">${l.role || '-'}</td>
+                        <td><span class="tag-pill">${l.institution_id || 'Platform'}</span></td>
+                        <td style="font-family:var(--mono);font-size:0.75rem;color:var(--t3);">${l.ip_address || '-'}</td>
+                        <td>
+                            <span class="status-badge ${l.result === 'SUCCESS' ? 'active' : 'disabled'}">
+                                ${l.result}
+                            </span>
+                        </td>
+                        <td style="font-size:0.78rem;color:var(--t2);">${l.details || '-'}</td>
                     </tr>
                 `).join('');
             } catch (err) {

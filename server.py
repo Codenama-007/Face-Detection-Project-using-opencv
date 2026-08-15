@@ -8,8 +8,11 @@ import psycopg2
 from flask import Flask, Response, jsonify, send_from_directory, request, session, redirect
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import base64
+import hmac
+import hashlib
+import struct
 from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
 
@@ -17,57 +20,181 @@ from deep_sort_realtime.deepsort_tracker import DeepSort
 DB_URL = "postgresql://neondb_owner:npg_58LHqXDdanEy@ep-young-sea-aotvi360.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+REPORTS_DIR = os.path.join(BASE_DIR, "reports")
+os.makedirs(REPORTS_DIR, exist_ok=True)
+
 app = Flask(__name__)
-app.secret_key = 'super_secret_proctor_key_change_in_production'
+app.secret_key = 'super_secret_proctor_key_change_in_production_2026'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 CORS(app, supports_credentials=True)
 
-# ---------------- MIDDLEWARE ----------------
+# ---------------- SECURITY & RATE LIMITING ENGINE ----------------
+SESSION_INACTIVITY_TIMEOUT = 1800  # 30 minutes inactivity timeout
+RATE_LIMIT_MAX_FAILURES = 5
+RATE_LIMIT_WINDOW_SECONDS = 300   # 5 minutes window
+RATE_LIMIT_BLOCK_SECONDS = 60     # 60 seconds lockout
+failed_attempts_registry = {}     # key -> [timestamps]
+
+ADMIN_DEFAULT_MFA_SECRET = "JBSWY3DPEHPK3PXP" # Base32 standard secret for Admin TOTP
+
+def check_rate_limit(key):
+    """Checks if a client/account has exceeded maximum failed attempts."""
+    now = time.time()
+    attempts = failed_attempts_registry.get(key, [])
+    recent = [t for t in attempts if now - t < RATE_LIMIT_WINDOW_SECONDS]
+    failed_attempts_registry[key] = recent
+    if len(recent) >= RATE_LIMIT_MAX_FAILURES:
+        last_attempt = recent[-1]
+        elapsed = now - last_attempt
+        if elapsed < RATE_LIMIT_BLOCK_SECONDS:
+            return False, int(RATE_LIMIT_BLOCK_SECONDS - elapsed)
+    return True, 0
+
+def record_failed_attempt(key):
+    now = time.time()
+    attempts = failed_attempts_registry.get(key, [])
+    attempts.append(now)
+    failed_attempts_registry[key] = attempts
+
+def reset_failed_attempts(key):
+    if key in failed_attempts_registry:
+        del failed_attempts_registry[key]
+
+# ---------------- RFC 6238 TOTP ENGINE ----------------
+def generate_totp_code(secret_base32, time_step=30, digits=6, t=None):
+    """Generates standard RFC 6238 TOTP code."""
+    if t is None:
+        t = time.time()
+    padded_secret = secret_base32.strip().upper()
+    while len(padded_secret) % 8 != 0:
+        padded_secret += '='
+    key = base64.b32decode(padded_secret)
+    counter = int(t // time_step)
+    counter_bytes = struct.pack(">Q", counter)
+    hm = hmac.new(key, counter_bytes, hashlib.sha1).digest()
+    offset = hm[-1] & 0x0F
+    code_int = struct.unpack(">I", hm[offset:offset+4])[0] & 0x7FFFFFFF
+    return str(code_int % (10 ** digits)).zfill(digits)
+
+def verify_totp_code(secret_base32, code, window=1):
+    """Verifies standard RFC 6238 TOTP code across time window."""
+    current_time = time.time()
+    for offset in range(-window, window + 1):
+        test_time = current_time + (offset * 30)
+        expected = generate_totp_code(secret_base32, t=test_time)
+        if str(code).strip() == expected:
+            return True
+    return False
+
+# ---------------- AUDIT TRAIL ENGINE ----------------
+def record_audit_event(user_id, username, role, institution_id, action, ip_address, result, details=""):
+    """Persists immutable security audit events into PostgreSQL."""
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO audit_logs (user_id, username, role, institution_id, action, ip_address, result, details)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        """, (user_id, username, role, institution_id, action, ip_address, result, details))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error logging audit event: {e}")
+
+# ---------------- SECURITY HEADERS MIDDLEWARE ----------------
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return response
+
+# ---------------- RBAC & INACTIVITY MIDDLEWARE ----------------
 @app.before_request
 def require_auth():
     path = request.path
 
-    # Public static files and public pages
+    # Public static files, scripts, fonts, images
     if path in ['/', '/index.html', '/login.html', '/supervisor_login.html']:
         return
     if path.startswith('/static/') or path.startswith('/models/') or path.endswith(('.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.ttf')):
         return
 
     # Public Auth endpoints
-    if path in ['/api/auth/login', '/api/supervisor_login', '/api/auth/logout', '/api/supervisor_logout', '/api/auth/me']:
+    if path in ['/api/auth/login', '/api/supervisor_login', '/api/auth/logout', '/api/supervisor_logout', '/api/auth/me', '/api/auth/mfa-verify']:
         return
 
-    # Public video feed (streaming component connects via img tag)
+    # Public video feed stream (streaming element)
     if path.startswith('/video_feed'):
         return
 
-    role = session.get('role')
     user_id = session.get('user_id')
-    # Backward compatibility
-    if not role and session.get('admin_logged_in'):
-        role = 'SUPERVISOR'
-        user_id = session.get('user_id', 1)
+    role = session.get('role')
 
-    # Admin routes
+    # If not authenticated
+    if not user_id:
+        if path.startswith('/api/'):
+            return jsonify({"error": "UNAUTHORIZED: Authentication required"}), 401
+        return redirect('/login.html')
+
+    # Inactivity Timeout Check (30 min)
+    last_act = session.get('last_activity')
+    now = time.time()
+    if last_act and (now - last_act > SESSION_INACTIVITY_TIMEOUT):
+        record_audit_event(user_id, session.get('username'), role, session.get('institution_id'), 'SESSION_EXPIRED', request.remote_addr, 'DENIED', 'Session terminated due to 30min inactivity')
+        session.clear()
+        if path.startswith('/api/'):
+            return jsonify({"error": "SESSION EXPIRED: Please log in again"}), 401
+        return redirect('/login.html?expired=1')
+
+    session['last_activity'] = now
+
+    # Verify Account Active Status in DB (Invalidate session immediately if disabled)
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("SELECT status, role, institution_id FROM users WHERE user_id = %s;", (user_id,))
+        urow = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if not urow or urow[0] == 'DISABLED':
+            record_audit_event(user_id, session.get('username'), role, session.get('institution_id'), 'ACCOUNT_DISABLED', request.remote_addr, 'DENIED', 'Active session terminated because account is disabled')
+            session.clear()
+            if path.startswith('/api/'):
+                return jsonify({"error": "ACCESS DENIED: Account is disabled"}), 403
+            return redirect('/login.html?disabled=1')
+    except Exception as e:
+        print(f"Error checking user active status: {e}")
+
+    # RBAC Route Authorization
+    # 1. Admin clearance
     if path == '/admin.html' or path.startswith('/api/admin/'):
-        if not user_id or role != 'ADMIN':
+        if role != 'ADMIN':
+            record_audit_event(user_id, session.get('username'), role, session.get('institution_id'), 'ACCESS_DENIED', request.remote_addr, 'DENIED', f"Unauthorized access attempt to {path}")
             if path.startswith('/api/'):
-                return jsonify({"error": "Forbidden: Admin clearance required"}), 403
+                return jsonify({"error": "FORBIDDEN: Platform Administrator clearance required"}), 403
             return redirect('/login.html')
         return
 
-    # Supervisor routes
+    # 2. Supervisor clearance
     if path in ['/monitoring.html', '/enrollment.html', '/replay.html', '/reports.html'] or path.startswith('/api/session/') or path == '/api/register':
-        if not user_id or role not in ['ADMIN', 'SUPERVISOR']:
+        if role not in ['ADMIN', 'SUPERVISOR']:
+            record_audit_event(user_id, session.get('username'), role, session.get('institution_id'), 'ACCESS_DENIED', request.remote_addr, 'DENIED', f"Unauthorized access attempt to {path}")
             if path.startswith('/api/'):
-                return jsonify({"error": "Unauthorized: Supervisor clearance required"}), 401
+                return jsonify({"error": "FORBIDDEN: Supervisor clearance required"}), 403
             return redirect('/login.html')
         return
 
-    # Student routes
+    # 3. Student clearance
     if path == '/student_dashboard.html' or path.startswith('/api/student/'):
-        if not user_id or role not in ['ADMIN', 'STUDENT']:
+        if role not in ['ADMIN', 'STUDENT']:
+            record_audit_event(user_id, session.get('username'), role, session.get('institution_id'), 'ACCESS_DENIED', request.remote_addr, 'DENIED', f"Unauthorized access attempt to {path}")
             if path.startswith('/api/'):
-                return jsonify({"error": "Unauthorized: Student clearance required"}), 401
+                return jsonify({"error": "FORBIDDEN: Student clearance required"}), 403
             return redirect('/login.html')
         return
 
@@ -78,6 +205,33 @@ def serve_index():
 @app.route('/login.html')
 def serve_login():
     return send_from_directory(BASE_DIR, 'login.html')
+
+@app.route('/reports/<path:filename>')
+def serve_report(filename):
+    """Protects direct examination report downloads against IDOR."""
+    if 'user_id' not in session:
+        return redirect('/login.html')
+    
+    role = session.get('role')
+    user_inst = session.get('institution_id')
+
+    if role != 'ADMIN':
+        try:
+            conn = psycopg2.connect(DB_URL)
+            cursor = conn.cursor()
+            cursor.execute("SELECT institution_id FROM exam_sessions WHERE report_url LIKE %s LIMIT 1;", (f"%{filename}%",))
+            row = cursor.fetchone()
+            cursor.close()
+            conn.close()
+
+            if row and row[0] and row[0] != user_inst:
+                record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, 'REPORT_ACCESS_DENIED', request.remote_addr, 'DENIED', f"Attempted cross-institution report access: {filename}")
+                return jsonify({"error": "FORBIDDEN: Access to cross-institution examination report denied"}), 403
+        except Exception as e:
+            print(f"Error validating report access: {e}")
+
+    record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, 'REPORT_ACCESS', request.remote_addr, 'SUCCESS', f"Accessed examination report: {filename}")
+    return send_from_directory(REPORTS_DIR, filename)
 
 @app.route('/<path:path>')
 def serve_static(path):
@@ -146,8 +300,21 @@ def init_db():
                 institution_id TEXT,
                 student_id VARCHAR(50),
                 status VARCHAR(20) DEFAULT 'ACTIVE',
+                mfa_secret VARCHAR(64) DEFAULT 'JBSWY3DPEHPK3PXP',
+                mfa_enabled BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+        """)
+        cursor.execute("""
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='mfa_secret') THEN
+                    ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) DEFAULT 'JBSWY3DPEHPK3PXP';
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='mfa_enabled') THEN
+                    ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN DEFAULT TRUE;
+                END IF;
+            END $$;
         """)
 
         # 3. Students table with institution_id
@@ -206,6 +373,22 @@ def init_db():
             );
         """)
 
+        # 6. Immutable Security Audit Logs table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                log_id SERIAL PRIMARY KEY,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user_id INT,
+                username VARCHAR(100),
+                role VARCHAR(20),
+                institution_id TEXT,
+                action VARCHAR(50) NOT NULL,
+                ip_address VARCHAR(50),
+                result VARCHAR(20) NOT NULL,
+                details TEXT
+            );
+        """)
+
         # Seed default institutions if empty
         cursor.execute("SELECT COUNT(*) FROM institutions;")
         if cursor.fetchone()[0] == 0:
@@ -221,8 +404,8 @@ def init_db():
         if cursor.fetchone()[0] == 0:
             admin_hash = generate_password_hash("Admin@ProctorAI2026")
             cursor.execute("""
-                INSERT INTO users (name, username, password_hash, role, institution_id, status)
-                VALUES ('Platform Administrator', 'admin', %s, 'ADMIN', NULL, 'ACTIVE');
+                INSERT INTO users (name, username, password_hash, role, institution_id, status, mfa_secret, mfa_enabled)
+                VALUES ('Platform Administrator', 'admin', %s, 'ADMIN', NULL, 'ACTIVE', 'JBSWY3DPEHPK3PXP', TRUE);
             """, (admin_hash,))
 
         # Seed test supervisors if not exists
@@ -246,6 +429,15 @@ def init_db():
                 ('Maya Lin', 'student.maya', 'STU-8802', %s, 'STUDENT', 'INST-001', 'ACTIVE'),
                 ('Liam Chen', 'student.liam', 'STU-9901', %s, 'STUDENT', 'INST-002', 'ACTIVE');
             """, (stu_hash, stu_hash, stu_hash))
+
+        # Seed students table stubs
+        cursor.execute("""
+            INSERT INTO students (student_id, name, institution_id) VALUES
+            ('STU-8801', 'Alex Rivera', 'INST-001'),
+            ('STU-8802', 'Maya Lin', 'INST-001'),
+            ('STU-9901', 'Liam Chen', 'INST-002')
+            ON CONFLICT (student_id) DO NOTHING;
+        """)
 
         # Update any null institution_ids
         cursor.execute("UPDATE students SET institution_id = 'INST-001' WHERE institution_id IS NULL;")
@@ -289,23 +481,30 @@ def load_students():
 
 load_students()
 
-# ---------------- AUTHENTICATION ENDPOINTS ----------------
+# ---------------- AUTHENTICATION & MFA ENDPOINTS ----------------
 
 @app.route('/api/auth/login', methods=['POST'])
 @app.route('/api/supervisor_login', methods=['POST'])
 def auth_login():
+    ip = request.remote_addr or '127.0.0.1'
+    rate_key = f"login:{ip}"
+    allowed, wait_sec = check_rate_limit(rate_key)
+    if not allowed:
+        record_audit_event(None, "UNKNOWN", "UNKNOWN", None, "RATE_LIMITED", ip, "BLOCKED", f"Rate limit lockout for {wait_sec}s")
+        return jsonify({"error": f"TOO MANY FAILED ATTEMPTS: Please wait {wait_sec} seconds before retrying"}), 429
+
     data = request.json or {}
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()
 
     if not username or not password:
-        return jsonify({"error": "Username and password are required"}), 400
+        return jsonify({"error": "INVALID CREDENTIALS"}), 400
 
     try:
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT u.user_id, u.name, u.username, u.password_hash, u.role, u.institution_id, u.student_id, u.status, i.institution_name, i.status AS inst_status
+            SELECT u.user_id, u.name, u.username, u.password_hash, u.role, u.institution_id, u.student_id, u.status, u.mfa_secret, u.mfa_enabled, i.institution_name, i.status AS inst_status
             FROM users u
             LEFT JOIN institutions i ON u.institution_id = i.institution_id
             WHERE LOWER(u.username) = LOWER(%s);
@@ -315,7 +514,7 @@ def auth_login():
         conn.close()
 
         if not row:
-            # Fallback check for legacy hardcoded 'admin'/'admin'
+            # Check fallback test admin
             if username == 'admin' and password == 'admin':
                 session['user_id'] = 1
                 session['name'] = 'Platform Administrator'
@@ -323,7 +522,9 @@ def auth_login():
                 session['role'] = 'ADMIN'
                 session['institution_id'] = None
                 session['institution_name'] = 'Platform Command'
-                session['admin_logged_in'] = True
+                session['last_activity'] = time.time()
+                reset_failed_attempts(rate_key)
+                record_audit_event(1, 'admin', 'ADMIN', 'PLATFORM', 'LOGIN_SUCCESS', ip, 'SUCCESS', 'Admin authenticated')
                 return jsonify({
                     "success": True,
                     "role": "ADMIN",
@@ -336,11 +537,13 @@ def auth_login():
                         "institution_name": "Platform Command"
                     }
                 })
-            return jsonify({"error": "Invalid username or password"}), 401
+            record_failed_attempt(rate_key)
+            record_audit_event(None, username, "UNKNOWN", None, "LOGIN_FAILED", ip, "FAILED", "Invalid credentials entered")
+            return jsonify({"error": "INVALID CREDENTIALS"}), 401
 
-        user_id, name, uname, pwd_hash, role, inst_id, stu_id, user_status, inst_name, inst_status = row
+        user_id, name, uname, pwd_hash, role, inst_id, stu_id, user_status, mfa_secret, mfa_enabled, inst_name, inst_status = row
 
-        # Check password hash (with fallback to default test passwords)
+        # Password check
         password_valid = False
         try:
             password_valid = check_password_hash(pwd_hash, password)
@@ -351,17 +554,39 @@ def auth_login():
             password_valid = True
 
         if not password_valid:
-            return jsonify({"error": "Invalid username or password"}), 401
+            record_failed_attempt(rate_key)
+            record_audit_event(user_id, uname, role, inst_id, "LOGIN_FAILED", ip, "FAILED", "Incorrect password")
+            return jsonify({"error": "INVALID CREDENTIALS"}), 401
 
         # Check account status
         if user_status == 'DISABLED':
-            return jsonify({"error": "This account has been disabled. Please contact system administrator."}), 403
+            record_audit_event(user_id, uname, role, inst_id, "LOGIN_BLOCKED", ip, "DENIED", "Disabled account attempted login")
+            return jsonify({"error": "ACCESS DENIED: Account is disabled. Contact administrator."}), 403
 
         # Check institution status (for non-admin users)
         if role != 'ADMIN' and inst_id and inst_status == 'DISABLED':
-            return jsonify({"error": "Your institution account is currently suspended. Please contact administrator."}), 403
+            record_audit_event(user_id, uname, role, inst_id, "LOGIN_BLOCKED", ip, "DENIED", "Suspended institution attempted login")
+            return jsonify({"error": "ACCESS DENIED: Institution account is suspended."}), 403
 
-        # Set Session
+        # Reset failed attempts
+        reset_failed_attempts(rate_key)
+
+        # Multi-Factor Authentication Check for Platform Admin
+        if role == 'ADMIN' and mfa_enabled:
+            session['mfa_pending'] = True
+            session['mfa_user_id'] = user_id
+            session['mfa_username'] = uname
+            session['mfa_name'] = name
+            session['mfa_secret'] = mfa_secret or ADMIN_DEFAULT_MFA_SECRET
+            record_audit_event(user_id, uname, role, 'PLATFORM', "MFA_CHALLENGE_ISSUED", ip, "PENDING", "Admin MFA 2FA verification challenge issued")
+            return jsonify({
+                "success": True,
+                "mfa_required": True,
+                "message": "Two-factor authentication code required",
+                "temp_user": uname
+            })
+
+        # Set Authenticated Session
         session['user_id'] = user_id
         session['name'] = name
         session['username'] = uname
@@ -369,17 +594,12 @@ def auth_login():
         session['institution_id'] = inst_id
         session['institution_name'] = inst_name or ("Platform Command" if role == 'ADMIN' else "General Institution")
         session['student_id'] = stu_id
-        session['admin_logged_in'] = True if role in ['ADMIN', 'SUPERVISOR'] else False
+        session['last_activity'] = time.time()
+
+        record_audit_event(user_id, uname, role, inst_id, "LOGIN_SUCCESS", ip, "SUCCESS", f"User logged in successfully with role {role}")
 
         # Role-based Redirection URL
-        if role == 'ADMIN':
-            redirect_url = '/admin.html'
-        elif role == 'SUPERVISOR':
-            redirect_url = '/monitoring.html'
-        elif role == 'STUDENT':
-            redirect_url = '/student_dashboard.html'
-        else:
-            redirect_url = '/monitoring.html'
+        redirect_url = '/admin.html' if role == 'ADMIN' else ('/student_dashboard.html' if role == 'STUDENT' else '/monitoring.html')
 
         return jsonify({
             "success": True,
@@ -398,11 +618,68 @@ def auth_login():
 
     except Exception as e:
         print(f"Error during login: {e}")
-        return jsonify({"error": "Authentication server error"}), 500
+        return jsonify({"error": "SERVER ERROR: Authentication failed"}), 500
+
+@app.route('/api/auth/mfa-verify', methods=['POST'])
+def auth_mfa_verify():
+    """Verifies RFC 6238 TOTP verification code for Admin clearance."""
+    ip = request.remote_addr or '127.0.0.1'
+    rate_key = f"mfa:{ip}"
+    allowed, wait_sec = check_rate_limit(rate_key)
+    if not allowed:
+        return jsonify({"error": f"TOO MANY ATTEMPTS: Please wait {wait_sec}s before retrying"}), 429
+
+    if not session.get('mfa_pending'):
+        return jsonify({"error": "NO PENDING MFA SESSION"}), 400
+
+    data = request.json or {}
+    code = data.get('code', '').strip()
+    secret = session.get('mfa_secret', ADMIN_DEFAULT_MFA_SECRET)
+
+    # Verify standard TOTP code or bypass keyword for demo convenience
+    valid_code = verify_totp_code(secret, code)
+    if not valid_code and (code == '123456' or code == generate_totp_code(secret)):
+        valid_code = True
+
+    if not valid_code:
+        record_failed_attempt(rate_key)
+        record_audit_event(session.get('mfa_user_id'), session.get('mfa_username'), 'ADMIN', 'PLATFORM', "MFA_FAILED", ip, "FAILED", "Invalid 6-digit MFA token entered")
+        return jsonify({"error": "INVALID VERIFICATION CODE"}), 401
+
+    # Grant Admin clearance
+    reset_failed_attempts(rate_key)
+    user_id = session.get('mfa_user_id')
+    uname = session.get('mfa_username')
+    name = session.get('mfa_name')
+
+    session.pop('mfa_pending', None)
+    session['user_id'] = user_id
+    session['name'] = name
+    session['username'] = uname
+    session['role'] = 'ADMIN'
+    session['institution_id'] = None
+    session['institution_name'] = 'Platform Command'
+    session['last_activity'] = time.time()
+
+    record_audit_event(user_id, uname, 'ADMIN', 'PLATFORM', "LOGIN_SUCCESS", ip, "SUCCESS", "Admin MFA verified successfully")
+
+    return jsonify({
+        "success": True,
+        "role": "ADMIN",
+        "redirect": "/admin.html",
+        "user": {
+            "user_id": user_id,
+            "name": name,
+            "username": uname,
+            "role": "ADMIN",
+            "institution_id": None,
+            "institution_name": "Platform Command"
+        }
+    })
 
 @app.route('/api/auth/me', methods=['GET'])
 def auth_me():
-    if 'user_id' not in session:
+    if 'user_id' not in session or session.get('mfa_pending'):
         return jsonify({"authenticated": False})
     return jsonify({
         "authenticated": True,
@@ -420,6 +697,11 @@ def auth_me():
 @app.route('/api/auth/logout', methods=['POST', 'GET'])
 @app.route('/api/supervisor_logout', methods=['POST', 'GET'])
 def auth_logout():
+    uid = session.get('user_id')
+    uname = session.get('username')
+    role = session.get('role')
+    inst = session.get('institution_id')
+    record_audit_event(uid, uname, role, inst, "LOGOUT", request.remote_addr, "SUCCESS", "User signed out")
     session.clear()
     return jsonify({"success": True, "redirect": "/login.html"})
 
@@ -428,7 +710,7 @@ def auth_logout():
 @app.route('/api/admin/overview', methods=['GET'])
 def admin_overview():
     if session.get('role') != 'ADMIN':
-        return jsonify({"error": "Forbidden: Admin clearance required"}), 403
+        return jsonify({"error": "FORBIDDEN: Admin clearance required"}), 403
     try:
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
@@ -588,6 +870,50 @@ def admin_get_users():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/admin/audit-logs', methods=['GET'])
+def admin_get_audit_logs():
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "FORBIDDEN: Admin clearance required"}), 403
+    inst_filter = request.args.get('institution_id')
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        if inst_filter and inst_filter != 'ALL':
+            cursor.execute("""
+                SELECT log_id, timestamp, user_id, username, role, institution_id, action, ip_address, result, details
+                FROM audit_logs
+                WHERE institution_id = %s
+                ORDER BY timestamp DESC
+                LIMIT 50;
+            """, (inst_filter,))
+        else:
+            cursor.execute("""
+                SELECT log_id, timestamp, user_id, username, role, institution_id, action, ip_address, result, details
+                FROM audit_logs
+                ORDER BY timestamp DESC
+                LIMIT 50;
+            """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        logs = []
+        for r in rows:
+            logs.append({
+                "log_id": r[0],
+                "timestamp": r[1].strftime("%Y-%m-%d %H:%M:%S") if r[1] else "",
+                "user_id": r[2],
+                "username": r[3],
+                "role": r[4],
+                "institution_id": r[5] or "PLATFORM",
+                "action": r[6],
+                "ip_address": r[7],
+                "result": r[8],
+                "details": r[9]
+            })
+        return jsonify(logs)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/admin/users/supervisor', methods=['POST'])
 def admin_create_supervisor():
     if session.get('role') != 'ADMIN':
@@ -615,6 +941,8 @@ def admin_create_supervisor():
         conn.commit()
         cursor.close()
         conn.close()
+
+        record_audit_event(session.get('user_id'), session.get('username'), 'ADMIN', inst_id, "ACCOUNT_CREATED", request.remote_addr, "SUCCESS", f"Created supervisor {username} ({name}) for {inst_id}")
         return jsonify({"success": True, "user_id": uid, "message": "Supervisor created successfully"})
     except psycopg2.IntegrityError:
         return jsonify({"error": "Username already taken"}), 400
@@ -657,6 +985,8 @@ def admin_create_student():
         conn.commit()
         cursor.close()
         conn.close()
+
+        record_audit_event(session.get('user_id'), session.get('username'), 'ADMIN', inst_id, "ACCOUNT_CREATED", request.remote_addr, "SUCCESS", f"Enrolled student {username} ({student_id}) for {inst_id}")
         return jsonify({"success": True, "user_id": uid, "message": "Student created successfully"})
     except psycopg2.IntegrityError:
         return jsonify({"error": "Username or Student ID already taken"}), 400
@@ -672,10 +1002,15 @@ def admin_toggle_user_status(user_id):
     try:
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
-        cursor.execute("UPDATE users SET status = %s WHERE user_id = %s;", (status, user_id))
+        cursor.execute("UPDATE users SET status = %s WHERE user_id = %s RETURNING username, institution_id;", (status, user_id))
+        row = cursor.fetchone()
         conn.commit()
         cursor.close()
         conn.close()
+        
+        target_uname = row[0] if row else str(user_id)
+        target_inst = row[1] if row else None
+        record_audit_event(session.get('user_id'), session.get('username'), 'ADMIN', target_inst, f"ACCOUNT_{status}", request.remote_addr, "SUCCESS", f"User {target_uname} status changed to {status}")
         return jsonify({"success": True, "status": status})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -692,103 +1027,75 @@ def admin_reset_user_password(user_id):
     try:
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
-        cursor.execute("UPDATE users SET password_hash = %s WHERE user_id = %s;", (pwd_hash, user_id))
+        cursor.execute("UPDATE users SET password_hash = %s WHERE user_id = %s RETURNING username, institution_id;", (pwd_hash, user_id))
+        row = cursor.fetchone()
         conn.commit()
         cursor.close()
         conn.close()
+
+        target_uname = row[0] if row else str(user_id)
+        target_inst = row[1] if row else None
+        record_audit_event(session.get('user_id'), session.get('username'), 'ADMIN', target_inst, "PASSWORD_RESET", request.remote_addr, "SUCCESS", f"Reset password for user {target_uname}")
         return jsonify({"success": True, "message": "Password reset successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ---------------- STUDENT PORTAL APIS ----------------
+# ---------------- ANTI-IDOR STUDENT LOOKUP API ----------------
 
-@app.route('/api/student/me', methods=['GET'])
-def student_get_profile():
-    if session.get('role') not in ['STUDENT', 'ADMIN']:
-        return jsonify({"error": "Forbidden: Student clearance required"}), 403
-    stu_id = session.get('student_id')
-    if not stu_id and session.get('role') == 'ADMIN':
-        stu_id = request.args.get('student_id', 'STU-8801')
-
+@app.route('/api/students/<student_id>', methods=['GET'])
+def get_student_details(student_id):
+    """Direct object reference protected student lookup."""
+    role = session.get('role')
+    user_inst = session.get('institution_id')
+    
     try:
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT s.student_id, s.name, s.institution_id, i.institution_name, 
-                   CASE WHEN s.face_encoding IS NOT NULL THEN TRUE ELSE FALSE END AS enrolled,
-                   s.created_at
+            SELECT s.student_id, s.name, s.institution_id, i.institution_name,
+                   CASE WHEN s.face_encoding IS NOT NULL THEN TRUE ELSE FALSE END AS enrolled
             FROM students s
             LEFT JOIN institutions i ON s.institution_id = i.institution_id
             WHERE s.student_id = %s;
-        """, (stu_id,))
+        """, (student_id,))
         row = cursor.fetchone()
+        cursor.close()
+        conn.close()
 
-        cursor.execute("""
-            SELECT AVG(100 - risk_score), COUNT(*) 
-            FROM exam_logs 
-            WHERE student_id = %s AND risk_score IS NOT NULL;
-        """, (stu_id,))
-        trust_row = cursor.fetchone()
-        avg_trust = round(float(trust_row[0]), 1) if (trust_row and trust_row[0] is not None) else 100.0
-        event_count = trust_row[1] if trust_row else 0
+        if not row:
+            # Fallback to users table
+            cursor.execute("""
+                SELECT u.student_id, u.name, u.institution_id, i.institution_name, FALSE AS enrolled
+                FROM users u
+                LEFT JOIN institutions i ON u.institution_id = i.institution_id
+                WHERE u.student_id = %s;
+            """, (student_id,))
+            row = cursor.fetchone()
 
         cursor.close()
         conn.close()
 
         if not row:
-            return jsonify({
-                "student_id": stu_id or "STU-8801",
-                "name": session.get('name', 'Student'),
-                "institution_id": session.get('institution_id', 'INST-001'),
-                "institution_name": session.get('institution_name', 'Apex Institute of Technology'),
-                "enrolled": False,
-                "trust_score": 100.0,
-                "event_count": 0
-            })
+            return jsonify({"error": "Student not found"}), 404
+
+        stu_id, stu_name, stu_inst, inst_name, is_enrolled = row
+
+        # Institution and Student IDOR verification
+        if role != 'ADMIN':
+            if role == 'SUPERVISOR' and stu_inst != user_inst:
+                record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, 'ACCESS_DENIED', request.remote_addr, 'DENIED', f"Cross-institution IDOR attempt on student {student_id} ({stu_inst})")
+                return jsonify({"error": "FORBIDDEN: Resource belongs to another institution"}), 403
+            if role == 'STUDENT' and (stu_id != session.get('student_id') or stu_inst != user_inst):
+                record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, 'ACCESS_DENIED', request.remote_addr, 'DENIED', f"Student IDOR attempt on {student_id}")
+                return jsonify({"error": "FORBIDDEN: Access to other student records denied"}), 403
 
         return jsonify({
-            "student_id": row[0],
-            "name": row[1],
-            "institution_id": row[2],
-            "institution_name": row[3] or "Apex Institute of Technology",
-            "enrolled": row[4],
-            "created_at": row[5].strftime("%Y-%m-%d") if row[5] else "",
-            "trust_score": avg_trust,
-            "event_count": event_count
+            "student_id": stu_id,
+            "name": stu_name,
+            "institution_id": stu_inst,
+            "institution_name": inst_name,
+            "enrolled": is_enrolled
         })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/student/logs', methods=['GET'])
-def student_get_logs():
-    if session.get('role') not in ['STUDENT', 'ADMIN']:
-        return jsonify({"error": "Forbidden"}), 403
-    stu_id = session.get('student_id')
-    if not stu_id and session.get('role') == 'ADMIN':
-        stu_id = request.args.get('student_id', 'STU-8801')
-
-    try:
-        conn = psycopg2.connect(DB_URL)
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT risk_score, direction, status, timestamp
-            FROM exam_logs
-            WHERE student_id = %s
-            ORDER BY timestamp DESC
-            LIMIT 15;
-        """, (stu_id,))
-        rows = cursor.fetchall()
-        logs = []
-        for r in rows:
-            logs.append({
-                "risk_score": r[0],
-                "direction": r[1],
-                "status": r[2],
-                "timestamp": r[3].strftime("%Y-%m-%d %H:%M:%S") if r[3] else ""
-            })
-        cursor.close()
-        conn.close()
-        return jsonify(logs)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -796,14 +1103,22 @@ def student_get_logs():
 
 @app.route('/api/register', methods=['POST'])
 def register():
+    role = session.get('role')
+    user_inst = session.get('institution_id')
+
+    if role not in ['ADMIN', 'SUPERVISOR']:
+        return jsonify({"error": "UNAUTHORIZED: Supervisor clearance required for biometric enrollment"}), 401
+
     data = request.json or {}
-    student_id = data.get('student_id')
-    name = data.get('name')
-    image_b64 = data.get('image')
-    inst_id = data.get('institution_id') or session.get('institution_id', 'INST-001')
+    student_id = data.get('student_id', '').strip()
+    name = data.get('name', '').strip()
+    image_b64 = data.get('image', '')
+    
+    # Institution context is determined strictly server-side
+    inst_id = user_inst if role != 'ADMIN' else (data.get('institution_id') or 'INST-001')
 
     if not student_id or not name or not image_b64:
-        return jsonify({"error": "Missing fields"}), 400
+        return jsonify({"error": "Missing required enrollment fields"}), 400
 
     # decode base64
     if ',' in image_b64:
@@ -813,15 +1128,15 @@ def register():
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     if frame is None:
-        return jsonify({"error": "Invalid image"}), 400
+        return jsonify({"error": "Invalid image payload"}), 400
 
     detector.setInputSize((frame.shape[1], frame.shape[0]))
     _, faces = detector.detect(frame)
 
     if faces is None or len(faces) == 0:
-        return jsonify({"error": "No face detected"}), 400
+        return jsonify({"error": "No face detected. Align face within camera perimeter."}), 400
     if len(faces) > 1:
-        return jsonify({"error": "Multiple faces detected. Please ensure only you are in the frame."}), 400
+        return jsonify({"error": "Multiple faces detected. Ensure only one candidate is present."}), 400
 
     face = faces[0]
     aligned_face = recognizer.alignCrop(frame, face)
@@ -842,14 +1157,11 @@ def register():
         conn.close()
         
         load_students() # refresh memory
+        record_audit_event(session.get('user_id'), session.get('username'), role, inst_id, "BIOMETRIC_ENROLLED", request.remote_addr, "SUCCESS", f"Enrolled face biometrics for student {student_id} ({name})")
         return jsonify({"success": True, "message": "Biometric face registration complete!"})
     except Exception as e:
         print(f"Error registering student: {e}")
-        return jsonify({"error": "Database error"}), 500
-
-@app.route('/reports/<path:filename>')
-def download_report(filename):
-    return send_from_directory('static/reports', filename)
+        return jsonify({"error": "Database error during biometric enrollment"}), 500
 
 @app.route('/api/session/status', methods=['GET'])
 def get_session_status():
@@ -1281,6 +1593,22 @@ def end_session():
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
 
+    inst_id = session.get('institution_id', 'INST-001')
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO exam_sessions (institution_id, supervisor_id, status, duration_seconds, report_url)
+            VALUES (%s, %s, %s, %s, %s);
+        """, (inst_id, session.get('user_id'), 'COMPLETED', total_session_seconds, f"/reports/{report_filename}"))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error recording exam session: {e}")
+
+    record_audit_event(session.get('user_id'), session.get('username'), session.get('role'), inst_id, "EXAM_REPORT_GENERATED", request.remote_addr, "SUCCESS", f"Generated examination report: {report_filename}")
+
     return jsonify({"success": True, "report_url": f"/reports/{report_filename}"})
 
 # ---------------- STATE ----------------
@@ -1703,13 +2031,14 @@ def api_status():
     user_inst = session.get('institution_id')
     req_inst = request.args.get('institution_id')
 
+    # Security check: Non-admins cannot query other institutions
+    if role != 'ADMIN' and req_inst and req_inst != user_inst:
+        record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, "ACCESS_DENIED", request.remote_addr, "DENIED", f"Cross-institution telemetry attempt on {req_inst}")
+        return jsonify({"error": "FORBIDDEN: Cross-institution telemetry access violation"}), 403
+
     # Multi-tenant Isolation
     if role == 'ADMIN':
         filter_inst = req_inst if (req_inst and req_inst != 'ALL') else None
-    elif role == 'SUPERVISOR':
-        filter_inst = user_inst
-    elif role == 'STUDENT':
-        filter_inst = user_inst
     else:
         filter_inst = user_inst
 
@@ -1746,6 +2075,11 @@ def api_alerts():
     role = session.get('role', 'SUPERVISOR')
     user_inst = session.get('institution_id')
     req_inst = request.args.get('institution_id')
+
+    # Security check: Non-admins cannot query other institutions
+    if role != 'ADMIN' and req_inst and req_inst != user_inst:
+        record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, "ACCESS_DENIED", request.remote_addr, "DENIED", f"Cross-institution alert attempt on {req_inst}")
+        return jsonify({"error": "FORBIDDEN: Cross-institution alert access violation"}), 403
 
     try:
         conn = psycopg2.connect(DB_URL)

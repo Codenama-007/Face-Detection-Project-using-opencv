@@ -348,16 +348,41 @@ p {
             <button type="submit" class="btn" id="loginBtn">
                 <i data-lucide="log-in"></i> Sign In & Verify Clearance
             </button>
-
-            <div id="statusMsg" class="message"></div>
         </form>
+
+        <!-- Admin MFA Verification Step -->
+        <form id="mfaForm" style="display:none;margin-top:1rem;">
+            <div style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);border-radius:12px;padding:1rem;margin-bottom:1rem;text-align:left;">
+                <div style="font-size:0.75rem;font-weight:800;color:var(--cyan);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:0.2rem;display:flex;align-items:center;gap:0.4rem;">
+                    <i data-lucide="key-round" style="width:14px;height:14px;"></i> Two-Factor Authenticator Required
+                </div>
+                <div style="font-size:0.75rem;color:var(--t2);line-height:1.4;">
+                    Enter the 6-digit verification code from your authenticator app (or demo code <strong style="color:#fff;">123456</strong>).
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="mfaCode">6-Digit One-Time Code</label>
+                <input type="text" id="mfaCode" placeholder="123456" maxlength="6" style="text-align:center;font-family:var(--mono);font-size:1.4rem;letter-spacing:0.3em;font-weight:800;" autocomplete="one-time-code">
+            </div>
+
+            <button type="submit" class="btn" id="mfaBtn">
+                <i data-lucide="shield-check"></i> Verify 2FA & Enter Admin SOC
+            </button>
+
+            <button type="button" class="btn-action" style="margin-top:0.75rem;width:100%;padding:0.6rem;" onclick="fillDemoMFA()">
+                Quick Fill Demo 2FA Code (123456)
+            </button>
+        </form>
+
+        <div id="statusMsg" class="message"></div>
 
         <!-- Quick Demo Credentials for Evaluation -->
         <div class="quick-fill-wrap">
             <div class="quick-fill-title">Demo Test Credentials:</div>
             <div class="chips-grid">
                 <button type="button" class="chip-btn" onclick="fillCreds('admin', 'Admin@ProctorAI2026')">
-                    <span class="chip-role">Platform Admin</span>
+                    <span class="chip-role">Platform Admin (MFA)</span>
                     <span class="chip-uname">admin</span>
                 </button>
                 <button type="button" class="chip-btn" onclick="fillCreds('supervisor.apex', 'Supervisor@123')">
@@ -385,15 +410,36 @@ p {
         lucide.createIcons();
 
         const loginForm = document.getElementById('loginForm');
+        const mfaForm = document.getElementById('mfaForm');
         const loginBtn = document.getElementById('loginBtn');
+        const mfaBtn = document.getElementById('mfaBtn');
         const statusMsg = document.getElementById('statusMsg');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
+        const mfaCodeInput = document.getElementById('mfaCode');
+
+        // Check URL parameters for session state notifications
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('expired')) {
+            statusMsg.className = 'message error';
+            statusMsg.textContent = 'SESSION EXPIRED: Your session timed out due to 30 minutes of inactivity. Please log in again.';
+            statusMsg.style.display = 'block';
+        } else if (params.has('disabled')) {
+            statusMsg.className = 'message error';
+            statusMsg.textContent = 'ACCESS DENIED: Your account has been disabled by platform administrator.';
+            statusMsg.style.display = 'block';
+        }
 
         function fillCreds(u, p) {
             usernameInput.value = u;
             passwordInput.value = p;
             statusMsg.style.display = 'none';
+            loginForm.style.display = 'block';
+            mfaForm.style.display = 'none';
+        }
+
+        function fillDemoMFA() {
+            mfaCodeInput.value = '123456';
         }
 
         loginForm.addEventListener('submit', async (e) => {
@@ -417,6 +463,17 @@ p {
                 const result = await response.json();
 
                 if (response.ok && result.success) {
+                    if (result.mfa_required) {
+                        loginForm.style.display = 'none';
+                        mfaForm.style.display = 'block';
+                        mfaCodeInput.focus();
+                        statusMsg.className = 'message success';
+                        statusMsg.textContent = 'Password verified. Enter 6-digit Authenticator MFA code.';
+                        statusMsg.style.display = 'block';
+                        lucide.createIcons();
+                        return;
+                    }
+
                     statusMsg.className = 'message success';
                     statusMsg.textContent = `Clearance Granted: ${result.role} (${result.user.institution_name}). Redirecting...`;
                     statusMsg.style.display = 'block';
@@ -426,7 +483,7 @@ p {
                     }, 400);
                 } else {
                     statusMsg.className = 'message error';
-                    statusMsg.textContent = result.error || 'Invalid credentials. Access denied.';
+                    statusMsg.textContent = result.error || 'INVALID CREDENTIALS';
                     statusMsg.style.display = 'block';
                     loginBtn.disabled = false;
                     loginBtn.innerHTML = '<i data-lucide="log-in"></i> Sign In & Verify Clearance';
@@ -438,6 +495,48 @@ p {
                 statusMsg.style.display = 'block';
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = '<i data-lucide="log-in"></i> Sign In & Verify Clearance';
+                lucide.createIcons();
+            }
+        });
+
+        mfaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = mfaCodeInput.value.trim();
+            if (!code) return;
+
+            mfaBtn.disabled = true;
+            mfaBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Verifying 2FA Token...';
+            lucide.createIcons();
+
+            try {
+                const response = await fetch('/api/auth/mfa-verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ code })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    statusMsg.className = 'message success';
+                    statusMsg.textContent = '2FA Token Verified. Entering Platform Admin Command...';
+                    statusMsg.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = result.redirect || '/admin.html';
+                    }, 400);
+                } else {
+                    statusMsg.className = 'message error';
+                    statusMsg.textContent = result.error || 'INVALID VERIFICATION CODE';
+                    statusMsg.style.display = 'block';
+                    mfaBtn.disabled = false;
+                    mfaBtn.innerHTML = '<i data-lucide="shield-check"></i> Verify 2FA & Enter Admin SOC';
+                    lucide.createIcons();
+                }
+            } catch {
+                statusMsg.className = 'message error';
+                statusMsg.textContent = 'Network error during MFA verification.';
+                statusMsg.style.display = 'block';
+                mfaBtn.disabled = false;
+                mfaBtn.innerHTML = '<i data-lucide="shield-check"></i> Verify 2FA & Enter Admin SOC';
                 lucide.createIcons();
             }
         });
