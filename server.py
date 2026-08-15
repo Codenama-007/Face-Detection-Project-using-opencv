@@ -588,21 +588,28 @@ def auth_mfa_verify():
     if not session.get('mfa_pending'):
         return jsonify({"error": "NO PENDING MFA SESSION"}), 400
 
+    data = request.json or {}
+    code = str(data.get('code', '')).strip()
+    if not code:
+        return jsonify({"error": "Verification code is required"}), 400
+
+    user_id = session.get('mfa_user_id')
+    uname = session.get('mfa_username')
+    name = session.get('mfa_name')
+    secret = session.get('mfa_secret') or ADMIN_DEFAULT_MFA_SECRET
+
     # Verify authentic RFC 6238 TOTP verification code
     valid_code = verify_totp_code(secret, code)
 
     if not valid_code:
         record_failed_attempt(rate_key)
-        record_audit_event(session.get('mfa_user_id'), session.get('mfa_username'), 'ADMIN', 'PLATFORM', "MFA_FAILED", ip, "FAILED", "Invalid 6-digit MFA token entered")
+        record_audit_event(user_id, uname, 'ADMIN', 'PLATFORM', "MFA_FAILED", ip, "FAILED", "Invalid 6-digit MFA token entered")
         return jsonify({"error": "INVALID VERIFICATION CODE"}), 401
 
     # Grant Admin clearance
     reset_failed_attempts(rate_key)
-    user_id = session.get('mfa_user_id')
-    uname = session.get('mfa_username')
-    name = session.get('mfa_name')
-
     session.pop('mfa_pending', None)
+    session.pop('mfa_secret', None)
     session['user_id'] = user_id
     session['name'] = name
     session['username'] = uname
@@ -626,6 +633,80 @@ def auth_mfa_verify():
             "institution_name": "Platform Command"
         }
     })
+
+# ---------------- ADMIN 2FA SETUP & MANAGEMENT ----------------
+@app.route('/api/admin/mfa/status', methods=['GET'])
+def admin_mfa_status():
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    user_id = session.get('user_id')
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("SELECT mfa_enabled, username FROM users WHERE user_id = %s;", (user_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return jsonify({
+            "mfa_enabled": bool(row[0]) if row else False,
+            "username": row[1] if row else "admin"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/mfa/setup', methods=['POST'])
+def admin_mfa_setup():
+    """Generates a new RFC 6238 Base32 TOTP secret for Admin authenticator setup."""
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    
+    # Generate 160-bit cryptographically secure secret in Base32
+    raw_secret = os.urandom(20)
+    secret_base32 = base64.b32encode(raw_secret).decode('utf-8').replace('=', '')
+    
+    username = session.get('username', 'admin')
+    otpauth_uri = f"otpauth://totp/ProctorAI:{username}?secret={secret_base32}&issuer=ProctorAI&algorithm=SHA1&digits=6&period=30"
+    
+    # Store pending secret in session until initial code is verified
+    session['pending_mfa_secret'] = secret_base32
+    
+    return jsonify({
+        "success": True,
+        "secret": secret_base32,
+        "otpauth_uri": otpauth_uri,
+        "message": "Scan with Google Authenticator or enter secret manually, then verify an initial code to activate."
+    })
+
+@app.route('/api/admin/mfa/enable', methods=['POST'])
+def admin_mfa_enable():
+    """Verifies initial code and activates 2FA on Admin account."""
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    
+    pending_secret = session.get('pending_mfa_secret')
+    if not pending_secret:
+        return jsonify({"error": "No pending MFA setup session. Request setup first."}), 400
+    
+    data = request.json or {}
+    code = str(data.get('code', '')).strip()
+    
+    if not verify_totp_code(pending_secret, code):
+        return jsonify({"error": "INVALID VERIFICATION CODE: Code did not match pending authenticator secret."}), 400
+    
+    user_id = session.get('user_id')
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET mfa_secret = %s, mfa_enabled = TRUE WHERE user_id = %s;", (pending_secret, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        session.pop('pending_mfa_secret', None)
+        record_audit_event(user_id, session.get('username'), 'ADMIN', 'PLATFORM', "MFA_ENABLED", request.remote_addr, "SUCCESS", "Admin 2FA activated successfully")
+        return jsonify({"success": True, "message": "Two-factor authentication successfully enabled for Admin account."})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/auth/me', methods=['GET'])
 def auth_me():
