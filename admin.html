@@ -598,6 +598,10 @@ body::before {
                 <span class="user-badge-role">ADMIN</span>
             </div>
 
+            <button class="btn-primary" style="padding:0.45rem 0.85rem;font-size:0.75rem;background:rgba(0,229,255,0.1);border-color:rgba(0,229,255,0.3);color:var(--cyan);" onclick="openMfaModal()">
+                <i data-lucide="shield-check" style="width:13px;height:13px;"></i> Admin 2FA
+            </button>
+
             <button class="btn-signout" onclick="handleSignOut()">
                 <i data-lucide="log-out" style="width:13px;height:13px;"></i> Sign Out
             </button>
@@ -870,6 +874,53 @@ body::before {
                     Update User Credentials
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Admin 2FA Setup -->
+    <div id="adminMfaModal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title"><i data-lucide="shield-check" style="width:18px;height:18px;color:var(--cyan);vertical-align:middle;margin-right:0.3rem;"></i> Admin 2FA Security</h3>
+                <button class="modal-close" onclick="closeModal('adminMfaModal')">&times;</button>
+            </div>
+            
+            <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:12px;padding:1rem;margin-bottom:1.25rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+                    <span style="font-size:0.8rem;color:var(--t2);font-weight:600;">Two-Factor Status:</span>
+                    <span id="mfaStatusPill" class="status-badge active">PROTECTED (ACTIVE)</span>
+                </div>
+                <p style="font-size:0.75rem;color:var(--t3);line-height:1.4;margin:0;">
+                    Platform Admin requires RFC 6238 TOTP authentication via Google Authenticator, Microsoft Authenticator, or Authy on every sign-in.
+                </p>
+            </div>
+
+            <div id="mfaSetupSection" style="display:none;">
+                <div style="background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.2);border-radius:10px;padding:0.9rem;margin-bottom:1rem;">
+                    <div style="font-size:0.72rem;font-weight:800;color:var(--cyan);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">
+                        Authenticator Secret (Base32)
+                    </div>
+                    <div id="mfaSecretDisplay" style="font-family:var(--mono);font-size:1rem;font-weight:800;color:#fff;word-break:break-all;letter-spacing:0.1em;background:rgba(0,0,0,0.4);padding:0.6rem;border-radius:6px;border:1px solid rgba(255,255,255,0.1);">
+                        -
+                    </div>
+                </div>
+
+                <form onsubmit="confirmEnableMfa(event)">
+                    <div class="form-group">
+                        <label>Enter 6-Digit Code to Confirm & Activate</label>
+                        <input type="text" id="mfaConfirmCode" placeholder="000000" maxlength="6" style="text-align:center;font-family:var(--mono);font-size:1.2rem;font-weight:800;letter-spacing:0.2em;" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width:100%;justify-content:center;">
+                        Verify Code & Activate 2FA
+                    </button>
+                </form>
+            </div>
+
+            <div id="mfaInitialSection">
+                <button type="button" class="btn-primary" style="width:100%;justify-content:center;" onclick="startMfaSetup()">
+                    <i data-lucide="key-round"></i> Generate New Authenticator Key
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1192,6 +1243,71 @@ body::before {
             } else {
                 const data = await res.json();
                 alert(data.error || 'Failed to reset password');
+            }
+        }
+
+        // Admin 2FA Management
+        async function openMfaModal() {
+            openModal('adminMfaModal');
+            await loadMfaStatus();
+        }
+
+        async function loadMfaStatus() {
+            try {
+                const res = await fetch('/api/admin/mfa/status', { credentials: 'include' });
+                const data = await res.json();
+                const pill = document.getElementById('mfaStatusPill');
+                if (data.mfa_enabled) {
+                    pill.className = 'status-badge active';
+                    pill.textContent = 'PROTECTED (ACTIVE)';
+                } else {
+                    pill.className = 'status-badge disabled';
+                    pill.textContent = 'SETUP REQUIRED';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function startMfaSetup() {
+            try {
+                const res = await fetch('/api/admin/mfa/setup', { method: 'POST', credentials: 'include' });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('mfaSecretDisplay').textContent = data.secret;
+                    document.getElementById('mfaSetupSection').style.display = 'block';
+                    document.getElementById('mfaInitialSection').style.display = 'none';
+                } else {
+                    alert(data.error || 'Failed to initiate 2FA setup');
+                }
+            } catch (err) {
+                alert('Server error setting up 2FA');
+            }
+        }
+
+        async function confirmEnableMfa(e) {
+            e.preventDefault();
+            const code = document.getElementById('mfaConfirmCode').value.trim();
+            try {
+                const res = await fetch('/api/admin/mfa/enable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ code })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('2FA successfully activated on Admin account!');
+                    document.getElementById('mfaSetupSection').style.display = 'none';
+                    document.getElementById('mfaInitialSection').style.display = 'block';
+                    document.getElementById('mfaConfirmCode').value = '';
+                    await loadMfaStatus();
+                    closeModal('adminMfaModal');
+                } else {
+                    alert(data.error || 'Invalid verification code');
+                }
+            } catch (err) {
+                alert('Server error verifying code');
             }
         }
 
