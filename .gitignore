@@ -25,3 +25,7 @@ bench_probe.jpg
 static/reports/
 # Local SQLite databases
 *.db
+
+# ---- Datasets and Logs ----
+datasets/
+*.log

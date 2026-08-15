@@ -109,11 +109,62 @@ system flags behaviour for human review.
 
 ## Phone detection
 
-COCO class 67 (`cell phone`) only, at ≥ `CONF_PHONE` (0.60) confidence.
-Books, bottles, calculators and wallets are deliberately **not** flagged.
-The 2-second temporal gate — not the raw confidence threshold — is what
-suppresses momentary false positives. A phone is attributed to the student
-whose (slightly expanded) person box contains the phone's centre.
+Handled by `phone_detect.py` on its own thread.
+
+### What the measurements actually showed
+
+Evaluated on COCO val2017: 120 images containing phones, and 120 phone-free
+images containing books, remotes, laptops, keyboards, TVs and mice.
+
+The suspicion that the detector "flags any rectangular thing as a phone" was
+**not reproduced**. At the old settings it produced **zero** false positives
+across all 120 phone-free images. Its actual defect was the opposite — it
+found only **5.5% of small/distant phones**:
+
+| Config | Recall | Distant-phone recall | False pos | Precision |
+|---|---|---|---|---|
+| yolo11n @480 conf .60 (old) | 18.9% | **5.5%** | 0 | 100% |
+| yolo11s @640 conf .25 | 48.6% | 38.5% | 6 | 92.3% |
+| yolo11s ROI conf .40 | 52.7% | 44.0% | 5 | 94.0% |
+| yolo11m ROI conf .40 | 64.2% | 57.1% | 3 | 96.9% |
+
+Where the remaining false positives land: `background`, `remote`, and one
+`toothbrush` — never a book, laptop, keyboard or TV.
+
+### Person-ROI detection — why distant phones are now found
+
+Each person box is cropped, padded by 18% (a concealed phone often sits just
+outside the torso — in a lap, below the desk edge) and re-detected on its own.
+A phone 20px wide in the full frame becomes ~100px wide once a person crop is
+scaled to the 640px network input. That is what makes a phone held low or
+cupped in a hand detectable at all.
+
+The whole-frame pass still contributes most of the recall (ROI-only drops
+yolo11s from 52.7% to 31.1%), so it runs every pass; the interval is what
+keeps the cost affordable.
+
+### Three independent layers keep precision high
+
+1. **Plausibility filter** — rejects anything too large relative to its
+   holder, extreme aspect ratios, and specks. Unit-tested to reject a
+   laptop-sized rectangle and a sliver while accepting a real phone. Measured
+   to cost **zero** recall. COCO never triggered it, so its value against a
+   specific scene object is unverified — it is a guard, not a proven fix.
+2. **Attribution** — a phone is tied to the person whose padded box contains it.
+3. **The temporal gate** — a phone must persist ~2s before an alert. This is
+   what turns per-frame precision (94–97%) into alert-level precision, since
+   isolated single-frame detections never survive it.
+
+### Tuning
+
+| Env var | Default | Effect |
+|---|---|---|
+| `PHONE_MODEL` | `yolo11s.pt` | `yolo11m.pt` = +12% recall, ~2x slower |
+| `PHONE_DETECTION` | `on` | `off` disables the thread entirely |
+
+`PHONE_CONF` (0.40) in `phone_detect.py` is deliberately below the old 0.60:
+at 0.60 the detector missed 94% of distant phones. Precision is recovered by
+the layers above rather than by a blunt threshold.
 
 ## Face identification (who is this student?)
 
@@ -208,8 +259,25 @@ Measured per-stage cost on this machine (CPU only, 960x540 frame):
 | SCRFD detect | 178 ms | identification thread only |
 | ArcFace embed (flip TTA) | 172 ms | identification thread only |
 
-Stream rate with everything running: **~15 FPS**. Identification is on a
-separate thread, so it does not reduce this.
+Measured worker costs (same machine, one person in frame):
+
+| Configuration | FPS |
+|---|---|
+| Face ID off, phone off | 7.0 |
+| Face ID **on**, phone off | 3.6 |
+| Face ID off, phone **on** | 5.2 |
+| Both on, before the backoff fix | 2.4 |
+| **Both on, after the backoff fix** | **11.6** |
+
+The backoff fix matters more than any model choice. A track that cannot be
+identified — someone not enrolled, or a spurious detection — used to pin the
+identifier at its 0.5s fast cadence permanently, roughly halving the frame
+rate for the entire session. It now gives up on a track after
+`ID_MAX_ATTEMPTS` passes and retries it only every `ID_RETRY_AFTER` seconds,
+so the system settles onto the 3s slow cadence.
+
+Absolute FPS varies with machine load and thermal state; the relative costs
+above are the reliable signal.
 
 ArcFace embedding was originally 729 ms. Almost all of it was the face
 alignment step using `cv2.estimateAffinePartial2D` with `LMEDS` — a robust
@@ -274,6 +342,16 @@ Each is runnable and prints the numbers quoted above.
 | `bench_crowd.py` | 1-in-100 identification using real LFW faces |
 | `bench_gate.py` | Confirms quality gates reject nothing recognisable |
 | `bench_stages.py` | Per-stage timing profile |
+| `bench_phone.py` | Phone recall/false-positives across model sizes on COCO |
+| `bench_phone2.py` | Confidence sweep + person-ROI comparison |
+| `bench_phone3.py` | Final detector vs old config, with filter ablation |
+| `bench_phone4.py` | ROI-only model comparison (speed/accuracy dial) |
+
+The phone benchmarks need COCO val2017 in `datasets/`:
+
+```bash
+curl -o datasets/val2017.zip http://images.cocodataset.org/zips/val2017.zip
+```
 
 ## Not implemented
 

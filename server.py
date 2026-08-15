@@ -137,6 +137,7 @@ def serve_static(path):
 # ---------------- AI MODELS ----------------
 import proctor_ai
 import face_recog
+import phone_detect
 
 # YOLO11-nano: newest ultralytics architecture, better accuracy than v8n at
 # the same speed. Auto-downloads on first run.
@@ -157,6 +158,15 @@ face_detector = face_recog.SCRFDDetector()
 embedder = face_recog.ArcFaceEmbedder()
 gallery = face_recog.Gallery()
 print(f"[FACE] ArcFace on {embedder.provider}")
+
+# Dedicated phone detector. The main YOLO pass (yolo11n @480, tuned for
+# person tracking) found only 5.5% of small/distant phones; this one crops
+# each person and re-detects inside that crop.
+# PHONE_MODEL / PHONE_DETECTION env vars let the accuracy-vs-speed trade-off
+# be changed without editing code. Set PHONE_DETECTION=off to disable.
+PHONE_ENABLED = os.environ.get("PHONE_DETECTION", "on").lower() != "off"
+phone_detector = (phone_detect.PhoneDetector(
+    os.environ.get("PHONE_MODEL", "yolo11s.pt")) if PHONE_ENABLED else None)
 
 # DeepSort Tracker
 tracker = DeepSort(max_age=30)
@@ -705,9 +715,16 @@ JPEG_PARAMS = [int(cv2.IMWRITE_JPEG_QUALITY), 70]
 # SCRFD plus ~170ms for ArcFace, which would otherwise halve the video frame
 # rate. Identity does not change frame to frame, so the video loop consumes
 # whatever the identifier last produced and never waits for it.
-ID_INTERVAL_FAST = 0.5   # seconds between passes while someone is unidentified
-ID_INTERVAL_SLOW = 3.0   # seconds between passes once everyone is known
+ID_INTERVAL_FAST = float(os.environ.get("ID_FAST", 0.5))  # while unidentified
+ID_INTERVAL_SLOW = float(os.environ.get("ID_SLOW", 3.0))  # once everyone known
+FACE_ID_ENABLED = os.environ.get("FACE_ID", "on").lower() != "off"
 ID_VOTES_REQUIRED = 3    # consistent matches before an identity is locked
+ID_MAX_ATTEMPTS = 10     # give up on a track after this many failed passes
+ID_RETRY_AFTER = 30.0    # seconds before a given-up track is retried
+
+id_attempts = {}         # track_id -> failed identification passes
+id_giveup_at = {}        # track_id -> when we last gave up on it
+last_counted_id = {}     # track_id -> when an attempt was last counted
 ID_RESULT_TTL = 2.0      # ignore identification results older than this
 DIM_FRAME_MEAN = 90      # below this mean luma the frame gets enhanced first
 
@@ -763,10 +780,71 @@ def start_identification_worker():
     global _id_thread_started
     if _id_thread_started:
         return
+    if not FACE_ID_ENABLED:
+        print("[FACE] identification disabled (FACE_ID=off)")
+        return
     _id_thread_started = True
     threading.Thread(target=_identification_worker, name="face-id",
                      daemon=True).start()
     print("[FACE] identification worker started")
+
+
+# ---- Phone detection thread -------------------------------------------
+# yolo11m plus a per-person ROI pass is far too slow to run inline, so it
+# lives on its own thread like face identification. A phone does not appear
+# and vanish between frames, and the temporal gate needs ~2s of persistence
+# before it alerts, so checking a few times a second loses nothing.
+# Measured recall on COCO (120 phone images), ROI-only vs whole-frame+ROI:
+#   yolo11n  ROI-only 20.3% / distant 18.7%   |  yolo11s ROI-only 31.1% / 31.9%
+#   yolo11s  frame+ROI 52.7% / distant 44.0%  |  yolo11m frame+ROI 64.2% / 57.1%
+# The whole-frame pass contributes most of the recall, so it runs every pass;
+# the interval is what keeps the CPU cost affordable. A phone must persist
+# ~2s before the temporal gate alerts, so a 1s cadence still samples it twice.
+PHONE_INTERVAL = 1.0         # seconds between phone passes
+PHONE_RESULT_TTL = 3.0       # drop phone results older than this
+PHONE_WHOLE_FRAME_EVERY = 1  # 1 = whole-frame sweep on every pass
+
+_phone_lock = threading.Lock()
+_phone_input = {"frame": None, "persons": []}
+_phone_output = {"boxes": [], "ts": 0.0}
+_phone_thread_started = False
+
+
+def _phone_worker():
+    pass_no = 0
+    while True:
+        with _phone_lock:
+            frame = _phone_input["frame"]
+            persons = list(_phone_input["persons"])
+            _phone_input["frame"] = None
+        if frame is None:
+            time.sleep(0.05)
+            continue
+        try:
+            pass_no += 1
+            # ROI passes catch the exam case (a phone held by a person);
+            # the occasional whole-frame sweep catches a phone lying on a desk.
+            whole = (pass_no % PHONE_WHOLE_FRAME_EVERY == 0) or not persons
+            found = phone_detector.detect(frame, persons, whole_frame=whole)
+            with _phone_lock:
+                _phone_output["boxes"] = found
+                _phone_output["ts"] = time.time()
+        except Exception as e:
+            print(f"[PHONE] detection pass failed: {e}")
+        time.sleep(PHONE_INTERVAL)
+
+
+def start_phone_worker():
+    global _phone_thread_started
+    if _phone_thread_started or phone_detector is None:
+        if phone_detector is None:
+            print("[PHONE] detection disabled (PHONE_DETECTION=off)")
+        return
+    _phone_thread_started = True
+    threading.Thread(target=_phone_worker, name="phone-detect",
+                     daemon=True).start()
+    print(f"[PHONE] detection worker started "
+          f"({phone_detector.weights}, person-ROI, every {PHONE_INTERVAL}s)")
 
 def open_capture(source):
     # Measured on this machine: the default backend opens the webcam in
@@ -912,22 +990,36 @@ def _camera_worker():
         #    Only actual phones are considered (COCO class 67) - books,
         #    bottles, calculators etc. are deliberately ignored to keep the
         #    false-positive rate down.
-        yolo_results = yolo_model(frame, stream=True, verbose=False, imgsz=YOLO_IMGSZ)
+        yolo_results = yolo_model(frame, stream=True, verbose=False,
+                                  imgsz=YOLO_IMGSZ, classes=[0])
         person_detections = []
-        phone_boxes = []   # (x1, y1, x2, y2, conf)
+        person_boxes = []
 
         for r in yolo_results:
             for box in r.boxes:
-                cls_id = int(box.cls[0])
                 conf = float(box.conf[0])
+                if conf <= 0.5:
+                    continue
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
+                person_detections.append(([x1, y1, x2 - x1, y2 - y1], conf, "person"))
+                person_boxes.append((x1, y1, x2, y2))
 
-                if cls_id == 0 and conf > 0.5: # person
-                    person_detections.append(([x1, y1, x2 - x1, y2 - y1], conf, "person"))
-                elif cls_id == 67 and conf >= proctor_ai.CONF_PHONE: # cell phone
-                    phone_boxes.append((x1, y1, x2, y2, conf))
-                    draw_ops.append(('rect', (x1, y1), (x2, y2), (0, 0, 255), 3))
-                    draw_ops.append(('text', f"PHONE {conf:.0%}", (x1, y1 - 10), 0.8, (0, 0, 255), 3))
+        # Hand the frame + person boxes to the phone thread, and take whatever
+        # it last produced. Never blocks the video loop.
+        with _phone_lock:
+            if _phone_input["frame"] is None:
+                _phone_input["frame"] = frame.copy()
+                _phone_input["persons"] = person_boxes
+            fresh = (now - _phone_output["ts"]) <= PHONE_RESULT_TTL
+            phone_hits = list(_phone_output["boxes"]) if fresh else []
+
+        phone_boxes = []
+        for d in phone_hits:
+            x1, y1, x2, y2 = [int(v) for v in d["bbox"]]
+            phone_boxes.append((x1, y1, x2, y2, d["conf"]))
+            draw_ops.append(('rect', (x1, y1), (x2, y2), (0, 0, 255), 3))
+            draw_ops.append(('text', f"PHONE {d['conf']:.0%}",
+                             (x1, max(12, y1 - 10)), 0.7, (0, 0, 255), 2))
 
         room_state["phone_detected"] = len(phone_boxes) > 0
         room_state["book_detected"] = False
@@ -952,9 +1044,24 @@ def _camera_worker():
         # 3. DeepSort Tracking (stable per-student IDs)
         tracks = tracker.update_tracks(person_detections, frame=frame)
 
-        # Tell the identifier whether to run at the fast or slow cadence
-        if any(t.is_confirmed() and t.track_id not in track_to_student
-               for t in tracks):
+        # Tell the identifier whether to run at the fast or slow cadence.
+        # A track that simply cannot be identified (someone not enrolled, or a
+        # spurious detection) must not pin the identifier at its fast cadence
+        # forever - that was measured costing about half the frame rate.
+        pending = False
+        for t in tracks:
+            if not t.is_confirmed() or t.track_id in track_to_student:
+                continue
+            tries = id_attempts.get(t.track_id, 0)
+            if tries < ID_MAX_ATTEMPTS:
+                pending = True
+            elif now - id_giveup_at.get(t.track_id, 0) > ID_RETRY_AFTER:
+                # periodically give up-on tracks another chance; conditions
+                # (lighting, pose, distance) may have improved
+                id_attempts[t.track_id] = 0
+                id_giveup_at[t.track_id] = now
+                pending = True
+        if pending:
             _id_wanted.set()
         else:
             _id_wanted.clear()
@@ -985,6 +1092,12 @@ def _camera_worker():
             # inside this track's box. Votes still gate the lock so a single
             # frame can never assign an identity.
             if track_id not in track_to_student:
+                # Count this as an attempt whenever a fresh identification
+                # result was available but produced no confident match here.
+                if id_faces and now - last_counted_id.get(track_id, 0) > 0.4:
+                    last_counted_id[track_id] = now
+                    id_attempts[track_id] = id_attempts.get(track_id, 0) + 1
+
                 for idf in id_faces:
                     if not (tx1 <= idf["cx"] <= tx2 and ty1 <= idf["cy"] <= ty2):
                         continue
@@ -1148,6 +1261,7 @@ def start_camera_worker():
     threading.Thread(target=_camera_worker, name="camera-worker", daemon=True).start()
     print("[VIDEO] Camera worker thread started (camera warming up).")
     start_identification_worker()
+    start_phone_worker()
 
 def gen_frames():
     """Per-viewer generator. Touches no camera and runs no AI - it only
