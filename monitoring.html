@@ -3,90 +3,762 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proctor Dashboard | Multi-Student Tracking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>ProctorAI | Live Monitoring Dashboard</title>
+    <meta name="description" content="ProctorAI live examination monitoring console — real-time student tracking, CCTV feed, and alert center.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ── Monitoring-specific overrides ─────────────────────── */
+
+        /* Make body fill viewport without scrollbar issues */
+        html, body { height: 100%; overflow: hidden; }
+
+        /* Full-height app wrapper */
+        .monitoring-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            padding: 1rem 1.5rem;
+            gap: 1rem;
+            max-width: 1800px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        /* ── Header ── */
+        .monitoring-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            min-height: 58px;
+            flex-shrink: 0;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.025);
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .monitoring-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .monitoring-header .logo span {
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #f0f4ff 0%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .monitoring-header .logo-icon {
+            color: var(--accent);
+            filter: drop-shadow(0 0 6px rgba(59,130,246,0.35));
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Session status pill */
+        .session-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 99px;
+            background: rgba(51,65,85,0.45);
+            border: 1px solid rgba(255,255,255,0.08);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #94a3b8;
+            transition: all 0.3s ease;
+        }
+
+        .session-pill .s-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #64748b;
+            flex-shrink: 0;
+        }
+
+        /* Controls group */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding-right: 0.75rem;
+            border-right: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .btn-end-session {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-family);
+            letter-spacing: 0.02em;
+        }
+        .btn-end-session:hover {
+            background: rgba(239, 68, 68, 0.28);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(239,68,68,0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn-logout {
+            padding: 0.38rem 0.8rem;
+            background: transparent;
+            color: #8899b8;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: var(--font-family);
+        }
+        .btn-logout:hover { color: #fff; border-color: rgba(255,255,255,0.2); }
+
+        .supervisor-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .supervisor-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,255,0.1);
+            object-fit: cover;
+        }
+
+        .supervisor-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* ── Three-column monitoring grid ── */
+        .monitoring-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 1rem;
+            flex: 1;
+            min-height: 0; /* critical: allows flex children to shrink */
+            overflow: hidden;
+        }
+
+        /* Column base */
+        .m-col {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        /* Glass panel shared */
+        .m-panel {
+            background: rgba(255, 255, 255, 0.025);
+            backdrop-filter: blur(18px) saturate(130%);
+            -webkit-backdrop-filter: blur(18px) saturate(130%);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .m-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.85rem 1.1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-shrink: 0;
+        }
+
+        .m-panel-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #8899b8;
+        }
+
+        .m-panel-body {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        /* ── Left: Students panel ── */
+        .students-panel {
+            flex: 1;
+        }
+
+        .register-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.32rem 0.7rem;
+            background: rgba(59,130,246,0.12);
+            color: var(--accent-light);
+            border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            letter-spacing: 0.02em;
+        }
+        .register-btn:hover {
+            background: rgba(59,130,246,0.22);
+            border-color: rgba(59,130,246,0.4);
+        }
+
+        .students-list {
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 2.5rem 1rem;
+            color: #4b5e7a;
+            text-align: center;
+        }
+
+        .empty-state svg {
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 0.78rem;
+            line-height: 1.5;
+        }
+
+        .empty-state strong {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #5c7098;
+            margin-bottom: 0.2rem;
+        }
+
+        /* Student card (injected by JS) */
+        .student-tile {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 10px;
+            padding: 0.7rem 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.25s ease;
+        }
+
+        .student-tile:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .student-tile.risk-danger {
+            border-left: 3px solid var(--danger);
+        }
+        .student-tile.risk-warning {
+            border-left: 3px solid var(--warning);
+        }
+        .student-tile.risk-safe {
+            border-left: 3px solid var(--success);
+        }
+
+        .student-avatar-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .student-info h4 {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 1px 0;
+            line-height: 1.2;
+        }
+
+        .student-info p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin: 0;
+            font-family: monospace;
+        }
+
+        .student-metrics {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .student-metrics .trust-pct {
+            font-size: 0.9rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .student-metrics .status-txt {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ── Center: CCTV Feed ── */
+        .cctv-panel {
+            flex: 1;
+        }
+
+        .cctv-inner {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            border-radius: 0 0 16px 16px;
+            background: #010407;
+            min-height: 0;
+        }
+
+        /* Scan-line texture */
+        .cctv-inner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg, transparent, transparent 3px,
+                rgba(255,255,255,0.008) 3px, rgba(255,255,255,0.008) 4px
+            );
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* AI scan bar */
+        .cctv-inner::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(
+                90deg, transparent 0%,
+                rgba(59,130,246,0.3) 35%,
+                rgba(96,165,250,0.5) 50%,
+                rgba(59,130,246,0.3) 65%,
+                transparent 100%
+            );
+            animation: scanLine 7s linear infinite;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        @keyframes scanLine {
+            0%   { top: 0%;   opacity: 0; }
+            4%   { opacity: 1; }
+            96%  { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* The actual video/image element */
+        .cctv-feed-img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Overlay badges on the video */
+        .cctv-overlay-tl {
+            position: absolute;
+            top: 0.7rem;
+            left: 0.7rem;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.07);
+            padding: 0.28rem 0.65rem;
+            border-radius: 6px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: liveBlink 1.4s ease-in-out infinite;
+        }
+
+        @keyframes liveBlink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        .cctv-overlay-tl span {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: rgba(255,255,255,0.65);
+            text-transform: uppercase;
+        }
+
+        .cctv-overlay-tr {
+            position: absolute;
+            top: 0.7rem;
+            right: 0.7rem;
+            z-index: 10;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.07);
+            padding: 0.28rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.45);
+            text-transform: uppercase;
+        }
+
+        /* Corner decorations */
+        .corner { position: absolute; width: 18px; height: 18px; z-index: 5; opacity: 0.5; }
+        .corner-tl { top: 0.5rem; left: 0.5rem; border-top: 2px solid #3b82f6; border-left: 2px solid #3b82f6; }
+        .corner-tr { top: 0.5rem; right: 0.5rem; border-top: 2px solid #3b82f6; border-right: 2px solid #3b82f6; }
+        .corner-bl { bottom: 0.5rem; left: 0.5rem; border-bottom: 2px solid #3b82f6; border-left: 2px solid #3b82f6; }
+        .corner-br { bottom: 0.5rem; right: 0.5rem; border-bottom: 2px solid #3b82f6; border-right: 2px solid #3b82f6; }
+
+        /* Feed error state */
+        .feed-error {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            color: #4b5e7a;
+            z-index: 20;
+        }
+
+        .feed-error.visible { display: flex; }
+
+        .feed-error svg { opacity: 0.3; }
+
+        .feed-error p {
+            font-size: 0.8rem;
+            text-align: center;
+            max-width: 220px;
+            line-height: 1.5;
+        }
+
+        .feed-error strong {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #5c7098;
+        }
+
+        /* ── Right: Alerts panel ── */
+        .alerts-panel {
+            flex: 1;
+        }
+
+        .alerts-inner {
+            padding: 0.65rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .alert-entry {
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-left: 3px solid var(--accent);
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            animation: alertSlide 0.25s ease-out;
+        }
+
+        @keyframes alertSlide {
+            from { transform: translateX(16px); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+
+        .alert-entry.danger  { border-left-color: var(--danger);  background: rgba(239,68,68,0.04); }
+        .alert-entry.warning { border-left-color: var(--warning); background: rgba(245,158,11,0.03); }
+        .alert-entry.success { border-left-color: var(--success); background: rgba(16,185,129,0.03); }
+        .alert-entry.info    { border-left-color: var(--accent); }
+
+        .alert-entry-title {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .alert-entry-time {
+            font-size: 0.66rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        .unknown-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.18rem 0.55rem;
+            border-radius: 99px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--warning);
+            border: 1px solid rgba(245,158,11,0.25);
+        }
+
+        /* ── Scrollbars ── */
+        .m-panel-body::-webkit-scrollbar { width: 3px; }
+        .m-panel-body::-webkit-scrollbar-track { background: transparent; }
+        .m-panel-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+
+        /* ── Responsive ── */
+        @media (max-width: 1100px) {
+            html, body { overflow: auto; }
+            .monitoring-wrapper { height: auto; overflow: visible; }
+            .monitoring-grid {
+                grid-template-columns: 240px 1fr;
+                grid-template-rows: auto auto;
+                overflow: visible;
+            }
+            .m-col.right-col {
+                grid-column: 1 / -1;
+            }
+            .cctv-inner { min-height: 360px; }
+        }
+
+        @media (max-width: 768px) {
+            html, body { overflow: auto; }
+            .monitoring-wrapper { height: auto; padding: 0.75rem; gap: 0.75rem; }
+            .monitoring-grid {
+                grid-template-columns: 1fr;
+                overflow: visible;
+            }
+            .m-col.right-col { grid-column: unset; }
+            .cctv-inner { min-height: 280px; }
+            .monitoring-header { flex-wrap: wrap; min-height: unset; }
+            .header-controls { border-right: none; }
+        }
+
+        @media (max-width: 480px) {
+            .monitoring-wrapper { padding: 0.5rem; }
+            .supervisor-name { display: none; }
+            .monitoring-header .logo span { font-size: 0.9rem !important; }
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Premium Header -->
-        <header class="glass-header">
+    <div class="monitoring-wrapper">
+
+        <!-- ── HEADER ─────────────────────────────────────── -->
+        <header class="monitoring-header">
             <div class="logo">
-                <i data-lucide="shield-check" class="logo-icon" style="color: var(--primary);"></i>
-                <span style="font-weight:700; font-size:1.2rem;">ProctorAI Dashboard</span>
+                <i data-lucide="shield-check" class="logo-icon" style="width:20px;height:20px;"></i>
+                <span>ProctorAI &nbsp;<span style="opacity:0.45;font-weight:400;">|</span>&nbsp; Live Monitoring</span>
             </div>
-            <div class="header-actions" style="display:flex; align-items:center; gap: 1rem;">
-                <div class="status-indicator" id="globalStatusBanner" style="font-weight:600; padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; gap:0.5rem; background: rgba(51,65,85,0.5);">
-                    <span class="dot" id="sessionStatusDot" style="background:#64748b; width:10px; height:10px; border-radius:50%; box-shadow:0 0 10px #64748b;"></span>
+
+            <div class="header-right">
+                <!-- Session status pill -->
+                <div class="session-pill" id="globalStatusBanner">
+                    <span class="s-dot" id="sessionStatusDot"></span>
                     <span id="globalStatusText">SESSION PENDING</span>
                 </div>
-                <div class="session-controls" style="display:flex; gap: 0.5rem; border-right: 1px solid #334155; padding-right: 1rem;">
-                    <button id="endSessionBtn" style="background:var(--danger); color:#fff; padding:0.5rem 1rem; border-radius:6px; font-weight:600; font-size:0.85rem; border:none; cursor:pointer; display:flex; align-items:center; gap:0.4rem; box-shadow:0 4px 15px rgba(239,68,68,0.3); transition:all 0.2s;">
-                        <i data-lucide="square" style="width:16px; height:16px;"></i> End Session
+
+                <!-- End Session + Logout -->
+                <div class="header-controls">
+                    <button class="btn-end-session" id="endSessionBtn">
+                        <i data-lucide="square" style="width:13px;height:13px;"></i>
+                        End Session
                     </button>
                 </div>
-                <div class="user-profile">
-                    <img src="https://i.pravatar.cc/150?img=11" alt="Supervisor" class="avatar">
-                    <span class="user-name">Supervisor</span>
-                    <button id="logoutBtn" style="background:transparent;border:1px solid #334155;color:white;padding:0.4rem 0.8rem;border-radius:6px;cursor:pointer;margin-left:1rem;font-size:0.8rem;">Logout</button>
+
+                <!-- Supervisor info -->
+                <div class="supervisor-info">
+                    <img src="https://i.pravatar.cc/150?img=11" alt="Supervisor" class="supervisor-avatar">
+                    <span class="supervisor-name">Supervisor</span>
+                    <button class="btn-logout" id="logoutBtn">Logout</button>
                 </div>
             </div>
         </header>
 
-        <main class="dashboard-grid" style="grid-template-columns: 1fr 2fr 1fr;">
-            <!-- Left Column: Active Students Grid -->
-            <div class="column left-col">
-                <div class="card glass-card" style="height: 100%; display:flex; flex-direction:column;">
-                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:1rem;">
-                        <h3>Active Students</h3>
-                        <a href="enrollment.html" style="background:var(--primary); color:white; padding:0.4rem 0.8rem; font-size:0.8rem; border-radius:6px; text-decoration:none; display:flex; align-items:center; gap:0.4rem;">
-                            <i data-lucide="user-plus" style="width:14px; height:14px;"></i> Register
+        <!-- ── THREE-COLUMN MONITORING GRID ───────────────── -->
+        <main class="monitoring-grid">
+
+            <!-- LEFT: Active Students ─────────────────────── -->
+            <div class="m-col left-col">
+                <div class="m-panel students-panel">
+                    <div class="m-panel-header">
+                        <span class="m-panel-title">Active Students</span>
+                        <a href="enrollment.html" class="register-btn">
+                            <i data-lucide="user-plus" style="width:12px;height:12px;"></i>
+                            Register
                         </a>
                     </div>
-                    <div class="card-body" id="studentsGrid" style="flex:1; overflow-y:auto; padding-top:1rem; display:flex; flex-direction:column; gap:1rem;">
-                        <div style="text-align:center; color:#94a3b8; font-size:0.9rem; padding:2rem 0;">
-                            Waiting for students to enter the frame...
+                    <div class="m-panel-body">
+                        <div id="studentsGrid" class="students-list">
+                            <div class="empty-state">
+                                <i data-lucide="users" style="width:32px;height:32px;"></i>
+                                <div>
+                                    <strong>No Active Students</strong>
+                                    <p>Waiting for students to enter the camera frame...</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Middle Column: Video Feed & Room Stats -->
-            <div class="column main-col">
-                <!-- Video Feed -->
-                <div class="card glass-card video-card" id="video-feed" style="flex:1;">
-                    <div class="card-header">
-                        <h3>CCTV Live Feed</h3>
+            <!-- CENTER: CCTV Live Feed ─────────────────────── -->
+            <div class="m-col main-col">
+                <div class="m-panel cctv-panel" id="video-feed">
+                    <div class="m-panel-header">
+                        <span class="m-panel-title">CCTV Live Feed</span>
+                        <span style="font-size:0.68rem;color:#4b5e7a;font-family:monospace;">CAM-01 · AI ACTIVE</span>
                     </div>
-                    <div style="position:relative;width:100%;height:100%;min-height:400px;display:flex;align-items:center;justify-content:center;background:#000;border-radius:8px;overflow:hidden;">
-                        <img src="/video_feed" alt="Live Camera Feed" style="width:100%;height:100%;object-fit:cover;">
+                    <!-- Video container fills remaining height -->
+                    <div class="cctv-inner">
+                        <!-- Corner brackets -->
+                        <div class="corner corner-tl"></div>
+                        <div class="corner corner-tr"></div>
+                        <div class="corner corner-bl"></div>
+                        <div class="corner corner-br"></div>
+
+                        <!-- Overlays -->
+                        <div class="cctv-overlay-tl">
+                            <div class="live-dot"></div>
+                            <span>LIVE</span>
+                        </div>
+                        <div class="cctv-overlay-tr">AI Monitoring</div>
+
+                        <!-- Actual feed — points to Flask backend on port 5001 -->
+                        <img
+                            id="cctvFeedImg"
+                            src="http://localhost:5001/video_feed"
+                            alt="CCTV Live Feed"
+                            class="cctv-feed-img"
+                            onerror="document.getElementById('feedError').classList.add('visible'); this.style.display='none';"
+                        >
+
+                        <!-- Fallback error state (shown if /video_feed is unreachable) -->
+                        <div id="feedError" class="feed-error">
+                            <i data-lucide="video-off" style="width:40px;height:40px;"></i>
+                            <p>
+                                <strong>Camera Offline</strong>
+                                Start the AI backend server to enable the live feed.<br>
+                                <code style="font-size:0.7rem;color:#3b82f6;">python server.py</code>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: Alerts -->
-            <div class="column right-col">
-                <!-- Alert Center -->
-                <div class="card glass-card alerts-card" id="alerts" style="height:100%; display:flex; flex-direction:column;">
-                    <div class="card-header">
-                        <h3>Alert Center</h3>
-                        <span class="badge warning" id="unknownCountBadge">0 Unknown</span>
+            <!-- RIGHT: Alert Center ───────────────────────── -->
+            <div class="m-col right-col">
+                <div class="m-panel alerts-panel" id="alerts">
+                    <div class="m-panel-header">
+                        <span class="m-panel-title">Alert Center</span>
+                        <span class="unknown-badge" id="unknownCountBadge">0 Unknown</span>
                     </div>
-                    <div class="alerts-list" id="alertsList" style="flex:1; overflow-y:auto; padding-top:1rem;">
-                        <!-- Alerts injected via JS -->
+                    <div class="m-panel-body">
+                        <div id="alertsList" class="alerts-inner">
+                            <!-- Alerts injected via JS -->
+                        </div>
                     </div>
                 </div>
             </div>
+
         </main>
     </div>
+
     <script src="main.js"></script>
     <script>
         lucide.createIcons();
+
+        // Logout
         document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await fetch('/api/supervisor_logout', {method: 'POST'});
+            await fetch('http://localhost:5001/api/supervisor_logout', { method: 'POST', credentials: 'include' });
             window.location.href = 'supervisor_login.html';
         });
+
+        // Override the addAlert function to use our new .alert-entry classes
+        // This runs after main.js is loaded
+        window._origAddAlert = window.addAlert;
+        function addAlert(message, type) {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const el = document.createElement('div');
+            el.className = `alert-entry ${type || 'info'}`;
+            el.innerHTML = `<span class="alert-entry-title">${message}</span><span class="alert-entry-time">${time}</span>`;
+            const list = document.getElementById('alertsList');
+            list.insertBefore(el, list.firstChild);
+            if (list.children.length > 25) list.lastElementChild.remove();
+        }
+
+        // Make API calls go to Flask backend (port 5001) not static server
+        // Override fetch for API calls so they target backend
+        const _origFetch = window.fetch;
+        window.fetch = function(url, opts) {
+            if (typeof url === 'string' && url.startsWith('/api/')) {
+                url = 'http://localhost:5001' + url;
+            }
+            return _origFetch(url, opts);
+        };
     </script>
 </body>
 </html>

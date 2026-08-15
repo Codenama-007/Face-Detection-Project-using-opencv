@@ -231,73 +231,382 @@ def start_session():
 
 @app.route('/api/session/end', methods=['POST'])
 def end_session():
-    global SESSION_ACTIVE
+    global SESSION_ACTIVE, session_start_time
     SESSION_ACTIVE = False
-    
+
     # Generate HTML Report
     import os
     os.makedirs('static/reports', exist_ok=True)
     report_filename = f"report_{datetime.now().strftime('%Y%md_%H%M%S')}.html"
     report_path = os.path.join('static/reports', report_filename)
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Examination Integrity Report</title>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-        <style>
-            body {{ font-family: 'Inter', sans-serif; background: #050505; color: #fff; padding: 3rem; line-height: 1.6; }}
-            h1 {{ border-bottom: 1px solid #333; padding-bottom: 1rem; color: #0a84ff; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 2rem; }}
-            th, td {{ padding: 1rem; text-align: left; border-bottom: 1px solid #222; }}
-            th {{ background: #111; color: #888; text-transform: uppercase; font-size: 0.85rem; }}
-            .high-risk {{ color: #ff453a; font-weight: bold; }}
-            .med-risk {{ color: #ffd60a; font-weight: bold; }}
-            .low-risk {{ color: #32d74b; font-weight: bold; }}
-        </style>
-    </head>
-    <body>
-        <h1>Examination Integrity Report</h1>
-        <p><strong>Generated:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Student ID</th>
-                    <th>Name</th>
-                    <th>Final Risk Score</th>
-                    <th>Last Status</th>
-                </tr>
-            </thead>
-            <tbody>
-    """
-    
-    for sid, data in tracked_students.items():
+
+    generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Compute summary stats from real data
+    students_snapshot = dict(tracked_students)
+    total_students = len(students_snapshot)
+    high_risk_count = sum(1 for d in students_snapshot.values() if d['risk_score'] > 75)
+    suspicious_count = sum(1 for d in students_snapshot.values() if 25 < d['risk_score'] <= 75)
+    avg_risk = round(sum(d['risk_score'] for d in students_snapshot.values()) / total_students, 1) if total_students else 0
+    avg_trust = round(100 - avg_risk, 1) if total_students else 0
+
+    if high_risk_count > 0:
+        integrity_status = "HIGH RISK"
+        integrity_color = "#ef4444"
+        integrity_bg = "rgba(239,68,68,0.08)"
+        integrity_dot = "#ef4444"
+    elif suspicious_count > 0:
+        integrity_status = "ATTENTION REQUIRED"
+        integrity_color = "#f59e0b"
+        integrity_bg = "rgba(245,158,11,0.08)"
+        integrity_dot = "#f59e0b"
+    else:
+        integrity_status = "SECURE"
+        integrity_color = "#10b981"
+        integrity_bg = "rgba(16,185,129,0.08)"
+        integrity_dot = "#10b981"
+
+    # Build student rows
+    student_rows_html = ""
+    for sid, data in students_snapshot.items():
         score = int(data['risk_score'])
-        if score > 75: risk_class = "high-risk"
-        elif score > 25: risk_class = "med-risk"
-        else: risk_class = "low-risk"
-        
-        html_content += f"""
+        trust = max(0, 100 - score)
+        bar_pct = score
+        if score > 75:
+            risk_label = "HIGH RISK"
+            risk_color = "#ef4444"
+            risk_bg = "rgba(239,68,68,0.12)"
+            bar_color = "#ef4444"
+        elif score > 25:
+            risk_label = "SUSPICIOUS"
+            risk_color = "#f59e0b"
+            risk_bg = "rgba(245,158,11,0.12)"
+            bar_color = "#f59e0b"
+        else:
+            risk_label = "LOW RISK"
+            risk_color = "#10b981"
+            risk_bg = "rgba(16,185,129,0.12)"
+            bar_color = "#10b981"
+
+        status_txt = data.get('status', 'N/A')
+
+        student_rows_html += f"""
                 <tr>
-                    <td>{sid}</td>
-                    <td>{data['name']}</td>
-                    <td class="{risk_class}">{score}%</td>
-                    <td>{data['status']}</td>
-                </tr>
-        """
-        
-    html_content += """
-            </tbody>
-        </table>
-    </body>
-    </html>
-    """
-    
+                    <td style="font-family:monospace;font-size:0.8rem;color:#8899b8;">{sid}</td>
+                    <td style="font-weight:600;color:#f0f4ff;">{data['name']}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.6rem;">
+                            <div style="flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;min-width:70px;">
+                                <div style="width:{bar_pct}%;height:100%;background:{bar_color};border-radius:99px;"></div>
+                            </div>
+                            <span style="font-size:0.85rem;font-weight:700;color:{risk_color};min-width:32px;">{score}</span>
+                        </div>
+                    </td>
+                    <td style="font-weight:600;color:#10b981;">{trust}%</td>
+                    <td>
+                        <span style="display:inline-block;padding:0.18rem 0.6rem;border-radius:99px;font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:{risk_bg};color:{risk_color};border:1px solid {risk_color}33;">
+                            {risk_label}
+                        </span>
+                    </td>
+                    <td style="font-size:0.8rem;color:#8899b8;">{status_txt}</td>
+                </tr>"""
+
+    if not student_rows_html:
+        student_rows_html = """
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:3rem;color:#4b5e7a;">
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="none" stroke="#4b5e7a" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:0.3;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            <div>
+                                <div style="font-size:0.85rem;font-weight:600;color:#5c7098;margin-bottom:0.25rem;">No Student Records Available</div>
+                                <div style="font-size:0.75rem;line-height:1.5;">No monitored students were recorded during this session.</div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>"""
+
+    # AI Insights
+    insights = []
+    if total_students > 0:
+        if high_risk_count > 0:
+            insights.append(f"{high_risk_count} student{'s' if high_risk_count > 1 else ''} exceeded the high-risk threshold during this examination session.")
+        if suspicious_count > 0:
+            insights.append(f"{suspicious_count} student{'s' if suspicious_count > 1 else ''} showed suspicious behavior patterns that may require review.")
+        if avg_trust >= 80:
+            insights.append(f"Overall examination integrity remained within acceptable limits — average trust score {avg_trust}%.")
+        if avg_risk < 20:
+            insights.append("Risk levels across all monitored students were within the configured safe range.")
+    else:
+        insights.append("No students were monitored during this session. Ensure camera and enrollment are configured before starting a session.")
+
+    insights_html = "".join(f'<div style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.6rem 0;border-bottom:1px solid rgba(255,255,255,0.04);"><span style="color:#3b82f6;font-size:0.9rem;margin-top:1px;">›</span><span style="font-size:0.82rem;color:#8899b8;line-height:1.5;">{i}</span></div>' for i in insights)
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProctorAI — Examination Integrity Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: #070b12;
+            color: #f0f4ff;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }}
+        .report-wrap {{
+            max-width: 1200px;
+            width: calc(100% - 48px);
+            margin: 0 auto;
+            padding: 2.5rem 0 4rem;
+        }}
+
+        /* ── Header ── */
+        .r-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 2rem;
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px;
+            margin-bottom: 1.5rem;
+        }}
+        .r-brand h1 {{
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            background: linear-gradient(135deg, #f0f4ff 0%, #93c5fd 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 0.2rem;
+        }}
+        .r-brand p {{ font-size: 0.8rem; color: #4b5e7a; letter-spacing: 0.04em; }}
+        .r-meta {{ text-align: right; }}
+        .r-status-pill {{
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.3rem 0.8rem; border-radius: 99px;
+            background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25);
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; color: #10b981;
+            text-transform: uppercase; margin-bottom: 0.6rem;
+        }}
+        .r-status-dot {{
+            width: 5px; height: 5px; border-radius: 50%; background: #10b981;
+        }}
+        .r-meta time {{ display: block; font-size: 0.78rem; color: #8899b8; }}
+        .r-meta strong {{ font-size: 0.72rem; font-weight: 600; color: #4b5e7a; letter-spacing: 0.05em; text-transform: uppercase; }}
+
+        /* ── Summary Cards ── */
+        .summary-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }}
+        .summary-card {{
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+        }}
+        .summary-card .s-label {{ font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4b5e7a; margin-bottom: 0.4rem; }}
+        .summary-card .s-value {{ font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }}
+        .summary-card .s-sub {{ font-size: 0.72rem; color: #4b5e7a; margin-top: 0.25rem; }}
+
+        /* ── Integrity Status ── */
+        .integrity-card {{
+            background: {integrity_bg};
+            border: 1px solid {integrity_color}33;
+            border-radius: 14px;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }}
+        .i-indicator {{
+            width: 14px; height: 14px; border-radius: 50%;
+            background: {integrity_dot};
+            box-shadow: 0 0 12px {integrity_dot};
+            flex-shrink: 0;
+        }}
+        .i-label {{ font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #4b5e7a; margin-bottom: 0.2rem; }}
+        .i-status {{ font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; color: {integrity_color}; }}
+
+        /* ── Section ── */
+        .r-section {{
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 1.25rem;
+        }}
+        .r-section-header {{
+            padding: 0.9rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #8899b8;
+        }}
+        .r-section-body {{ padding: 0 0; }}
+
+        /* ── Table ── */
+        .r-table {{ width: 100%; border-collapse: collapse; }}
+        .r-table th {{
+            padding: 0.75rem 1.5rem;
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #4b5e7a;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }}
+        .r-table td {{
+            padding: 0.85rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.82rem;
+            vertical-align: middle;
+        }}
+        .r-table tr:last-child td {{ border-bottom: none; }}
+        .r-table tbody tr:hover {{ background: rgba(255,255,255,0.02); }}
+
+        /* ── Insights ── */
+        .insights-body {{ padding: 0.5rem 1.5rem 1rem; }}
+
+        /* ── Footer ── */
+        .r-footer {{
+            text-align: center;
+            padding-top: 2.5rem;
+            color: #2d3e58;
+            font-size: 0.75rem;
+        }}
+        .r-footer strong {{ color: #3b82f6; }}
+
+        /* ── Print ── */
+        @media print {{
+            body {{ background: #fff !important; color: #111 !important; }}
+            .r-header, .r-section, .summary-card, .integrity-card {{
+                background: #f8faff !important;
+                border-color: #dde3f0 !important;
+            }}
+            .r-table th {{ color: #555 !important; }}
+            .r-table td {{ color: #222 !important; border-color: #e5e9f0 !important; }}
+            .r-brand h1 {{ -webkit-text-fill-color: #1e3a5f !important; }}
+            @page {{ margin: 2cm; }}
+        }}
+
+        @media (max-width: 700px) {{
+            .report-wrap {{ width: calc(100% - 24px); }}
+            .r-header {{ flex-direction: column; gap: 1rem; }}
+            .r-meta {{ text-align: left; }}
+            .summary-grid {{ grid-template-columns: 1fr 1fr; }}
+            .r-table {{ overflow-x: auto; display: block; }}
+        }}
+    </style>
+</head>
+<body>
+<div class="report-wrap">
+
+    <!-- Header -->
+    <div class="r-header">
+        <div class="r-brand">
+            <h1>ProctorAI</h1>
+            <p>Examination Integrity Report &nbsp;·&nbsp; AI-Powered Security Monitoring</p>
+        </div>
+        <div class="r-meta">
+            <div class="r-status-pill"><span class="r-status-dot"></span>Generated</div>
+            <strong>Report Generated</strong>
+            <time>{generated_at}</time>
+        </div>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="s-label">Total Students</div>
+            <div class="s-value" style="color:#f0f4ff;">{total_students}</div>
+            <div class="s-sub">Monitored this session</div>
+        </div>
+        <div class="summary-card">
+            <div class="s-label">High Risk</div>
+            <div class="s-value" style="color:#ef4444;">{high_risk_count}</div>
+            <div class="s-sub">Risk score &gt; 75</div>
+        </div>
+        <div class="summary-card">
+            <div class="s-label">Suspicious</div>
+            <div class="s-value" style="color:#f59e0b;">{suspicious_count}</div>
+            <div class="s-sub">Risk score 25 – 75</div>
+        </div>
+        <div class="summary-card">
+            <div class="s-label">Avg Trust Score</div>
+            <div class="s-value" style="color:#10b981;">{avg_trust}%</div>
+            <div class="s-sub">Across all students</div>
+        </div>
+        <div class="summary-card">
+            <div class="s-label">Avg Risk Score</div>
+            <div class="s-value" style="color:#8899b8;">{avg_risk}</div>
+            <div class="s-sub">Session average</div>
+        </div>
+    </div>
+
+    <!-- Integrity Status -->
+    <div class="integrity-card">
+        <div class="i-indicator"></div>
+        <div>
+            <div class="i-label">Examination Integrity</div>
+            <div class="i-status">{integrity_status}</div>
+        </div>
+    </div>
+
+    <!-- Student Risk Table -->
+    <div class="r-section">
+        <div class="r-section-header">Student Risk Summary</div>
+        <div class="r-section-body">
+            <table class="r-table">
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Risk Score</th>
+                        <th>Trust Score</th>
+                        <th>Risk Level</th>
+                        <th>Last Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {student_rows_html}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- AI Insights -->
+    <div class="r-section">
+        <div class="r-section-header">AI Security Insights</div>
+        <div class="insights-body">
+            {insights_html}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="r-footer">
+        <strong>ProctorAI</strong> · AI-Powered Examination Security<br>
+        Generated automatically by the ProctorAI monitoring system.
+    </div>
+
+</div>
+</body>
+</html>"""
+
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
-        
+
     return jsonify({"success": True, "report_url": f"/reports/{report_filename}"})
 
 # ---------------- STATE ----------------
