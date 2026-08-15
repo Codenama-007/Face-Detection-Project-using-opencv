@@ -73,11 +73,14 @@ track_votes = {} # track_id -> {student_id: count}
 historical_risk_scores = {}
 head_pose_buffers = {}
 baseline_calibration = {} # sid -> {"nx": [], "ny": []}
+student_gaze_tracker = {} # sid -> {"history": [], "deviation_start": None, "last_event_time": 0}
 VIDEO_SOURCE = 0 # Can be an RTSP url like 'rtsp://admin:123@192.168.1.100/stream'
 
 # Session State
 SESSION_ACTIVE = False
 session_start_time = None
+session_paused_time = None
+accumulated_elapsed_seconds = 0
 
 # ---------------- DB INIT ----------------
 def init_db():
@@ -215,24 +218,61 @@ def download_report(filename):
 
 @app.route('/api/session/status', methods=['GET'])
 def get_session_status():
-    global SESSION_ACTIVE
-    return jsonify({"active": SESSION_ACTIVE})
+    global SESSION_ACTIVE, session_start_time, session_paused_time, accumulated_elapsed_seconds
+    
+    elapsed = accumulated_elapsed_seconds
+    if SESSION_ACTIVE and session_start_time is not None:
+        elapsed += int((datetime.now() - session_start_time).total_seconds())
+        
+    return jsonify({
+        "active": SESSION_ACTIVE,
+        "elapsed_seconds": max(0, elapsed),
+        "start_time": session_start_time.timestamp() if session_start_time else None
+    })
 
 @app.route('/api/session/start', methods=['POST'])
 def start_session():
-    global SESSION_ACTIVE, session_start_time, tracked_students, track_to_student
+    global SESSION_ACTIVE, session_start_time, session_paused_time, accumulated_elapsed_seconds, tracked_students
     SESSION_ACTIVE = True
     session_start_time = datetime.now()
-    # Reset tracking state for new session
-    for sid in tracked_students:
-        tracked_students[sid]["risk_score"] = 0
-        tracked_students[sid]["status"] = "Active"
-    return jsonify({"success": True, "message": "Session started"})
+    session_paused_time = None
+    
+    # If starting fresh (no accumulated time), reset tracking state
+    if accumulated_elapsed_seconds == 0:
+        for sid in tracked_students:
+            tracked_students[sid]["risk_score"] = 0
+            tracked_students[sid]["status"] = "Active"
+            
+    return jsonify({
+        "success": True, 
+        "message": "Session started",
+        "elapsed_seconds": accumulated_elapsed_seconds
+    })
+
+@app.route('/api/session/pause', methods=['POST'])
+def pause_session():
+    global SESSION_ACTIVE, session_start_time, session_paused_time, accumulated_elapsed_seconds
+    if SESSION_ACTIVE and session_start_time is not None:
+        accumulated_elapsed_seconds += int((datetime.now() - session_start_time).total_seconds())
+    SESSION_ACTIVE = False
+    session_start_time = None
+    session_paused_time = datetime.now()
+    return jsonify({
+        "success": True, 
+        "message": "Session paused", 
+        "elapsed_seconds": accumulated_elapsed_seconds
+    })
 
 @app.route('/api/session/end', methods=['POST'])
 def end_session():
-    global SESSION_ACTIVE, session_start_time
+    global SESSION_ACTIVE, session_start_time, session_paused_time, accumulated_elapsed_seconds
+    if SESSION_ACTIVE and session_start_time is not None:
+        accumulated_elapsed_seconds += int((datetime.now() - session_start_time).total_seconds())
     SESSION_ACTIVE = False
+    total_session_seconds = accumulated_elapsed_seconds
+    session_start_time = None
+    session_paused_time = None
+    accumulated_elapsed_seconds = 0
 
     # Generate HTML Report
     import os
@@ -635,8 +675,95 @@ def log_to_db(student_id, risk_score, direction, status):
 
 # ---------------- VIDEO PROCESSING ----------------
 
+def process_eye_gaze(person_crop, face, tx1, ty1, frame):
+    """
+    Extracts left & right eye regions from YuNet face landmarks,
+    detects pupil/iris location within each eye box,
+    calculates real gaze direction, and renders subtle cyan eye bounding
+    boxes and pupil tracking points on the frame.
+    Returns: (gaze_direction, eye_data)
+    """
+    x_face, y_face, w_face, h_face = map(int, face[:4])
+    re_x, re_y = int(face[4]), int(face[5])
+    le_x, le_y = int(face[6]), int(face[7])
+    
+    if w_face <= 0 or h_face <= 0:
+        return "UNKNOWN", None
+    
+    # Eye bounding box dimensions (tight box around each eye)
+    eye_w = max(10, int(w_face * 0.18))
+    eye_h = max(8, int(h_face * 0.12))
+    
+    crop_h, crop_w = person_crop.shape[:2]
+    
+    # Right eye box (in person_crop)
+    r_x1 = max(0, re_x - eye_w // 2)
+    r_y1 = max(0, re_y - eye_h // 2)
+    r_x2 = min(crop_w, r_x1 + eye_w)
+    r_y2 = min(crop_h, r_y1 + eye_h)
+    
+    # Left eye box (in person_crop)
+    l_x1 = max(0, le_x - eye_w // 2)
+    l_y1 = max(0, le_y - eye_h // 2)
+    l_x2 = min(crop_w, l_x1 + eye_w)
+    l_y2 = min(crop_h, l_y1 + eye_h)
+    
+    r_ratio_x, r_ratio_y = 0.5, 0.5
+    l_ratio_x, l_ratio_y = 0.5, 0.5
+    
+    # Analyze Right Eye Pupil
+    if r_x2 > r_x1 + 4 and r_y2 > r_y1 + 4:
+        r_roi = person_crop[r_y1:r_y2, r_x1:r_x2]
+        r_gray = cv2.cvtColor(r_roi, cv2.COLOR_BGR2GRAY)
+        r_blur = cv2.GaussianBlur(r_gray, (5, 5), 0)
+        _, _, min_loc, _ = cv2.minMaxLoc(r_blur)
+        r_pupil_x, r_pupil_y = min_loc
+        r_ratio_x = r_pupil_x / max(1, (r_x2 - r_x1))
+        r_ratio_y = r_pupil_y / max(1, (r_y2 - r_y1))
+        
+        # Draw on global frame: small cyan eye box + pupil point
+        g_rx1, g_ry1 = tx1 + r_x1, ty1 + r_y1
+        g_rx2, g_ry2 = tx1 + r_x2, ty1 + r_y2
+        cv2.rectangle(frame, (g_rx1, g_ry1), (g_rx2, g_ry2), (255, 229, 0), 1)
+        cv2.circle(frame, (g_rx1 + r_pupil_x, g_ry1 + r_pupil_y), 2, (0, 255, 255), -1)
+        
+    # Analyze Left Eye Pupil
+    if l_x2 > l_x1 + 4 and l_y2 > l_y1 + 4:
+        l_roi = person_crop[l_y1:l_y2, l_x1:l_x2]
+        l_gray = cv2.cvtColor(l_roi, cv2.COLOR_BGR2GRAY)
+        l_blur = cv2.GaussianBlur(l_gray, (5, 5), 0)
+        _, _, min_loc, _ = cv2.minMaxLoc(l_blur)
+        l_pupil_x, l_pupil_y = min_loc
+        l_ratio_x = l_pupil_x / max(1, (l_x2 - l_x1))
+        l_ratio_y = l_pupil_y / max(1, (l_y2 - l_y1))
+        
+        # Draw on global frame: small cyan eye box + pupil point
+        g_lx1, g_ly1 = tx1 + l_x1, ty1 + l_y1
+        g_lx2, g_ly2 = tx1 + l_x2, ty1 + l_y2
+        cv2.rectangle(frame, (g_lx1, g_ly1), (g_lx2, g_ly2), (255, 229, 0), 1)
+        cv2.circle(frame, (g_lx1 + l_pupil_x, g_ly1 + l_pupil_y), 2, (0, 255, 255), -1)
+        
+    avg_ratio_x = (r_ratio_x + l_ratio_x) / 2.0
+    avg_ratio_y = (r_ratio_y + l_ratio_y) / 2.0
+    
+    # Calculate Gaze Direction
+    gaze_dir = "CENTER"
+    if avg_ratio_x < 0.38:
+        gaze_dir = "RIGHT"
+    elif avg_ratio_x > 0.62:
+        gaze_dir = "LEFT"
+    elif avg_ratio_y < 0.35:
+        gaze_dir = "UP"
+    elif avg_ratio_y > 0.68:
+        gaze_dir = "DOWN"
+        
+    return gaze_dir, {
+        "ratio_x": round(avg_ratio_x, 2),
+        "ratio_y": round(avg_ratio_y, 2)
+    }
+
 def gen_frames():
-    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, head_pose_buffers, baseline_calibration, VIDEO_SOURCE, SESSION_ACTIVE
+    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, head_pose_buffers, baseline_calibration, student_gaze_tracker, VIDEO_SOURCE, SESSION_ACTIVE
     cap = cv2.VideoCapture(VIDEO_SOURCE)
     last_log_time = 0
     
@@ -704,7 +831,6 @@ def gen_frames():
                 _, faces = detector.detect(person_crop)
                 
                 if faces is not None and len(faces) > 0:
-                    # Sort faces by area (width * height) and pick the largest
                     faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
                     face = faces[0]
                     aligned_face = recognizer.alignCrop(person_crop, face)
@@ -728,7 +854,6 @@ def gen_frames():
                         if track_votes[track_id][sid] >= 5:
                             track_to_student[track_id] = sid
                             
-                            # Restore historical risk score if exists
                             hist_score = historical_risk_scores.get(sid, 0)
                             
                             if sid not in tracked_students:
@@ -737,53 +862,53 @@ def gen_frames():
                                     "risk_score": hist_score, 
                                     "status": "Active", 
                                     "direction": "CENTER", 
+                                    "gaze": "CENTER",
                                     "last_seen": now, 
                                     "last_update": now
                                 }
 
-            # If identified, process head pose
+            # If identified, process head pose & eye gaze
             if track_id in track_to_student:
                 sid = track_to_student[track_id]
                 current_students_in_frame.add(sid)
                 name = tracked_students[sid]["name"]
                 
-                # Yunet Head Direction on cropped body
                 direction = "CENTER"
+                detected_gaze = "CENTER"
                 detector.setInputSize((person_crop.shape[1], person_crop.shape[0]))
                 _, faces = detector.detect(person_crop)
                 
                 if faces is not None and len(faces) > 0:
-                    # Pick largest face
                     faces = sorted(faces, key=lambda f: f[2] * f[3], reverse=True)
                     face = faces[0]
+                    
+                    # Real Eye Movement and Gaze Tracking
+                    detected_gaze, _ = process_eye_gaze(person_crop, face, tx1, ty1, frame)
+                    
                     x_face, y_face, w_face, h_face = map(int, face[:4])
                     x_nose, y_nose = map(int, face[8:10])
                     if w_face > 0 and h_face > 0:
                         nx = (x_nose - x_face) / w_face
                         ny = (y_nose - y_face) / h_face
                         
-                        # Dynamic Overhead Calibration
                         if sid not in baseline_calibration:
                             baseline_calibration[sid] = {"nx": [], "ny": []}
                             
-                        # Calibrate for the first 30 frames
                         if len(baseline_calibration[sid]["nx"]) < 30:
                             baseline_calibration[sid]["nx"].append(nx)
                             baseline_calibration[sid]["ny"].append(ny)
-                            # Assume CENTER during calibration
                             direction = "CENTER"
                         else:
-                            # Use baseline average
                             base_nx = sum(baseline_calibration[sid]["nx"]) / 30.0
                             base_ny = sum(baseline_calibration[sid]["ny"]) / 30.0
                             
-                            # Dynamic Thresholds (adjust based on baseline)
                             if nx < base_nx - 0.15: direction = "RIGHT"
                             elif nx > base_nx + 0.15: direction = "LEFT"
                             elif ny < base_ny - 0.15: direction = "UP"
                             elif ny > base_ny + 0.15: direction = "DOWN"
                 else:
                     direction = "OCCLUDED"
+                    detected_gaze = "UNKNOWN"
                 
                 # Head pose stabilization buffer
                 if sid not in head_pose_buffers:
@@ -792,10 +917,26 @@ def gen_frames():
                 if len(head_pose_buffers[sid]) > 3:
                     head_pose_buffers[sid].pop(0)
                 
-                # Only use direction if consistent across 3 frames, else use last known direction
                 stable_direction = tracked_students[sid].get("direction", "CENTER")
                 if len(head_pose_buffers[sid]) == 3 and all(d == head_pose_buffers[sid][0] for d in head_pose_buffers[sid]):
                     stable_direction = head_pose_buffers[sid][0]
+
+                # Gaze temporal stabilization & sustained deviation detection
+                if sid not in student_gaze_tracker:
+                    student_gaze_tracker[sid] = {
+                        "history": [],
+                        "deviation_start": None,
+                        "last_event_time": 0
+                    }
+
+                tracker_info = student_gaze_tracker[sid]
+                tracker_info["history"].append(detected_gaze)
+                if len(tracker_info["history"]) > 5:
+                    tracker_info["history"].pop(0)
+
+                # Most frequent gaze in last 5 frames
+                stable_gaze = max(set(tracker_info["history"]), key=tracker_info["history"].count) if tracker_info["history"] else "CENTER"
+                tracked_students[sid]["gaze"] = stable_gaze
 
                 # Update Risk Score
                 last_update = tracked_students[sid].get("last_update", now)
@@ -803,6 +944,26 @@ def gen_frames():
                 tracked_students[sid]["last_update"] = now
                 tracked_students[sid]["last_seen"] = now
                 tracked_students[sid]["direction"] = stable_direction
+                
+                # Check sustained gaze deviation (> 2.0 seconds)
+                if stable_gaze != "CENTER" and stable_gaze != "UNKNOWN":
+                    if tracker_info["deviation_start"] is None:
+                        tracker_info["deviation_start"] = now
+                    dev_duration = now - tracker_info["deviation_start"]
+                    
+                    if dev_duration >= 2.0:
+                        tracked_students[sid]["gaze_deviation"] = {
+                            "direction": stable_gaze,
+                            "duration": round(dev_duration, 1),
+                            "timestamp": now
+                        }
+                    else:
+                        if "gaze_deviation" in tracked_students[sid]:
+                            del tracked_students[sid]["gaze_deviation"]
+                else:
+                    tracker_info["deviation_start"] = None
+                    if "gaze_deviation" in tracked_students[sid]:
+                        del tracked_students[sid]["gaze_deviation"]
                 
                 if SESSION_ACTIVE:
                     if phone_detected:
@@ -814,6 +975,9 @@ def gen_frames():
                     elif stable_direction == "OCCLUDED":
                         tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (10 * delta_t))
                         tracked_students[sid]["status"] = "Face Occluded/Hidden"
+                    elif "gaze_deviation" in tracked_students[sid]:
+                        tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (4 * delta_t))
+                        tracked_students[sid]["status"] = f"Gaze Shift: {stable_gaze}"
                     elif stable_direction != "CENTER":
                         tracked_students[sid]["risk_score"] = min(100, tracked_students[sid]["risk_score"] + (5 * delta_t))
                         tracked_students[sid]["status"] = f"Looking {stable_direction}"
@@ -830,12 +994,11 @@ def gen_frames():
                 if tracked_students[sid]["risk_score"] > 75:
                     color = (0, 0, 255) # Red
                     
-                    
-                label = f"{name} ({sid}) Risk: {int(tracked_students[sid]['risk_score'])}"
+                label = f"{name} ({sid}) | Gaze: {stable_gaze} | Risk: {int(tracked_students[sid]['risk_score'])}"
                 if not SESSION_ACTIVE:
-                    label = f"{name} (Paused)"
+                    label = f"{name} ({sid}) | Gaze: {stable_gaze} (Paused)"
                 cv2.rectangle(frame, (tx1, ty1), (tx2, ty2), color, 2)
-                cv2.putText(frame, label, (tx1, ty1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                cv2.putText(frame, label, (tx1, ty1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.52, color, 2)
             else:
                 unknown_count += 1
                 cv2.rectangle(frame, (tx1, ty1), (tx2, ty2), (0, 0, 255), 2)
@@ -902,7 +1065,10 @@ def api_status():
             "id": sid,
             "name": data["name"],
             "risk_score": data["risk_score"],
-            "status": data["status"]
+            "status": data["status"],
+            "direction": data.get("direction", "CENTER"),
+            "gaze": data.get("gaze", "CENTER"),
+            "gaze_deviation": data.get("gaze_deviation", None)
         })
         
     return jsonify({

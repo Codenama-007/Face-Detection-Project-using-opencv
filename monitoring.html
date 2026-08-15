@@ -2462,15 +2462,23 @@ setInterval(updateClock, 1000);
 updateClock();
 
 // ── SESSION TIMER LOGIC ──────────────────────
+let sessionElapsed = 0;
+let lastGazeStates = {};
+
+function formatSessionTime(totalSeconds) {
+    const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const s = String(totalSeconds % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+}
+
 function startSessionTimer() {
     if (sessionTimerInt) return;
-    sessionStart = sessionStart || Date.now();
     sessionTimerInt = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
-        const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-        const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-        const s = String(elapsed % 60).padStart(2, '0');
-        $timerDisplay.textContent = `${h}:${m}:${s}`;
+        if (sessionActive) {
+            sessionElapsed++;
+            $timerDisplay.textContent = formatSessionTime(sessionElapsed);
+        }
     }, 1000);
 }
 
@@ -2485,10 +2493,14 @@ async function checkSessionStatus() {
         const res  = await fetch(`${BASE}/api/session/status`, { credentials: 'include' });
         const data = await res.json();
         sessionActive = data.active;
+        if (typeof data.elapsed_seconds === 'number') {
+            sessionElapsed = data.elapsed_seconds;
+        }
 
         if (data.active) {
             $startSessionBtn.style.display = 'none';
             $endSessionBtn.style.display   = 'inline-flex';
+            $timerDisplay.textContent     = formatSessionTime(sessionElapsed);
             if (!$globalBanner.classList.contains('threat')) {
                 $globalBanner.className = 'session-pill active';
                 $globalText.textContent = 'SESSION ACTIVE';
@@ -2499,6 +2511,7 @@ async function checkSessionStatus() {
             $endSessionBtn.style.display   = 'none';
             $globalBanner.className = 'session-pill paused';
             $globalText.textContent = 'SESSION PAUSED';
+            $timerDisplay.textContent = formatSessionTime(sessionElapsed);
             stopSessionTimer();
         }
     } catch {
@@ -2598,6 +2611,7 @@ function updateStudentsGrid(students) {
             const el = document.getElementById(`stu-${sid}`);
             if (el) el.remove();
             displayedStudents.delete(sid);
+            delete lastGazeStates[sid];
             addAlert(`Student ${sid} exited camera frame.`, 'warning');
             logActivity(`Subject ${sid} left camera frame`);
         }
@@ -2623,6 +2637,8 @@ function updateStudentsGrid(students) {
                                                  : 'linear-gradient(135deg, #991b1b, #ef4444)';
 
         const initials = (student.name || '?').charAt(0).toUpperCase();
+        const gazeText = student.gaze || 'CENTER';
+        const gazeColor = gazeText === 'CENTER' ? 'var(--cyan)' : (gazeText === 'UNKNOWN' ? 'var(--t3)' : 'var(--warning)');
 
         let tile = document.getElementById(`stu-${student.id}`);
         if (!tile) {
@@ -2644,6 +2660,7 @@ function updateStudentsGrid(students) {
                 </div>
                 <div class="stu-meta-right">
                     <div class="stu-trust-num" style="color:${trustColor};">${trust.toFixed(0)}%</div>
+                    <div class="stu-gaze-pill" style="font-size:0.65rem;font-family:var(--mono);color:${gazeColor};font-weight:700;letter-spacing:0.04em;">GAZE: ${gazeText}</div>
                     <div class="stu-status-pill ${riskClass}">${student.status || 'Active'}</div>
                 </div>
             </div>
@@ -2767,6 +2784,28 @@ async function fetchLiveStatus() {
         }
 
         data.students.forEach(s => {
+            // Real Gaze Shift Activity Logging
+            const prevGaze = lastGazeStates[s.id];
+            const currentGaze = s.gaze || 'CENTER';
+            if (prevGaze && currentGaze !== prevGaze) {
+                if (currentGaze !== 'CENTER' && currentGaze !== 'UNKNOWN') {
+                    logActivity(`Subject ${s.name} (${s.id}) gaze shifted ${currentGaze}`);
+                } else if (currentGaze === 'CENTER' && prevGaze !== 'CENTER') {
+                    logActivity(`Subject ${s.name} (${s.id}) gaze returned CENTER`);
+                }
+            }
+            lastGazeStates[s.id] = currentGaze;
+
+            // Sustained Gaze Deviation Alert
+            if (s.gaze_deviation && !prevAlerts.includes(`gaze_${s.id}`)) {
+                addAlert(`Gaze Deviation: ${s.name} (${s.id}) looking ${s.gaze_deviation.direction} for ${s.gaze_deviation.duration}s`, 'warning', 10);
+                logActivity(`GAZE DEVIATION: ${s.name} sustained ${s.gaze_deviation.direction} (${s.gaze_deviation.duration}s)`);
+                prevAlerts.push(`gaze_${s.id}`);
+            } else if (!s.gaze_deviation && prevAlerts.includes(`gaze_${s.id}`)) {
+                prevAlerts = prevAlerts.filter(a => a !== `gaze_${s.id}`);
+            }
+
+            // High risk & anomaly triggers
             if (s.risk_score > 75 && !prevAlerts.includes(`high_risk_${s.id}`)) {
                 addAlert(`Critical: ${s.name} (${s.id}) entered HIGH RISK threshold!`, 'danger', Math.round(s.risk_score));
                 logActivity(`CRITICAL RISK THRESHOLD: ${s.name}`);
@@ -2814,6 +2853,8 @@ $endSessionBtn.addEventListener('click', async () => {
         if (res.ok) {
             addAlert('Session terminated. Generating integrity report...', 'info');
             logActivity('Session concluded — integrity audit generated');
+            sessionElapsed = 0;
+            $timerDisplay.textContent = '00:00:00';
             stopSessionTimer();
             checkSessionStatus();
             if (data.report_url) {
