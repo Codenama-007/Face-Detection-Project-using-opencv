@@ -277,7 +277,7 @@ def end_session():
     # Generate HTML Report
     import os
     os.makedirs('static/reports', exist_ok=True)
-    report_filename = f"report_{datetime.now().strftime('%Y%md_%H%M%S')}.html"
+    report_filename = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
     report_path = os.path.join('static/reports', report_filename)
 
     generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
