@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Authentication | ProctorAI Platform</title>
+    <meta name="description" content="Secure Unified Authentication Portal for ProctorAI Platform — Admin, Supervisor, and Student Access.">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — UNIFIED COMMAND AUTHENTICATION PORTAL
+   ═════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg-base:        #06090e;
+    --bg-surface:     #080c14;
+    --bg-elevated:    #0e1422;
+    
+    --panel-glass:    rgba(14, 20, 34, 0.88);
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-light:   rgba(255, 255, 255, 0.12);
+    --border-hover:   rgba(56, 189, 248, 0.32);
+    
+    --cyan:           #00e5ff;
+    --cyan-glow:      rgba(0, 229, 255, 0.35);
+    --accent:         #38bdf8;
+    
+    --success:        #10b981;
+    --success-dim:    rgba(16, 185, 129, 0.14);
+    --warning:        #f59e0b;
+    --danger:         #ef4444;
+    --danger-dim:     rgba(239, 68, 68, 0.14);
+    --danger-bd:      rgba(239, 68, 68, 0.35);
+    
+    --t1:             #f8fafc;
+    --t2:             #94a3b8;
+    --t3:             #64748b;
+    --t4:             #334155;
+    
+    --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
+}
+
+body {
+    font-family: var(--font);
+    background-color: var(--bg-base);
+    color: var(--t1);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1.5rem;
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 65% 45% at 50% 25%, rgba(14, 42, 80, 0.38) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 35% at 85% 85%, rgba(0, 229, 255, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 45% 35% at 15% 85%, rgba(56, 189, 248, 0.06) 0%, transparent 60%),
+        var(--bg-base);
+    pointer-events: none;
+    z-index: 0;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(56, 189, 248, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.018) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.8;
+}
+
+.container {
+    position: relative;
+    z-index: 1;
+    background: var(--panel-glass);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--border-subtle);
+    border-top: 1px solid var(--border-light);
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 229, 255, 0.05);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 460px;
+    text-align: center;
+}
+
+.logo-badge {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--cyan);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
+}
+
+.logo-badge svg {
+    width: 28px;
+    height: 28px;
+}
+
+h2 {
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.35rem;
+}
+
+p {
+    color: var(--t2);
+    margin-bottom: 1.75rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.input-group {
+    margin-bottom: 1.25rem;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    color: var(--t2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: rgba(6, 9, 14, 0.75);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 0.92rem;
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.input-group input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.20), inset 0 2px 6px rgba(0, 0, 0, 0.3);
+    background: rgba(14, 20, 34, 0.9);
+}
+
+.input-group input::placeholder {
+    color: var(--t3);
+}
+
+.btn {
+    width: 100%;
+    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #00e5ff 100%);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    padding: 0.9rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    font-family: var(--font);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
+    margin-top: 0.5rem;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 229, 255, 0.45);
+    border-color: var(--cyan);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.message {
+    margin-top: 1.25rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: none;
+    text-align: left;
+}
+
+.message.error {
+    display: block;
+    background: var(--danger-dim);
+    border: 1px solid var(--danger-bd);
+    color: #fca5a5;
+}
+
+.message.success {
+    display: block;
+    background: var(--success-dim);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #6ee7b7;
+}
+
+/* Quick Fill Selector Chips */
+.quick-fill-wrap {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-subtle);
+    text-align: left;
+}
+
+.quick-fill-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--t3);
+    margin-bottom: 0.6rem;
+}
+
+.chips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.chip-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    color: var(--t2);
+    font-size: 0.72rem;
+    font-family: var(--font);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.chip-btn:hover {
+    background: rgba(56, 189, 248, 0.08);
+    border-color: rgba(56, 189, 248, 0.3);
+    color: var(--cyan);
+}
+
+.chip-role {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.chip-uname {
+    font-family: var(--mono);
+    color: var(--t1);
+    font-size: 0.7rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.5rem;
+    color: var(--t3);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    color: var(--cyan);
+    transform: translateX(-2px);
+}
+
+.lucide-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo-badge">
+            <i data-lucide="shield-check"></i>
+        </div>
+        <h2>Command Authentication</h2>
+        <p>ProctorAI Enterprise Access Portal · Platform Admin & Teacher / Supervisor Clearance</p>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username">Username / Email</label>
+                <input type="text" id="username" placeholder="Enter username or email" required autocomplete="username">
+            </div>
+
+            <div class="input-group">
+                <label for="password">Security Password</label>
+                <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn" id="loginBtn">
+                <i data-lucide="log-in"></i> Sign In & Verify Clearance
+            </button>
+        </form>
+
+        <!-- Admin MFA Verification Step -->
+        <form id="mfaForm" style="display:none;margin-top:1rem;">
+            <div style="background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.25);border-radius:12px;padding:1rem;margin-bottom:1rem;text-align:left;">
+                <div style="font-size:0.75rem;font-weight:800;color:var(--cyan);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:0.2rem;display:flex;align-items:center;gap:0.4rem;">
+                    <i data-lucide="key-round" style="width:14px;height:14px;"></i> Two-Factor Authenticator Required
+                </div>
+                <div style="font-size:0.75rem;color:var(--t2);line-height:1.4;">
+                    Enter the 6-digit verification code from your authenticator application.
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="mfaCode">6-Digit One-Time Code</label>
+                <input type="text" id="mfaCode" placeholder="000000" maxlength="6" style="text-align:center;font-family:var(--mono);font-size:1.4rem;letter-spacing:0.3em;font-weight:800;" autocomplete="one-time-code">
+            </div>
+
+            <button type="submit" class="btn" id="mfaBtn">
+                <i data-lucide="shield-check"></i> Verify 2FA & Enter Platform
+            </button>
+        </form>
+
+        <div id="statusMsg" class="message"></div>
+        
+        <a href="index.html" class="back-link">
+            <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
+            Back to Platform Overview
+        </a>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const loginForm = document.getElementById('loginForm');
+        const mfaForm = document.getElementById('mfaForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const mfaBtn = document.getElementById('mfaBtn');
+        const statusMsg = document.getElementById('statusMsg');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const mfaCodeInput = document.getElementById('mfaCode');
+
+        // Check URL parameters for session state notifications
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('expired')) {
+            statusMsg.className = 'message error';
+            statusMsg.textContent = 'SESSION EXPIRED: Your session timed out due to inactivity. Please log in again.';
+            statusMsg.style.display = 'block';
+        } else if (params.has('disabled')) {
+            statusMsg.className = 'message error';
+            statusMsg.textContent = 'ACCESS DENIED: Your account has been disabled by platform administrator.';
+            statusMsg.style.display = 'block';
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Verifying Command Clearance...';
+            lucide.createIcons();
+            statusMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    if (result.mfa_required) {
+                        loginForm.style.display = 'none';
+                        mfaForm.style.display = 'block';
+                        mfaCodeInput.focus();
+                        statusMsg.className = 'message success';
+                        statusMsg.textContent = 'Password verified. Enter 6-digit Authenticator MFA code.';
+                        statusMsg.style.display = 'block';
+                        lucide.createIcons();
+                        return;
+                    }
+
+                    statusMsg.className = 'message success';
+                    statusMsg.textContent = `Clearance Granted: ${result.role} (${result.user.institution_name}). Redirecting...`;
+                    statusMsg.style.display = 'block';
+
+                    setTimeout(() => {
+                        window.location.href = result.redirect || 'monitoring.html';
+                    }, 400);
+                } else {
+                    statusMsg.className = 'message error';
+                    statusMsg.textContent = result.error || 'INVALID CREDENTIALS';
+                    statusMsg.style.display = 'block';
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<i data-lucide="log-in"></i> Sign In & Verify Clearance';
+                    lucide.createIcons();
+                }
+            } catch (err) {
+                statusMsg.className = 'message error';
+                statusMsg.textContent = 'Network error: Unable to contact ProctorAI security server.';
+                statusMsg.style.display = 'block';
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i data-lucide="log-in"></i> Sign In & Verify Clearance';
+                lucide.createIcons();
+            }
+        });
+
+        mfaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = mfaCodeInput.value.trim();
+            if (!code) return;
+
+            mfaBtn.disabled = true;
+            mfaBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Verifying 2FA Token...';
+            lucide.createIcons();
+
+            try {
+                const response = await fetch('/api/auth/mfa-verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ code })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    statusMsg.className = 'message success';
+                    statusMsg.textContent = '2FA Token Verified. Entering Platform Admin Command...';
+                    statusMsg.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = result.redirect || '/admin.html';
+                    }, 400);
+                } else {
+                    statusMsg.className = 'message error';
+                    statusMsg.textContent = result.error || 'INVALID VERIFICATION CODE';
+                    statusMsg.style.display = 'block';
+                    mfaBtn.disabled = false;
+                    mfaBtn.innerHTML = '<i data-lucide="shield-check"></i> Verify 2FA & Enter Admin SOC';
+                    lucide.createIcons();
+                }
+            } catch {
+                statusMsg.className = 'message error';
+                statusMsg.textContent = 'Network error during MFA verification.';
+                statusMsg.style.display = 'block';
+                mfaBtn.disabled = false;
+                mfaBtn.innerHTML = '<i data-lucide="shield-check"></i> Verify 2FA & Enter Admin SOC';
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>

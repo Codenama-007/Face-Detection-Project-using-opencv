@@ -3,308 +3,747 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face ID Enrollment</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Biometric Identity Enrollment | ProctorAI SOC</title>
+    <meta name="description" content="Secure Biometric Identity Enrollment & Face ID Registration for ProctorAI SOC.">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --surface-color: #1e293b;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --success: #10b981;
-            --danger: #ef4444;
-        }
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — SECURE BIOMETRIC IDENTITY ENROLLMENT
+   Enterprise Face Verification Onboarding & Batch Roster Ingestion
+   ═════════════════════════════════════════════════════════════════════ */
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        .container {
-            background: var(--surface-color);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-        }
+:root {
+    --bg-base:        #06090e;
+    --bg-surface:     #080c14;
+    --bg-elevated:    #0e1422;
+    
+    --panel-glass:    rgba(14, 20, 34, 0.82);
+    --panel-card:     rgba(18, 26, 44, 0.70);
+    --panel-hover:    rgba(25, 36, 60, 0.85);
+    
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-light:   rgba(255, 255, 255, 0.12);
+    --border-hover:   rgba(56, 189, 248, 0.32);
+    --border-active:  rgba(0, 229, 255, 0.55);
+    
+    --cyan:           #00e5ff;
+    --cyan-glow:      rgba(0, 229, 255, 0.35);
+    --accent:         #38bdf8;
+    --accent-dim:     rgba(56, 189, 248, 0.12);
+    --accent-bd:      rgba(56, 189, 248, 0.28);
+    
+    --success:        #10b981;
+    --success-dim:    rgba(16, 185, 129, 0.12);
+    --success-bd:     rgba(16, 185, 129, 0.28);
+    
+    --warning:        #f59e0b;
+    --warning-dim:    rgba(245, 158, 11, 0.12);
+    --warning-bd:     rgba(245, 158, 11, 0.28);
+    
+    --danger:         #ef4444;
+    --danger-dim:     rgba(239, 68, 68, 0.14);
+    --danger-bd:      rgba(239, 68, 68, 0.35);
+    
+    --t1:             #f8fafc;
+    --t2:             #94a3b8;
+    --t3:             #64748b;
+    --t4:             #334155;
+    
+    --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
+}
 
-        h2 {
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
+html {
+    scroll-behavior: smooth;
+}
 
-        p {
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-        }
+body {
+    font-family: var(--font);
+    background-color: var(--bg-base);
+    color: var(--t1);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem;
+    position: relative;
+    overflow-x: hidden;
+}
 
-        .video-container {
-            width: 100%;
-            height: 300px;
-            background: #000;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
+/* Background Atmosphere */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 65% 45% at 50% 18%, rgba(14, 42, 80, 0.35) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 10% 90%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 90%, rgba(16, 185, 129, 0.06) 0%, transparent 60%),
+        var(--bg-base);
+    pointer-events: none;
+    z-index: 0;
+}
 
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(56, 189, 248, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.018) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.8;
+}
 
-        .input-group {
-            margin-bottom: 1rem;
-            text-align: left;
-        }
+/* Back Button */
+.back-btn {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.95rem;
+    font-family: var(--font);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--t1);
+    text-decoration: none;
+    background: rgba(14, 20, 34, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+}
 
-        .input-group label {
-            display: block;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-        }
+.back-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--cyan);
+    transition: transform 0.2s ease;
+}
 
-        .input-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
+.back-btn:hover {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: var(--cyan);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 30px rgba(0, 229, 255, 0.25);
+}
 
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
+.back-btn:hover svg {
+    transform: translateX(-3px);
+}
 
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.875rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.2s;
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
+.container {
+    position: relative;
+    z-index: 1;
+    background: var(--panel-glass);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--border-subtle);
+    border-top: 1px solid var(--border-light);
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 229, 255, 0.05);
+    padding: 2.25rem;
+    width: 100%;
+    max-width: 540px;
+    text-align: center;
+}
 
-        .btn:hover {
-            background: var(--primary-hover);
-        }
+/* Top Icon & Titles */
+.enroll-shield-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--cyan);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
+}
 
-        .btn:disabled {
-            background: #334155;
-            cursor: not-allowed;
-            color: #94a3b8;
-        }
+.enroll-shield-icon svg {
+    width: 28px;
+    height: 28px;
+}
 
-        .message {
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            display: none;
-        }
+h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.25rem;
+}
 
-        .message.success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            display: block;
-        }
+p.subtitle {
+    color: var(--t2);
+    margin-bottom: 1.25rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
 
-        .message.error {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            display: block;
-        }
-        
-        .nav-link {
-            display: inline-block;
-            margin-top: 1.5rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.85rem;
-        }
-        .nav-link:hover {
-            color: white;
-        }
-        
-        .start-session-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            border: none;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            font-size: 1.1rem;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 1.5rem;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-        }
-        .start-session-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
-        }
-        
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid #334155;
-            margin-bottom: 1.5rem;
-        }
-        .tab-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            padding: 1rem;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 1rem;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .file-upload-zone {
-            border: 2px dashed #334155;
-            padding: 2rem;
-            text-align: center;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        .file-upload-zone:hover {
-            border-color: var(--primary);
-        }
-        .file-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-bottom: 1rem;
-            background: #0f172a;
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-        }
-        .file-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem;
-            border-bottom: 1px solid #1e293b;
-        }
-        .file-item img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-        .file-item-info {
-            flex: 1;
-            display: flex;
-            gap: 0.5rem;
-        }
-        .file-item-info input {
-            padding: 0.4rem;
-            border-radius: 4px;
-            border: 1px solid #334155;
-            background: #1e293b;
-            color: white;
-            width: 50%;
-        }
+/* Stage Progress Indicator */
+.stage-tracker {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(6, 9, 14, 0.6);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 0.75rem 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.stage-status-sub {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--cyan);
+    font-family: var(--mono);
+    margin-bottom: 1.25rem;
+    letter-spacing: 0.03em;
+    min-height: 1.2rem;
+    transition: color 0.2s ease;
+}
+
+.stage-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    flex: 1;
+}
+
+.stage-step::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 60%;
+    width: 80%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    transition: background 0.3s ease;
+}
+
+.stage-step:last-child::after {
+    display: none;
+}
+
+.stage-step.complete::after {
+    background: var(--success);
+}
+
+.stage-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid var(--t4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.stage-step.waiting .stage-dot {
+    opacity: 0.4;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.stage-step.active .stage-dot {
+    background: var(--cyan);
+    border-color: #ffffff;
+    box-shadow: 0 0 12px var(--cyan);
+    animation: stagePulse 2s infinite ease-in-out;
+}
+
+@keyframes stagePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 10px var(--cyan); }
+    50%      { transform: scale(1.15); box-shadow: 0 0 18px var(--cyan); }
+}
+
+.stage-step.complete .stage-dot {
+    background: var(--success);
+    border-color: var(--success);
+    box-shadow: 0 0 8px var(--success);
+}
+
+.stage-step.error .stage-dot {
+    background: var(--danger);
+    border-color: var(--danger);
+    box-shadow: 0 0 10px var(--danger);
+}
+
+.stage-label {
+    font-size: 0.58rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--t3);
+    transition: color 0.3s ease;
+}
+
+.stage-step.waiting .stage-label {
+    opacity: 0.45;
+}
+
+.stage-step.active .stage-label {
+    color: var(--cyan);
+    opacity: 1;
+}
+
+.stage-step.complete .stage-label {
+    color: var(--success);
+    opacity: 1;
+}
+
+.stage-step.error .stage-label {
+    color: var(--danger);
+    opacity: 1;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 1.4rem;
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--t3);
+    padding: 0.65rem;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.76rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-family: var(--font);
+    border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-btn.active {
+    color: var(--cyan);
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: tabFadeIn 0.25s ease-out;
+}
+
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Camera Video Preview Box */
+.video-container {
+    width: 100%;
+    height: 290px;
+    background: #020509;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    position: relative;
+    border: 1px solid var(--border-subtle);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7);
+}
+
+.video-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0, 229, 255, 0.02) 3px,
+        rgba(0, 229, 255, 0.02) 4px
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Reticle Corner Marks */
+.video-container::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 18px;
+    height: 18px;
+    border-top: 2px solid var(--cyan);
+    border-left: 2px solid var(--cyan);
+    pointer-events: none;
+    z-index: 3;
+    filter: drop-shadow(0 0 4px var(--cyan));
+}
+
+.cam-reticle-br {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 18px;
+    height: 18px;
+    border-bottom: 2px solid var(--cyan);
+    border-right: 2px solid var(--cyan);
+    pointer-events: none;
+    z-index: 3;
+    filter: drop-shadow(0 0 4px var(--cyan));
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+/* Inputs */
+.input-group {
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    color: var(--t2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: rgba(6, 9, 14, 0.75);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 0.88rem;
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.input-group input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.20), inset 0 2px 6px rgba(0, 0, 0, 0.3);
+    background: rgba(14, 20, 34, 0.9);
+}
+
+.input-group input::placeholder {
+    color: var(--t3);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #00e5ff 100%);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(0, 229, 255, 0.45);
+}
+
+.btn:disabled {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--border-subtle);
+    cursor: not-allowed;
+    color: var(--t3);
+    box-shadow: none;
+    transform: none;
+}
+
+/* Messages */
+.message {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: none;
+    line-height: 1.4;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.message.success {
+    background: var(--success-dim);
+    color: #34d399;
+    border: 1px solid var(--success-bd);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
+    display: block;
+}
+
+.message.error {
+    background: var(--danger-dim);
+    color: #f87171;
+    border: 1px solid var(--danger-bd);
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
+    display: block;
+}
+
+/* Start Session Button */
+.start-session-btn {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: #fff;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    padding: 0.95rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    font-family: var(--font);
+    cursor: pointer;
+    width: 100%;
+    margin-top: 1rem;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
+}
+
+.start-session-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.55);
+}
+
+/* Bulk Upload Zone */
+.file-upload-zone {
+    border: 2px dashed rgba(56, 189, 248, 0.3);
+    background: rgba(18, 26, 42, 0.5);
+    padding: 2rem;
+    text-align: center;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.file-upload-zone:hover {
+    border-color: var(--cyan);
+    background: rgba(25, 36, 58, 0.7);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+}
+
+.file-list {
+    max-height: 240px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    background: rgba(6, 9, 14, 0.7);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.file-item:last-child {
+    border-bottom: none;
+}
+
+.file-item img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+}
+
+.file-item-info {
+    flex: 1;
+    display: flex;
+    gap: 0.4rem;
+}
+
+.file-item-info input {
+    padding: 0.45rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-light);
+    background: rgba(18, 26, 42, 0.9);
+    color: #fff;
+    font-size: 0.78rem;
+    width: 50%;
+}
+
+.lucide-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
     </style>
 </head>
 <body>
+    <!-- Back to Monitoring -->
+    <a href="monitoring.html" class="back-btn" aria-label="Back to SOC Monitoring">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        SOC Command
+    </a>
 
     <div class="container">
-        <i data-lucide="scan-face" style="width:48px;height:48px;color:var(--primary);margin-bottom:1rem;"></i>
-        <h2>Face ID Enrollment</h2>
-        <p>Register your face for the CCTV monitoring system.</p>
+        <div class="enroll-shield-icon">
+            <i data-lucide="scan-face"></i>
+        </div>
+        <h2>Secure Identity Enrollment</h2>
+        <p class="subtitle">Biometric facial feature enrollment for ProctorAI Security Operations Center.</p>
+
+        <!-- Stage Progress Tracker -->
+        <div class="stage-tracker" id="stageTracker">
+            <div class="stage-step active" id="step-identity">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Identity</span>
+            </div>
+            <div class="stage-step waiting" id="step-facescan">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Face Scan</span>
+            </div>
+            <div class="stage-step waiting" id="step-align">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Align</span>
+            </div>
+            <div class="stage-step waiting" id="step-enroll">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Enroll</span>
+            </div>
+            <div class="stage-step waiting" id="step-ready">
+                <div class="stage-dot"></div>
+                <span class="stage-label">Ready</span>
+            </div>
+        </div>
+        <div class="stage-status-sub" id="timelineStatus">Identity profile required — enter name & student ID</div>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Webcam</button>
-            <button class="tab-btn" onclick="switchTab('uploadTab', this)">Bulk Upload</button>
+            <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
+            <button class="tab-btn" onclick="switchTab('uploadTab', this)">Batch Upload</button>
         </div>
 
         <div id="webcamTab" class="tab-content active">
             <div class="video-container">
+                <div class="cam-reticle-br"></div>
                 <video id="webcam" autoplay playsinline></video>
             </div>
 
             <div class="input-group">
-                <label for="studentName">Full Name</label>
-                <input type="text" id="studentName" placeholder="e.g. John Doe" autocomplete="off">
+                <label for="studentName">Student Full Name</label>
+                <input type="text" id="studentName" placeholder="e.g. Alex Johnson" autocomplete="off">
             </div>
 
             <div class="input-group">
-                <label for="studentId">Student ID</label>
-                <input type="text" id="studentId" placeholder="e.g. STU-1002" autocomplete="off">
+                <label for="studentId">Student Identification ID</label>
+                <input type="text" id="studentId" placeholder="e.g. STU-4091" autocomplete="off">
             </div>
 
             <button class="btn" id="captureBtn">
-                <i data-lucide="camera"></i> Enroll Face ID
+                <i data-lucide="camera"></i> Register Biometric Face ID
             </button>
         </div>
 
         <div id="uploadTab" class="tab-content">
             <div class="file-upload-zone" onclick="document.getElementById('fileInput').click()">
-                <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--text-secondary);margin-bottom:0.5rem;display:inline-block;"></i>
-                <p>Click to select photos or ID cards<br><small style="color:var(--text-secondary)">Tip: Name files as "ID-Name.jpg" to auto-fill</small></p>
+                <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--cyan);margin-bottom:0.5rem;display:inline-block;"></i>
+                <p style="margin-bottom:0;color:var(--t2);font-size:0.82rem;">Select photos or ID documents<br><small style="color:var(--t3);font-family:var(--mono);">Format: "ID-Name.jpg" to auto-parse</small></p>
             </div>
             <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
             
             <div class="file-list" id="fileList"></div>
             
             <button class="btn" id="uploadAllBtn" disabled>
-                <i data-lucide="upload"></i> Register All Selected
+                <i data-lucide="upload"></i> Enroll Batch Selected
             </button>
         </div>
 
         <div id="statusMsg" class="message"></div>
         
-        <hr style="border: 0; height: 1px; background: #334155; margin: 2rem 0;">
+        <hr style="border: 0; height: 1px; background: var(--border-subtle); margin: 1.5rem 0;">
         
         <button class="start-session-btn" id="startSessionBtn">
-            <i data-lucide="play-circle"></i> Start Exam Session & Enter Dashboard
+            <i data-lucide="shield-check"></i> Launch SOC Examination Defense Matrix
         </button>
     </div>
 
@@ -316,8 +755,6 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             btnElement.classList.add('active');
-            
-            // Re-render icons incase they are in hidden tabs initially
             lucide.createIcons();
         }
 
@@ -326,6 +763,65 @@
         const studentName = document.getElementById('studentName');
         const studentId = document.getElementById('studentId');
         const statusMsg = document.getElementById('statusMsg');
+        const timelineStatus = document.getElementById('timelineStatus');
+
+        const steps = {
+            identity: document.getElementById('step-identity'),
+            facescan: document.getElementById('step-facescan'),
+            align: document.getElementById('step-align'),
+            enroll: document.getElementById('step-enroll'),
+            ready: document.getElementById('step-ready')
+        };
+
+        function updateTimeline(states, message, isError = false) {
+            Object.keys(states).forEach(key => {
+                if (steps[key]) {
+                    steps[key].className = 'stage-step ' + states[key];
+                }
+            });
+            if (timelineStatus && message) {
+                timelineStatus.textContent = message;
+                timelineStatus.style.color = isError ? 'var(--danger)' : (states.ready === 'complete' ? 'var(--success)' : 'var(--cyan)');
+            }
+        }
+
+        // Check identity inputs
+        function checkIdentityState() {
+            const name = studentName.value.trim();
+            const id = studentId.value.trim();
+            const isCamReady = (video.readyState >= 2 && !video.paused);
+            
+            if (name && id) {
+                if (isCamReady) {
+                    updateTimeline({
+                        identity: 'complete',
+                        facescan: 'complete',
+                        align: 'active',
+                        enroll: 'waiting',
+                        ready: 'waiting'
+                    }, 'Identity profile verified · Align face with camera');
+                } else {
+                    updateTimeline({
+                        identity: 'complete',
+                        facescan: 'active',
+                        align: 'waiting',
+                        enroll: 'waiting',
+                        ready: 'waiting'
+                    }, 'Identity profile entered · Connecting camera stream...');
+                }
+            } else {
+                updateTimeline({
+                    identity: 'active',
+                    facescan: 'waiting',
+                    align: 'waiting',
+                    enroll: 'waiting',
+                    ready: 'waiting'
+                }, 'Enter Student Full Name and Identification ID');
+            }
+        }
+
+        studentName.addEventListener('input', checkIdentityState);
+        studentId.addEventListener('input', checkIdentityState);
 
         // The monitoring feed and this page cannot hold the webcam at the same
         // time. Ask the server to let go of it before we open it here, and
@@ -343,6 +839,10 @@
                 try {
                     localStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     video.srcObject = localStream;
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        checkIdentityState();
+                    };
                     captureBtn.disabled = false;
                     return;
                 } catch (err) {
@@ -354,6 +854,13 @@
                     }
                     showMsg('Error accessing webcam: ' + err.message, 'error');
                     captureBtn.disabled = true;
+                    updateTimeline({
+                        identity: 'active',
+                        facescan: 'error',
+                        align: 'waiting',
+                        enroll: 'waiting',
+                        ready: 'waiting'
+                    }, 'Camera connection failed: ' + err.message, true);
                     return;
                 }
             }
@@ -381,11 +888,28 @@
             const id = studentId.value.trim();
 
             if (!name || !id) {
-                showMsg('Please enter both Name and Student ID.', 'error');
+                showMsg('Please enter both Full Name and Student ID.', 'error');
+                updateTimeline({
+                    identity: 'error',
+                    facescan: 'waiting',
+                    align: 'waiting',
+                    enroll: 'waiting',
+                    ready: 'waiting'
+                }, 'Both Student Name and ID are required to proceed', true);
                 return;
             }
 
             captureBtn.disabled = true;
+            captureBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Processing Neural Alignment...';
+            lucide.createIcons();
+
+            updateTimeline({
+                identity: 'complete',
+                facescan: 'complete',
+                align: 'complete',
+                enroll: 'active',
+                ready: 'waiting'
+            }, 'Extracting facial landmarks & registering biometric template...');
 
             // Guided multi-angle capture. A single photo cannot represent a
             // face across pose and lighting, so we collect a short sequence
@@ -401,8 +925,8 @@
             const SHOTS_PER_POSE = 3;
 
             const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
             const ctx = canvas.getContext('2d');
             const images = [];
 
@@ -439,21 +963,42 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showMsg(result.message || ('Enrolled ' + name + '!'), 'success');
+                    showMsg(result.message || ('Successfully enrolled Face ID for ' + name + ' (' + id + ')!'), 'success');
                     studentName.value = '';
                     studentId.value = '';
+                    updateTimeline({
+                        identity: 'complete',
+                        facescan: 'complete',
+                        align: 'complete',
+                        enroll: 'complete',
+                        ready: 'complete'
+                    }, '✓ Biometric enrollment complete — template stored in database');
                 } else {
                     if (response.status === 401) {
-                        window.location.href = 'supervisor_login.html';
+                        window.location.href = 'login.html';
                         return;
                     }
                     showMsg(result.error || 'Failed to enroll face.', 'error');
+                    updateTimeline({
+                        identity: 'complete',
+                        facescan: 'complete',
+                        align: 'error',
+                        enroll: 'error',
+                        ready: 'waiting'
+                    }, result.error || 'Enrollment failed — please realign and retry', true);
                 }
             } catch (err) {
                 showMsg('Network error. Is the server running?', 'error');
+                updateTimeline({
+                    identity: 'complete',
+                    facescan: 'complete',
+                    align: 'active',
+                    enroll: 'error',
+                    ready: 'waiting'
+                }, 'Network error communicating with AI server', true);
             } finally {
                 captureBtn.disabled = false;
-                captureBtn.innerHTML = '<i data-lucide="camera"></i> Enroll Face ID';
+                captureBtn.innerHTML = '<i data-lucide="camera"></i> Register Biometric Face ID';
                 lucide.createIcons();
             }
         });
@@ -469,25 +1014,28 @@
         const startSessionBtn = document.getElementById('startSessionBtn');
         startSessionBtn.addEventListener('click', async () => {
             startSessionBtn.disabled = true;
-            startSessionBtn.innerHTML = '<i class="lucide-loader"></i> Starting...';
+            startSessionBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Initializing SOC...';
+            lucide.createIcons();
             try {
                 const res = await fetch('/api/session/start', { method: 'POST' });
                 if (res.ok) {
                     window.location.href = 'monitoring.html';
                 } else {
                     if (res.status === 401) {
-                        window.location.href = 'supervisor_login.html';
+                        window.location.href = 'login.html';
                         return;
                     }
                     let errText = await res.text();
                     showMsg('Failed to start session: ' + res.status + ' ' + errText, 'error');
                     startSessionBtn.disabled = false;
-                    startSessionBtn.innerHTML = '<i data-lucide="play-circle"></i> Start Exam Session & Enter Dashboard';
+                    startSessionBtn.innerHTML = '<i data-lucide="shield-check"></i> Launch SOC Examination Defense Matrix';
                     lucide.createIcons();
                 }
             } catch (err) {
                 showMsg('Network error starting session', 'error');
                 startSessionBtn.disabled = false;
+                startSessionBtn.innerHTML = '<i data-lucide="shield-check"></i> Launch SOC Examination Defense Matrix';
+                lucide.createIcons();
             }
         });
         
@@ -504,7 +1052,6 @@
                 
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    // Try to parse ID-Name from filename
                     let defaultId = "";
                     let defaultName = "";
                     const nameParts = file.name.split('.')[0].split('-');
@@ -546,9 +1093,9 @@
                 el.className = 'file-item';
                 
                 let iconHtml = '';
-                if (item.status === 'success') iconHtml = '<i data-lucide="check-circle" style="color:var(--success);width:20px;"></i>';
-                else if (item.status === 'error') iconHtml = '<i data-lucide="x-circle" style="color:var(--danger);width:20px;"></i>';
-                else if (item.status === 'uploading') iconHtml = '<i data-lucide="loader" style="color:var(--primary);width:20px;" class="lucide-spin"></i>';
+                if (item.status === 'success') iconHtml = '<i data-lucide="check-circle" style="color:var(--success);width:18px;"></i>';
+                else if (item.status === 'error') iconHtml = '<i data-lucide="x-circle" style="color:var(--danger);width:18px;"></i>';
+                else if (item.status === 'uploading') iconHtml = '<i data-lucide="loader" style="color:var(--cyan);width:18px;" class="lucide-spin"></i>';
                 
                 el.innerHTML = `
                     <img src="${item.dataUrl}">
@@ -571,12 +1118,12 @@
         document.getElementById('uploadAllBtn').addEventListener('click', async () => {
             const btn = document.getElementById('uploadAllBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Processing...';
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Enrolling Batch...';
             lucide.createIcons();
             
             for (let i = 0; i < selectedFilesData.length; i++) {
                 const item = selectedFilesData[i];
-                if (item.status === 'success') continue; // skip already uploaded
+                if (item.status === 'success') continue;
                 
                 if (!item.studentId || !item.studentName) {
                     item.status = 'error';
@@ -609,11 +1156,10 @@
                 renderFileList();
             }
             
-            btn.innerHTML = '<i data-lucide="upload"></i> Register All Selected';
+            btn.innerHTML = '<i data-lucide="upload"></i> Enroll Batch Selected';
             btn.disabled = false;
             lucide.createIcons();
         });
-        
     </script>
 </body>
 </html>

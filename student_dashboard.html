@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Examination & Integrity Portal | ProctorAI</title>
+    <meta name="description" content="ProctorAI Candidate Examination Portal and Biometric Identity Verification.">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — CANDIDATE PORTAL & INTEGRITY DASHBOARD
+   ═════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg-base:        #06090e;
+    --bg-surface:     #080c14;
+    --bg-elevated:    #0e1422;
+    --panel-glass:    rgba(14, 20, 34, 0.82);
+    
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-light:   rgba(255, 255, 255, 0.12);
+    --border-hover:   rgba(56, 189, 248, 0.35);
+    
+    --cyan:           #00e5ff;
+    --cyan-glow:      rgba(0, 229, 255, 0.35);
+    --accent:         #38bdf8;
+    
+    --success:        #10b981;
+    --success-dim:    rgba(16, 185, 129, 0.12);
+    --warning:        #f59e0b;
+    --warning-dim:    rgba(245, 158, 11, 0.12);
+    --danger:         #ef4444;
+    --danger-dim:     rgba(239, 68, 68, 0.12);
+    
+    --t1:             #f8fafc;
+    --t2:             #94a3b8;
+    --t3:             #64748b;
+    --t4:             #334155;
+    
+    --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
+}
+
+body {
+    font-family: var(--font);
+    background-color: var(--bg-base);
+    color: var(--t1);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 10% 20%, rgba(0, 229, 255, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(56, 189, 248, 0.04) 0%, transparent 40%),
+        var(--bg-base);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Top Navigation Bar ── */
+.top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: 68px;
+    background: rgba(6, 9, 14, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+}
+
+.brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.brand-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.2);
+}
+
+.brand-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, #a5f3fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-sub {
+    font-size: 0.68rem;
+    font-family: var(--mono);
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    padding: 0.4rem 0.85rem;
+    border-radius: 99px;
+    font-size: 0.78rem;
+    color: var(--t1);
+}
+
+.user-badge-role {
+    font-size: 0.65rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: var(--cyan);
+    letter-spacing: 0.05em;
+}
+
+.btn-signout {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s;
+}
+
+.btn-signout:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: var(--danger);
+    color: #fff;
+}
+
+/* ── Main Container ── */
+.main-wrap {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* ── Grid Layout ── */
+.portal-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.card {
+    background: var(--panel-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: 18px;
+    padding: 1.75rem;
+    backdrop-filter: blur(16px);
+    position: relative;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.card-title i {
+    color: var(--accent);
+}
+
+/* Profile Info */
+.profile-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.avatar-badge {
+    width: 68px;
+    height: 68px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1e3a8a, #0284c7);
+    border: 2px solid rgba(56, 189, 248, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
+}
+
+.profile-meta h3 {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.2rem;
+}
+
+.profile-meta p {
+    font-size: 0.82rem;
+    color: var(--t2);
+    font-family: var(--mono);
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.meta-box {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+}
+
+.meta-box-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t3);
+    margin-bottom: 0.25rem;
+}
+
+.meta-box-val {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--t1);
+}
+
+.status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    text-transform: uppercase;
+}
+
+.status-tag.verified {
+    background: var(--success-dim);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: var(--success);
+}
+
+.status-tag.pending {
+    background: var(--warning-dim);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: var(--warning);
+}
+
+/* Trust Score */
+.trust-score-wrap {
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+.trust-number {
+    font-size: 3.8rem;
+    font-weight: 900;
+    font-family: var(--mono);
+    letter-spacing: -0.04em;
+    color: var(--success);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.trust-rating-label {
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 0.35rem;
+}
+
+.trust-desc {
+    font-size: 0.78rem;
+    color: var(--t2);
+    max-width: 320px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* Guidelines */
+.rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.rule-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+}
+
+.rule-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rule-content h4 {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.2rem;
+}
+
+.rule-content p {
+    font-size: 0.75rem;
+    color: var(--t2);
+    line-height: 1.4;
+}
+
+/* Table */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+.data-table th {
+    padding: 0.75rem 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--t3);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.data-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--t1);
+}
+
+@media (max-width: 900px) {
+    .portal-grid {
+        grid-template-columns: 1fr;
+    }
+    .top-nav {
+        padding: 0 1rem;
+    }
+}
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <header class="top-nav">
+        <div class="brand-wrap">
+            <div class="brand-badge">
+                <i data-lucide="shield-check"></i>
+            </div>
+            <div>
+                <div class="brand-title">ProctorAI</div>
+                <div class="brand-sub">Student Integrity Portal</div>
+            </div>
+        </div>
+
+        <div class="nav-actions">
+            <div class="user-badge">
+                <i data-lucide="user" style="width:14px;height:14px;color:var(--cyan);"></i>
+                <span id="navStudentName">Student Candidate</span>
+                <span class="user-badge-role">STUDENT</span>
+            </div>
+
+            <button class="btn-signout" onclick="handleSignOut()">
+                <i data-lucide="log-out" style="width:13px;height:13px;"></i> Sign Out
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-wrap">
+        
+        <div class="portal-grid">
+            
+            <!-- Student Identity Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i data-lucide="id-card"></i> Candidate Biometric Profile</h3>
+                    <span id="bioStatusTag" class="status-tag verified">
+                        <i data-lucide="check-circle-2" style="width:13px;height:13px;"></i> Enrolled & Verified
+                    </span>
+                </div>
+
+                <div class="profile-row">
+                    <div class="avatar-badge" id="avatarInitial">A</div>
+                    <div class="profile-meta">
+                        <h3 id="profileName">Alex Rivera</h3>
+                        <p id="profileStudentId">ID: STU-8801</p>
+                    </div>
+                </div>
+
+                <div class="meta-grid">
+                    <div class="meta-box">
+                        <div class="meta-box-label">Institution</div>
+                        <div class="meta-box-val" id="profileInstitution">Apex Institute of Technology</div>
+                    </div>
+                    <div class="meta-box">
+                        <div class="meta-box-label">Biometric Model</div>
+                        <div class="meta-box-val">SFace 2021 + YuNet</div>
+                    </div>
+                    <div class="meta-box">
+                        <div class="meta-box-label">Examination Status</div>
+                        <div class="meta-box-val" style="color:var(--success);">Cleared for Proctoring</div>
+                    </div>
+                    <div class="meta-box">
+                        <div class="meta-box-label">Monitored Sessions</div>
+                        <div class="meta-box-val" id="profileSessionsCount">1 Active</div>
+                    </div>
+                </div>
+
+                <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.2);border-radius:10px;padding:0.85rem 1rem;">
+                    <div style="font-size:0.75rem;color:var(--accent);font-weight:700;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.2rem;">
+                        <i data-lucide="shield" style="width:14px;height:14px;"></i> Continuous Biometric Authentication Active
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--t2);line-height:1.4;">
+                        Your facial biometrics and gaze behavior are continuously cross-referenced with your enrolled profile during exam sessions.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Integrity Score Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i data-lucide="award"></i> Personal Integrity Rating</h3>
+                </div>
+
+                <div class="trust-score-wrap">
+                    <div class="trust-number" id="personalTrust">100%</div>
+                    <div class="trust-rating-label">Exemplary Examination Trust</div>
+                    <p class="trust-desc">No critical anomalies or prohibited materials detected across your examination sessions.</p>
+                </div>
+
+                <div style="border-top:1px solid var(--border-subtle);padding-top:1.25rem;">
+                    <div class="meta-grid" style="margin-bottom:0;">
+                        <div class="meta-box">
+                            <div class="meta-box-label">Average Risk</div>
+                            <div class="meta-box-val" style="color:var(--success);">0.0 Low</div>
+                        </div>
+                        <div class="meta-box">
+                            <div class="meta-box-label">Integrity Status</div>
+                            <div class="meta-box-val" style="color:var(--cyan);">Verified Clear</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Examination Zone Guidelines & Pre-Check -->
+        <div class="card" style="margin-bottom:2rem;">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="camera"></i> Examination Environment & Security Standards</h3>
+            </div>
+
+            <div class="rules-list">
+                <div class="rule-item">
+                    <div class="rule-icon"><i data-lucide="eye"></i></div>
+                    <div class="rule-content">
+                        <h4>Direct Gaze & Screen Alignment</h4>
+                        <p>Keep your head and gaze centered toward the active examination monitor. Sustained gaze shifts greater than 2 seconds are automatically flagged.</p>
+                    </div>
+                </div>
+
+                <div class="rule-item">
+                    <div class="rule-icon"><i data-lucide="smartphone"></i></div>
+                    <div class="rule-content">
+                        <h4>Prohibited Mobile Devices & Books</h4>
+                        <p>Cell phones, secondary tablets, study notes, or reference textbooks in the camera field of view immediately trigger high-priority alerts.</p>
+                    </div>
+                </div>
+
+                <div class="rule-item">
+                    <div class="rule-icon"><i data-lucide="users"></i></div>
+                    <div class="rule-content">
+                        <h4>Single Candidate Environment</h4>
+                        <p>Ensure no unregistered individuals, room visitors, or secondary faces enter the webcam perimeter during the session.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personal Audit Activity Stream -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i data-lucide="history"></i> Personal Session Audit Logs</h3>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Security Event</th>
+                        <th>Gaze / Pose</th>
+                        <th>Risk Score</th>
+                    </tr>
+                </thead>
+                <tbody id="studentLogsTableBody">
+                    <tr><td colspan="4" style="text-align:center;color:var(--t3);">Loading personal integrity logs...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <script>
+        async function init() {
+            lucide.createIcons();
+            await checkAuth();
+            await loadProfileData();
+            await loadStudentLogs();
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/me', { credentials: 'include' });
+                const data = await res.json();
+                if (!data.authenticated || (data.user.role !== 'STUDENT' && data.user.role !== 'ADMIN')) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                document.getElementById('navStudentName').textContent = data.user.name || 'Candidate';
+            } catch {
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadProfileData() {
+            try {
+                const res = await fetch('/api/student/me', { credentials: 'include' });
+                const profile = await res.json();
+
+                document.getElementById('profileName').textContent = profile.name;
+                document.getElementById('profileStudentId').textContent = `ID: ${profile.student_id}`;
+                document.getElementById('profileInstitution').textContent = profile.institution_name;
+                document.getElementById('avatarInitial').textContent = (profile.name || 'A').charAt(0).toUpperCase();
+
+                const trust = profile.trust_score || 100;
+                document.getElementById('personalTrust').textContent = `${trust.toFixed(0)}%`;
+
+                const $bioTag = document.getElementById('bioStatusTag');
+                if (profile.enrolled) {
+                    $bioTag.className = 'status-tag verified';
+                    $bioTag.innerHTML = '<i data-lucide="check-circle-2" style="width:13px;height:13px;"></i> Enrolled & Verified';
+                } else {
+                    $bioTag.className = 'status-tag pending';
+                    $bioTag.innerHTML = '<i data-lucide="alert-circle" style="width:13px;height:13px;"></i> Pending Enrollment';
+                }
+                lucide.createIcons();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadStudentLogs() {
+            try {
+                const res = await fetch('/api/student/logs', { credentials: 'include' });
+                const logs = await res.json();
+                const tbody = document.getElementById('studentLogsTableBody');
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--t3);font-weight:600;padding:2rem;">NO ACTIVITY RECORDED</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = logs.map(l => `
+                    <tr>
+                        <td style="font-family:var(--mono);font-size:0.75rem;color:var(--t3);">${l.timestamp}</td>
+                        <td style="font-weight:600;color:#fff;">${l.status}</td>
+                        <td style="font-size:0.78rem;color:var(--accent);">${l.direction || 'CENTER'}</td>
+                        <td style="font-family:var(--mono);font-weight:700;color:${l.risk_score > 50 ? 'var(--danger)' : 'var(--success)'};">${l.risk_score}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleSignOut() {
+            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+            window.location.href = 'login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

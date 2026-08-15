@@ -3,188 +3,345 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supervisor Login | ProctorAI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@0.462.0"></script>
+    <title>Command Authentication | ProctorAI SOC</title>
+    <meta name="description" content="Supervisor Command Authentication Portal for ProctorAI Security Operations Center.">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --surface-color: #1e293b;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --danger: #ef4444;
-        }
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — SUPERVISOR COMMAND AUTHENTICATION
+   National Examination Security Operations Center Access Portal
+   ═════════════════════════════════════════════════════════════════════ */
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        .container {
-            background: var(--surface-color);
-            padding: 2.5rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
+:root {
+    --bg-base:        #06090e;
+    --bg-surface:     #080c14;
+    --bg-elevated:    #0e1422;
+    
+    --panel-glass:    rgba(14, 20, 34, 0.85);
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-light:   rgba(255, 255, 255, 0.12);
+    --border-hover:   rgba(56, 189, 248, 0.32);
+    
+    --cyan:           #00e5ff;
+    --cyan-glow:      rgba(0, 229, 255, 0.35);
+    --accent:         #38bdf8;
+    
+    --success:        #10b981;
+    --danger:         #ef4444;
+    --danger-dim:     rgba(239, 68, 68, 0.14);
+    --danger-bd:      rgba(239, 68, 68, 0.35);
+    
+    --t1:             #f8fafc;
+    --t2:             #94a3b8;
+    --t3:             #64748b;
+    --t4:             #334155;
+    
+    --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
+}
 
-        .logo-icon {
-            width: 48px;
-            height: 48px;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
+html {
+    scroll-behavior: smooth;
+}
 
-        h2 {
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
+body {
+    font-family: var(--font);
+    background-color: var(--bg-base);
+    color: var(--t1);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1.5rem;
+    position: relative;
+    overflow-x: hidden;
+}
 
-        p {
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-        }
+/* Background Atmosphere */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 65% 45% at 50% 25%, rgba(14, 42, 80, 0.38) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 35% at 85% 85%, rgba(0, 229, 255, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 45% 35% at 15% 85%, rgba(56, 189, 248, 0.06) 0%, transparent 60%),
+        var(--bg-base);
+    pointer-events: none;
+    z-index: 0;
+}
 
-        .input-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(56, 189, 248, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.018) 1px, transparent 1px);
+    background-size: 36px 36px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.8;
+}
 
-        .input-group label {
-            display: block;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-        }
+.container {
+    position: relative;
+    z-index: 1;
+    background: var(--panel-glass);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid var(--border-subtle);
+    border-top: 1px solid var(--border-light);
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 229, 255, 0.05);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    text-align: center;
+}
 
-        .input-group input {
-            width: 100%;
-            padding: 0.875rem;
-            border-radius: 0.5rem;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
-            font-family: inherit;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
+.logo-badge {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--cyan);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
+}
 
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
+.logo-badge svg {
+    width: 28px;
+    height: 28px;
+}
 
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.2s;
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 1rem;
-        }
+h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.35rem;
+}
 
-        .btn:hover {
-            background: var(--primary-hover);
-        }
+p {
+    color: var(--t2);
+    margin-bottom: 2rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
 
-        .btn:disabled {
-            background: #334155;
-            cursor: not-allowed;
-            color: #94a3b8;
-        }
+.input-group {
+    margin-bottom: 1.25rem;
+    text-align: left;
+}
 
-        .message {
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            display: none;
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
+.input-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    color: var(--t2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
 
-        .back-link {
-            display: inline-block;
-            margin-top: 1.5rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.85rem;
-        }
+.input-group input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: rgba(6, 9, 14, 0.75);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 0.92rem;
+    outline: none;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+}
 
-        .back-link:hover {
-            color: white;
-        }
+.input-group input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.20), inset 0 2px 6px rgba(0, 0, 0, 0.3);
+    background: rgba(14, 20, 34, 0.9);
+}
 
-        .hint {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-top: 0.4rem;
-            line-height: 1.4;
-        }
+.input-group input::placeholder {
+    color: var(--t3);
+}
 
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin: 1.25rem 0;
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-        }
-        .divider::before, .divider::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: #334155;
-        }
+.hint {
+    font-size: 0.72rem;
+    color: var(--t3);
+    margin-top: 0.4rem;
+    line-height: 1.4;
+}
 
-        .btn-hello {
-            background: transparent;
-            border: 1px solid #334155;
-            color: var(--text-primary);
-        }
-        .btn-hello:hover {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: var(--primary);
-        }
+.btn {
+    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #00e5ff 100%);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    padding: 0.9rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    font-family: var(--font);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
+    margin-top: 0.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 24px rgba(0, 229, 255, 0.45);
+}
+
+.btn:disabled {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--border-subtle);
+    cursor: not-allowed;
+    color: var(--t3);
+    box-shadow: none;
+    transform: none;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+    color: var(--t3);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.divider::before, .divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-light);
+}
+
+.btn-hello {
+    background: rgba(14, 20, 34, 0.6);
+    border: 1px solid var(--border-light);
+    color: var(--t1);
+    box-shadow: none;
+    text-shadow: none;
+}
+
+.btn-hello:hover:not(:disabled) {
+    background: rgba(0, 229, 255, 0.08);
+    border-color: var(--cyan);
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.2);
+}
+
+.message {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: none;
+    background: var(--danger-dim);
+    color: #f87171;
+    border: 1px solid var(--danger-bd);
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
+    animation: fadeIn 0.3s ease;
+}
+
+.message.success {
+    background: rgba(16, 185, 129, 0.14);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.35);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 1.75rem;
+    color: var(--t3);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    color: var(--cyan);
+    transform: translateX(-2px);
+}
+
+.lucide-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
     </style>
 </head>
 <body>
 
     <div class="container">
-        <i data-lucide="shield-check" class="logo-icon"></i>
-        <h2>Supervisor Login</h2>
-        <p>Authenticate to access the Proctor Dashboard.</p>
+        <div class="logo-badge">
+            <i data-lucide="shield-check"></i>
+        </div>
+        <h2>Supervisor Command Access</h2>
+        <p>Authenticate with credentials to access the ProctorAI Examination Defense Matrix.</p>
 
         <form id="loginForm">
             <div class="input-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" placeholder="Enter supervisor username" required autocomplete="off">
+                <label for="username">Command Username</label>
+                <input type="text" id="username" placeholder="admin" required autocomplete="off">
             </div>
 
             <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter password" required>
+                <label for="password">Security Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
             </div>
 
             <div class="input-group">
@@ -196,36 +353,41 @@
             </div>
 
             <button type="submit" class="btn" id="loginBtn">
-                <i data-lucide="log-in"></i> Login
+                <i data-lucide="log-in"></i> Authenticate & Enter SOC
             </button>
 
-            <div class="divider">or</div>
+            <div class="divider" id="dividerHello" style="display:none;">or</div>
 
-            <button type="button" class="btn btn-hello" id="helloBtn">
+            <button type="button" class="btn btn-hello" id="helloBtn" style="display:none;">
                 <i data-lucide="scan-face"></i> Sign in with Windows Hello (Face ID)
             </button>
 
             <div id="statusMsg" class="message"></div>
         </form>
         
-        <a href="index.html" class="back-link">&larr; Back to Home</a>
+        <a href="index.html" class="back-link">
+            <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
+            Back to Platform Overview
+        </a>
     </div>
 
     <script>
         lucide.createIcons();
 
-        // First run? Send the supervisor to the setup wizard instead
+        // First run? Send the supervisor to the setup wizard if setup is not complete
         fetch('/api/setup/status')
             .then(r => r.json())
-            .then(s => { if (!s.setup_complete) window.location.href = 'setup.html'; })
+            .then(s => { if (s.setup_complete === false) window.location.href = 'setup.html'; })
             .catch(() => {});
 
         const loginForm = document.getElementById('loginForm');
         const loginBtn = document.getElementById('loginBtn');
         const helloBtn = document.getElementById('helloBtn');
+        const dividerHello = document.getElementById('dividerHello');
         const statusMsg = document.getElementById('statusMsg');
 
         function showError(text) {
+            statusMsg.className = 'message';
             statusMsg.textContent = text;
             statusMsg.style.display = 'block';
         }
@@ -233,7 +395,7 @@
         function resetButtons() {
             loginBtn.disabled = false;
             helloBtn.disabled = false;
-            loginBtn.innerHTML = '<i data-lucide="log-in"></i> Login';
+            loginBtn.innerHTML = '<i data-lucide="log-in"></i> Authenticate & Enter SOC';
             helloBtn.innerHTML = '<i data-lucide="scan-face"></i> Sign in with Windows Hello (Face ID)';
             lucide.createIcons();
         }
@@ -250,87 +412,29 @@
 
         const cctvValue = () => document.getElementById('cctvIp').value.trim();
 
-        // Only offer Face ID if the browser supports a platform authenticator
-        // AND this device has already been enrolled for this origin.
         async function initHelloButton() {
-            helloBtn.style.display = 'none';
             if (!window.PublicKeyCredential) return;
             try {
-                const supported = await PublicKeyCredential
-                    .isUserVerifyingPlatformAuthenticatorAvailable();
+                const supported = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
                 if (!supported) return;
                 const st = await (await fetch('/api/webauthn/status')).json();
-                if (st.registered) helloBtn.style.display = 'flex';
+                if (st.registered) {
+                    helloBtn.style.display = 'flex';
+                    dividerHello.style.display = 'flex';
+                }
             } catch (e) { /* leave hidden */ }
         }
         initHelloButton();
 
-        async function passwordLogin() {
-            const response = await fetch('/api/supervisor_login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: document.getElementById('username').value.trim(),
-                    password: document.getElementById('password').value.trim(),
-                    cctv_ip: cctvValue()
-                })
-            });
-            const result = await response.json();
-            if (!response.ok) {
-                if (result.setup_required) { window.location.href = 'setup.html'; return; }
-                showError(result.error || 'Authentication failed.');
+        async function faceIdLogin() {
+            const resp = await fetch('/api/webauthn/login/begin', { method: 'POST' });
+            if (!resp.ok) {
+                const r = await resp.json();
+                showError(r.error || 'Could not start Face ID authentication.');
                 resetButtons();
                 return;
             }
-            // Logged in. Offer to enable Face ID on this device if possible.
-            await maybeEnrollFaceId();
-            window.location.href = 'enrollment.html';
-        }
-
-        async function maybeEnrollFaceId() {
-            if (!window.PublicKeyCredential) return;
-            try {
-                const supported = await PublicKeyCredential
-                    .isUserVerifyingPlatformAuthenticatorAvailable();
-                if (!supported) return;
-                const st = await (await fetch('/api/webauthn/status')).json();
-                if (st.registered) return;
-                if (!confirm('Enable Windows Hello (Face ID) sign-in on this device?')) return;
-
-                const options = await (await fetch('/api/webauthn/register/begin', { method: 'POST' })).json();
-                options.challenge = b64urlToBuf(options.challenge);
-                options.user.id = b64urlToBuf(options.user.id);
-                (options.excludeCredentials || []).forEach(c => c.id = b64urlToBuf(c.id));
-
-                const cred = await navigator.credentials.create({ publicKey: options });
-                const body = {
-                    id: cred.id,
-                    rawId: bufToB64url(cred.rawId),
-                    type: cred.type,
-                    response: {
-                        clientDataJSON: bufToB64url(cred.response.clientDataJSON),
-                        attestationObject: bufToB64url(cred.response.attestationObject)
-                    }
-                };
-                const r = await fetch('/api/webauthn/register/complete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                if (!r.ok) {
-                    const err = await r.json();
-                    alert('Could not enable Face ID: ' + (err.error || 'unknown error'));
-                }
-            } catch (e) {
-                // User cancelled the Hello prompt, or it is unavailable - not fatal
-                console.warn('Face ID enrollment skipped:', e);
-            }
-        }
-
-        async function faceIdLogin() {
-            const options = await (await fetch('/api/webauthn/login/begin', { method: 'POST' })).json();
-            if (options.error) { showError(options.error); resetButtons(); return; }
-
+            const options = await resp.json();
             options.challenge = b64urlToBuf(options.challenge);
             (options.allowCredentials || []).forEach(c => c.id = b64urlToBuf(c.id));
 
@@ -354,30 +458,75 @@
             });
             const result = await r.json();
             if (r.ok) {
-                window.location.href = 'enrollment.html';
+                window.location.href = 'monitoring.html';
             } else {
                 showError(result.error || 'Face ID sign-in failed.');
                 resetButtons();
             }
         }
 
+        async function passwordLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const cctv_ip = cctvValue();
+
+            // Try the main /api/auth/login first, with fallback to /api/supervisor_login
+            let response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ username, password, cctv_ip })
+            });
+
+            if (!response.ok && response.status === 404) {
+                response = await fetch('/api/supervisor_login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password, cctv_ip })
+                });
+            }
+
+            const result = await response.json();
+
+            if (response.ok && (result.success || result.authenticated)) {
+                statusMsg.className = 'message success';
+                statusMsg.textContent = 'Clearance Verified. Redirecting to SOC...';
+                statusMsg.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = result.redirect || 'monitoring.html';
+                }, 400);
+            } else {
+                if (result.setup_required) {
+                    window.location.href = 'setup.html';
+                    return;
+                }
+                showError(result.error || 'Invalid credentials. Access denied.');
+                resetButtons();
+            }
+        }
+
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            loginBtn.disabled = true; helloBtn.disabled = true;
+            loginBtn.disabled = true;
+            helloBtn.disabled = true;
             statusMsg.style.display = 'none';
-            loginBtn.innerHTML = 'Authenticating...';
+            loginBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Verifying Command Clearance...';
+            lucide.createIcons();
             try {
                 await passwordLogin();
             } catch (err) {
-                showError('Network error. Is the server running?');
+                showError('Network error. Is the AI backend server running?');
                 resetButtons();
             }
         });
 
         helloBtn.addEventListener('click', async () => {
-            loginBtn.disabled = true; helloBtn.disabled = true;
+            loginBtn.disabled = true;
+            helloBtn.disabled = true;
             statusMsg.style.display = 'none';
-            helloBtn.innerHTML = 'Look at your camera…';
+            helloBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Look at your camera…';
+            lucide.createIcons();
             try {
                 await faceIdLogin();
             } catch (err) {
