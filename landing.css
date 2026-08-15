@@ -151,24 +151,156 @@ a { text-decoration: none; color: inherit; }
 .stat-number { font-size: 3.5rem; font-weight: 800; font-family: var(--mono); background: linear-gradient(135deg, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; letter-spacing: -0.04em;}
 .stat-label { color: var(--text-secondary); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 0.5rem; }
 
-/* 2. Key Features */
-.features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-.feature-card { padding: 2.25rem; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s; }
-.feature-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+/* 2. Key Features — 6 Cards Ambient Glow System */
+.features-grid { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 2rem; 
+    position: relative;
+    overflow: visible;
+}
 
-.feature-icon { 
-    width: 56px; height: 56px; border-radius: 14px; 
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.25);
-    display: flex; align-items: center; justify-content: center; 
-    margin-bottom: 1.25rem; color: var(--accent); 
+.feature-card { 
+    padding: 2.25rem; 
+    position: relative;
+    overflow: visible;
+    background: linear-gradient(135deg, rgba(14, 20, 34, 0.90) 0%, rgba(8, 12, 20, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1;
+}
+
+.feature-card:hover { 
+    transform: translateY(-3px); 
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6); 
+}
+
+/* Atmospheric Ambient Background Glow behind Card */
+.feature-card::before {
+    content: '';
+    position: absolute;
+    inset: -38px;
+    border-radius: 36px;
+    z-index: -1;
+    opacity: 0.26;
+    filter: blur(48px);
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s;
+    will-change: opacity, transform;
+}
+
+.feature-card:hover::before {
+    opacity: 0.52;
+    filter: blur(56px);
+    transform: scale(1.03);
+}
+
+/* Card Content Layering (Ensure 100% Sharpness) */
+.feature-card * {
+    position: relative;
+    z-index: 2;
+}
+
+/* ── 6 Individual Ambient Accent Glows ── */
+/* Card 1: Electric Blue (AI Monitoring) */
+.features-grid .feature-card:nth-child(1)::before {
+    background: radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.85) 0%, rgba(56, 189, 248, 0.40) 45%, rgba(37, 99, 235, 0) 75%);
+}
+.features-grid .feature-card:nth-child(1):hover {
+    border-color: rgba(56, 189, 248, 0.35);
+}
+.features-grid .feature-card:nth-child(1) .feature-icon {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.28);
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.2);
+}
+
+/* Card 2: Cyan (Risk Score System) */
+.features-grid .feature-card:nth-child(2)::before {
+    background: radial-gradient(circle at 50% 50%, rgba(0, 229, 255, 0.80) 0%, rgba(6, 182, 212, 0.40) 45%, rgba(0, 229, 255, 0) 75%);
+}
+.features-grid .feature-card:nth-child(2):hover {
+    border-color: rgba(0, 229, 255, 0.35);
+}
+.features-grid .feature-card:nth-child(2) .feature-icon {
+    color: #00e5ff;
+    background: rgba(0, 229, 255, 0.12);
+    border-color: rgba(0, 229, 255, 0.28);
     box-shadow: 0 0 16px rgba(0, 229, 255, 0.2);
 }
 
-.warning-icon { color: var(--warning); background: var(--warning-dim); border-color: var(--warning-bd); box-shadow: 0 0 16px rgba(245, 158, 11, 0.2); }
-.success-icon { color: var(--success); background: var(--success-dim); border-color: var(--success-bd); box-shadow: 0 0 16px rgba(16, 185, 129, 0.2); }
-.accent-icon { color: var(--accent); background: var(--accent-dim); border-color: var(--accent-bd); box-shadow: 0 0 16px rgba(56, 189, 248, 0.2); }
-.feature-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.65rem; letter-spacing: -0.01em;}
+/* Card 3: Violet (Trust Score Engine) */
+.features-grid .feature-card:nth-child(3)::before {
+    background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.85) 0%, rgba(168, 85, 247, 0.40) 45%, rgba(139, 92, 246, 0) 75%);
+}
+.features-grid .feature-card:nth-child(3):hover {
+    border-color: rgba(168, 85, 247, 0.35);
+}
+.features-grid .feature-card:nth-child(3) .feature-icon {
+    color: #a855f7;
+    background: rgba(168, 85, 247, 0.12);
+    border-color: rgba(168, 85, 247, 0.28);
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.2);
+}
+
+/* Card 4: Emerald (Secure Identity Enrollment) */
+.features-grid .feature-card:nth-child(4)::before {
+    background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.80) 0%, rgba(52, 211, 153, 0.40) 45%, rgba(16, 185, 129, 0) 75%);
+}
+.features-grid .feature-card:nth-child(4):hover {
+    border-color: rgba(16, 185, 129, 0.35);
+}
+.features-grid .feature-card:nth-child(4) .feature-icon {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.28);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
+}
+
+/* Card 5: Indigo (Analytics Dashboard) */
+.features-grid .feature-card:nth-child(5)::before {
+    background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.85) 0%, rgba(129, 140, 248, 0.40) 45%, rgba(99, 102, 241, 0) 75%);
+}
+.features-grid .feature-card:nth-child(5):hover {
+    border-color: rgba(99, 102, 241, 0.35);
+}
+.features-grid .feature-card:nth-child(5) .feature-icon {
+    color: #818cf8;
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.28);
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.2);
+}
+
+/* Card 6: Cool Blue (Persistent Body Tracking) */
+.features-grid .feature-card:nth-child(6)::before {
+    background: radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.80) 0%, rgba(56, 189, 248, 0.40) 45%, rgba(14, 165, 233, 0) 75%);
+}
+.features-grid .feature-card:nth-child(6):hover {
+    border-color: rgba(56, 189, 248, 0.35);
+}
+.features-grid .feature-card:nth-child(6) .feature-icon {
+    color: #38bdf8;
+    background: rgba(14, 165, 233, 0.12);
+    border-color: rgba(14, 165, 233, 0.28);
+    box-shadow: 0 0 16px rgba(14, 165, 233, 0.2);
+}
+
+.feature-icon { 
+    width: 56px; 
+    height: 56px; 
+    border-radius: 14px; 
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin-bottom: 1.25rem;
+}
+
+.feature-card h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.65rem; letter-spacing: -0.01em; color: #f8fafc; }
 .feature-card p { color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
 
 /* 3. How It Works */
@@ -244,7 +376,9 @@ a { text-decoration: none; color: inherit; }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-    .features-grid { grid-template-columns: repeat(2, 1fr); }
+    .features-grid { grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+    .features-grid .feature-card::before { inset: -26px; filter: blur(36px); opacity: 0.22; }
+    .features-grid .feature-card:hover::before { opacity: 0.45; filter: blur(44px); }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
     .steps-container { grid-template-columns: repeat(2, 1fr); }
     .showcase-grid { grid-template-columns: repeat(2, 1fr); }
@@ -271,7 +405,9 @@ a { text-decoration: none; color: inherit; }
     .hero-subtitle { font-size: 1.05rem; }
     .section-title { font-size: 2.1rem; }
     .section-padding { padding: 4.5rem 0; }
-    .features-grid { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+    .features-grid .feature-card::before { inset: -18px; filter: blur(28px); opacity: 0.20; }
+    .features-grid .feature-card:hover::before { opacity: 0.38; filter: blur(34px); }
     .steps-container { grid-template-columns: 1fr; }
     .showcase-grid { grid-template-columns: 1fr; }
     .testim-grid { grid-template-columns: 1fr; }
