@@ -647,15 +647,16 @@ body::before {
         </section>
 
         <!-- Navigation Tabs -->
+        <!-- Navigation Tabs -->
         <div class="tabs-nav">
             <button class="tab-btn active" onclick="switchTab('institutions')">
                 <i data-lucide="landmark"></i> Institutions
             </button>
             <button class="tab-btn" onclick="switchTab('supervisors')">
-                <i data-lucide="shield-alert"></i> Supervisors
+                <i data-lucide="shield-alert"></i> Teachers / Supervisors
             </button>
             <button class="tab-btn" onclick="switchTab('students')">
-                <i data-lucide="graduation-cap"></i> Students
+                <i data-lucide="graduation-cap"></i> Monitored Students
             </button>
             <button class="tab-btn" onclick="switchTab('audit')">
                 <i data-lucide="terminal"></i> Security Audit Stream
@@ -691,9 +692,9 @@ body::before {
         <!-- TAB 2: SUPERVISORS -->
         <div id="tab-supervisors" class="panel-card" style="display:none;">
             <div class="panel-header">
-                <h3 class="panel-title">Active Supervisors & Proctor Commanders</h3>
+                <h3 class="panel-title">Active Teachers & Proctor Supervisors</h3>
                 <button class="btn-primary" onclick="openModal('createSupervisorModal')">
-                    <i data-lucide="user-plus"></i> Create Supervisor
+                    <i data-lucide="user-plus"></i> Create Teacher Account
                 </button>
             </div>
             <table class="data-table">
@@ -716,25 +717,23 @@ body::before {
         <!-- TAB 3: STUDENTS -->
         <div id="tab-students" class="panel-card" style="display:none;">
             <div class="panel-header">
-                <h3 class="panel-title">Enrolled Students & Candidates</h3>
+                <h3 class="panel-title">Monitored Candidates & Examination Students (No Login)</h3>
                 <button class="btn-primary" onclick="openModal('createStudentModal')">
-                    <i data-lucide="user-plus"></i> Enroll Student Account
+                    <i data-lucide="user-plus"></i> Register Student Candidate
                 </button>
             </div>
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Student ID</th>
-                        <th>Username</th>
                         <th>Full Name</th>
-                        <th>Institution</th>
-                        <th>Status</th>
-                        <th>Enrolled Date</th>
-                        <th>Actions</th>
+                        <th>Assigned Institution</th>
+                        <th>Biometric Enrollment</th>
+                        <th>Registered Date</th>
                     </tr>
                 </thead>
                 <tbody id="studentsTableBody">
-                    <tr><td colspan="7" style="text-align:center;color:var(--t3);">Loading students...</td></tr>
+                    <tr><td colspan="5" style="text-align:center;color:var(--t3);">Loading monitored students...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -795,7 +794,7 @@ body::before {
     <div id="createSupervisorModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
-                <h3 class="modal-title">Provision Supervisor Account</h3>
+                <h3 class="modal-title">Provision Teacher Account</h3>
                 <button class="modal-close" onclick="closeModal('createSupervisorModal')">&times;</button>
             </div>
             <form onsubmit="handleCreateSupervisor(event)">
@@ -804,11 +803,11 @@ body::before {
                     <input type="text" id="newSupName" placeholder="e.g. Dr. John Doe" required>
                 </div>
                 <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="newSupUsername" placeholder="e.g. supervisor.stanford" required>
+                    <label>Username / Email</label>
+                    <input type="text" id="newSupUsername" placeholder="e.g. teacher.stanford" required>
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
+                    <label>Security Password</label>
                     <input type="password" id="newSupPassword" placeholder="••••••••" required>
                 </div>
                 <div class="form-group">
@@ -816,7 +815,7 @@ body::before {
                     <select id="newSupInstitution" required></select>
                 </div>
                 <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:1rem;">
-                    Create Supervisor Clearance
+                    Create Teacher Clearance
                 </button>
             </form>
         </div>
@@ -826,7 +825,7 @@ body::before {
     <div id="createStudentModal" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-header">
-                <h3 class="modal-title">Register Student User</h3>
+                <h3 class="modal-title">Register Monitored Student</h3>
                 <button class="modal-close" onclick="closeModal('createStudentModal')">&times;</button>
             </div>
             <form onsubmit="handleCreateStudent(event)">
@@ -839,19 +838,12 @@ body::before {
                     <input type="text" id="newStuName" placeholder="e.g. Sarah Jenkins" required>
                 </div>
                 <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="newStuUsername" placeholder="e.g. student.sarah" required>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="newStuPassword" placeholder="••••••••" required>
-                </div>
-                <div class="form-group">
-                    <label>Institution</label>
+                    <label>Assign Institution</label>
                     <select id="newStuInstitution" required></select>
                 </div>
-                <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:1rem;">
-                    Enroll Student Account
+                <p style="font-size:0.75rem;color:var(--t3);margin-bottom:1rem;">Note: Students do not have login credentials. Candidates are verified via camera biometric recognition.</p>
+                <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:0.5rem;">
+                    Register Candidate for Monitoring
                 </button>
             </form>
         </div>
@@ -1009,30 +1001,21 @@ body::before {
         async function loadStudents() {
             try {
                 const inst = document.getElementById('globalInstFilter').value;
-                const url = inst === 'ALL' ? '/api/admin/users?role=STUDENT' : `/api/admin/users?role=STUDENT&institution_id=${inst}`;
+                const url = inst === 'ALL' ? '/api/admin/students' : `/api/admin/students?institution_id=${inst}`;
                 const res = await fetch(url, { credentials: 'include' });
-                const users = await res.json();
+                const students = await res.json();
                 const tbody = document.getElementById('studentsTableBody');
-                if (users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--t3);font-weight:600;padding:2rem;">NO STUDENTS AVAILABLE</td></tr>';
+                if (students.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--t3);font-weight:600;padding:2rem;">NO STUDENTS AVAILABLE</td></tr>';
                     return;
                 }
-                tbody.innerHTML = users.map(u => `
+                tbody.innerHTML = students.map(s => `
                     <tr>
-                        <td style="font-family:var(--mono);color:var(--accent);font-weight:700;">${u.student_id || '-'}</td>
-                        <td style="font-family:var(--mono);">${u.username}</td>
-                        <td style="font-weight:600;">${u.name}</td>
-                        <td><span class="tag-pill">${u.institution_name || 'N/A'}</span></td>
-                        <td><span class="status-badge ${u.status.toLowerCase()}">${u.status}</span></td>
-                        <td style="color:var(--t3);font-size:0.75rem;">${u.created_at}</td>
-                        <td>
-                            <div class="actions-cell">
-                                <button class="btn-action" onclick="openResetPassword(${u.user_id}, '${u.name}')">Reset Pwd</button>
-                                <button class="btn-action toggle-btn" onclick="toggleUserStatus(${u.user_id}, '${u.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'}')">
-                                    ${u.status === 'ACTIVE' ? 'Disable' : 'Enable'}
-                                </button>
-                            </div>
-                        </td>
+                        <td style="font-family:var(--mono);color:var(--accent);font-weight:700;">${s.student_id}</td>
+                        <td style="font-weight:700;color:#fff;">${s.name}</td>
+                        <td><span class="tag-pill">${s.institution_name || 'N/A'}</span></td>
+                        <td><span class="status-badge ${s.enrolled ? 'active' : 'disabled'}">${s.enrolled ? 'Biometrics Enrolled' : 'Pending Enrollment'}</span></td>
+                        <td style="color:var(--t3);font-size:0.75rem;">${s.created_at}</td>
                     </tr>
                 `).join('');
             } catch (err) {
@@ -1152,22 +1135,22 @@ body::before {
             e.preventDefault();
             const student_id = document.getElementById('newStuId').value.trim();
             const name = document.getElementById('newStuName').value.trim();
-            const username = document.getElementById('newStuUsername').value.trim();
-            const password = document.getElementById('newStuPassword').value.trim();
             const institution_id = document.getElementById('newStuInstitution').value;
-            const res = await fetch('/api/admin/users/student', {
+            const res = await fetch('/api/admin/students', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ student_id, name, username, password, institution_id })
+                body: JSON.stringify({ student_id, name, institution_id })
             });
             if (res.ok) {
                 closeModal('createStudentModal');
+                document.getElementById('newStuId').value = '';
+                document.getElementById('newStuName').value = '';
                 await loadStudents();
                 await loadOverviewStats();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Failed to enroll student');
+                alert(data.error || 'Failed to register student candidate');
             }
         }
 

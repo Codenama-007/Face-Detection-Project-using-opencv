@@ -2871,22 +2871,19 @@ async function checkAuthContext() {
     try {
         const res = await fetch(`${BASE}/api/auth/me`, { credentials: 'include' });
         const data = await res.json();
-        if (!data.authenticated) {
+        if (!data.authenticated || data.user.role === 'STUDENT') {
             window.location.href = 'login.html';
             return;
         }
-        if (data.user.role === 'STUDENT') {
-            window.location.href = 'student_dashboard.html';
-            return;
-        }
         if (document.getElementById('supNameDisplay')) {
-            document.getElementById('supNameDisplay').textContent = data.user.name || 'Supervisor';
+            document.getElementById('supNameDisplay').textContent = data.user.name || 'Teacher';
         }
         if (document.getElementById('supInstDisplay')) {
-            document.getElementById('supInstDisplay').textContent = `${data.user.role} · ${data.user.institution_name || 'Apex Institute'}`;
+            const roleName = (data.user.role === 'SUPERVISOR' || data.user.role === 'TEACHER') ? 'Teacher / Proctor' : data.user.role;
+            document.getElementById('supInstDisplay').textContent = `${roleName} · ${data.user.institution_name || 'Institutional SOC'}`;
         }
         if (document.getElementById('supAvatarInitial')) {
-            document.getElementById('supAvatarInitial').textContent = (data.user.name || 'S').charAt(0).toUpperCase();
+            document.getElementById('supAvatarInitial').textContent = (data.user.name || 'T').charAt(0).toUpperCase();
         }
     } catch {
         // Continue in dev

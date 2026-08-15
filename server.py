@@ -498,15 +498,18 @@ def auth_login():
 
         user_id, name, uname, pwd_hash, role, inst_id, stu_id, user_status, mfa_secret, mfa_enabled, inst_name, inst_status = row
 
-        # Password check
+        # Only Admin and Teachers/Supervisors can log in
+        if role not in ['ADMIN', 'SUPERVISOR', 'TEACHER']:
+            record_failed_attempt(rate_key)
+            record_audit_event(user_id, uname, role, inst_id, "LOGIN_BLOCKED", ip, "DENIED", "Student login attempt blocked: Students do not have login accounts")
+            return jsonify({"error": "ACCESS DENIED: Students do not have platform login accounts. Monitoring is conducted by institutional proctors."}), 403
+
+        # Password check (Zero mock bypasses)
         password_valid = False
         try:
             password_valid = check_password_hash(pwd_hash, password)
         except Exception:
-            password_valid = (pwd_hash == password)
-
-        if not password_valid and (password == 'admin' or password == 'Supervisor@123' or password == 'Student@123' or password == 'Admin@ProctorAI2026'):
-            password_valid = True
+            password_valid = False
 
         if not password_valid:
             record_failed_attempt(rate_key)
@@ -547,14 +550,13 @@ def auth_login():
         session['username'] = uname
         session['role'] = role
         session['institution_id'] = inst_id
-        session['institution_name'] = inst_name or ("Platform Command" if role == 'ADMIN' else "General Institution")
-        session['student_id'] = stu_id
+        session['institution_name'] = inst_name or ("Platform Command" if role == 'ADMIN' else "Institutional SOC")
         session['last_activity'] = time.time()
 
-        record_audit_event(user_id, uname, role, inst_id, "LOGIN_SUCCESS", ip, "SUCCESS", f"User logged in successfully with role {role}")
+        record_audit_event(user_id, uname, role, inst_id, "LOGIN_SUCCESS", ip, "SUCCESS", f"Authenticated as {role} for {session['institution_name']}")
 
-        # Role-based Redirection URL
-        redirect_url = '/admin.html' if role == 'ADMIN' else ('/student_dashboard.html' if role == 'STUDENT' else '/monitoring.html')
+        # Exactly 2 destinations: Admin -> /admin.html | Teacher/Supervisor -> /monitoring.html
+        redirect_url = '/admin.html' if role == 'ADMIN' else '/monitoring.html'
 
         return jsonify({
             "success": True,
@@ -566,8 +568,7 @@ def auth_login():
                 "username": uname,
                 "role": role,
                 "institution_id": inst_id,
-                "institution_name": session['institution_name'],
-                "student_id": stu_id
+                "institution_name": session['institution_name']
             }
         })
 
@@ -898,47 +899,73 @@ def admin_create_supervisor():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/admin/students', methods=['GET'])
+def admin_get_students():
+    if session.get('role') != 'ADMIN':
+        return jsonify({"error": "Forbidden"}), 403
+    inst_filter = request.args.get('institution_id')
+    query = """
+        SELECT s.student_id, s.name, s.institution_id, i.institution_name,
+               CASE WHEN s.face_encoding IS NOT NULL THEN TRUE ELSE FALSE END AS enrolled,
+               s.created_at
+        FROM students s
+        LEFT JOIN institutions i ON s.institution_id = i.institution_id
+        WHERE 1=1
+    """
+    params = []
+    if inst_filter and inst_filter != 'ALL':
+        query += " AND s.institution_id = %s"
+        params.append(inst_filter)
+    query += " ORDER BY s.created_at DESC;"
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute(query, tuple(params))
+        rows = cursor.fetchall()
+        students = []
+        for r in rows:
+            students.append({
+                "student_id": r[0],
+                "name": r[1],
+                "institution_id": r[2] or "N/A",
+                "institution_name": r[3] or "N/A",
+                "enrolled": bool(r[4]),
+                "created_at": r[5].strftime("%Y-%m-%d %H:%M") if r[5] else ""
+            })
+        cursor.close()
+        conn.close()
+        return jsonify(students)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/admin/students', methods=['POST'])
 @app.route('/api/admin/users/student', methods=['POST'])
 def admin_create_student():
     if session.get('role') != 'ADMIN':
         return jsonify({"error": "Forbidden"}), 403
     data = request.json or {}
-    name = data.get('name', '').strip()
-    username = data.get('username', '').strip()
     student_id = data.get('student_id', '').strip().upper()
-    password = data.get('password', '').strip()
+    name = data.get('name', '').strip()
     inst_id = data.get('institution_id', '').strip()
 
-    if not name or not username or not student_id or not password or not inst_id:
-        return jsonify({"error": "All fields are required"}), 400
-
-    pwd_hash = generate_password_hash(password)
+    if not student_id or not name or not inst_id:
+        return jsonify({"error": "Student ID, Name, and Institution are required"}), 400
 
     try:
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO users (name, username, student_id, password_hash, role, institution_id, status)
-            VALUES (%s, %s, %s, %s, 'STUDENT', %s, 'ACTIVE')
-            RETURNING user_id;
-        """, (name, username, student_id, pwd_hash, inst_id))
-        uid = cursor.fetchone()[0]
-
-        # Also register stub in students table
-        cursor.execute("""
             INSERT INTO students (student_id, name, institution_id)
             VALUES (%s, %s, %s)
             ON CONFLICT (student_id) DO UPDATE SET name=EXCLUDED.name, institution_id=EXCLUDED.institution_id;
         """, (student_id, name, inst_id))
-
         conn.commit()
         cursor.close()
         conn.close()
 
-        record_audit_event(session.get('user_id'), session.get('username'), 'ADMIN', inst_id, "ACCOUNT_CREATED", request.remote_addr, "SUCCESS", f"Enrolled student {username} ({student_id}) for {inst_id}")
-        return jsonify({"success": True, "user_id": uid, "message": "Student created successfully"})
-    except psycopg2.IntegrityError:
-        return jsonify({"error": "Username or Student ID already taken"}), 400
+        record_audit_event(session.get('user_id'), session.get('username'), 'ADMIN', inst_id, "STUDENT_REGISTERED", request.remote_addr or '127.0.0.1', "SUCCESS", f"Registered monitored candidate {student_id} ({name}) for {inst_id}")
+        return jsonify({"success": True, "student_id": student_id, "message": "Student registered for monitoring"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
