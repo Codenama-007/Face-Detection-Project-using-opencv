@@ -1,10 +1,70 @@
-# Ignore the virtual environment directory
+# ============================================================
+# PROCTORAI — GITHUB SECURITY IGNORE SPECIFICATION
+# ============================================================
+
+# Environment variables & secrets
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+!.env.example
+
+# Credentials & Key files
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.pkcs12
+credentials.json
+service_account.json
+service-account*.json
+client_secret*.json
+
+# Virtual environment & Dependencies
 venv/
-# Ignore the __pycache__ directory
+.venv/
+env/
+ENV/
+node_modules/
+
+# Python cache & build artifacts
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Scratch directories
+scratch/
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Project specific transient artifacts
 images/
 static/reports/
 snapshot_tmp.json
 
-# Ignore all .pyc files
-*.pyc
+# OS specific files
+.DS_Store
+Thumbs.db

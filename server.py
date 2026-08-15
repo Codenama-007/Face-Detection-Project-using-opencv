@@ -24,20 +24,20 @@ REPORTS_DIR = os.path.join(BASE_DIR, "reports")
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_proctor_key_change_in_production_2026'
+app.secret_key = os.environ.get('SECRET_KEY', 'proctorai_secure_session_secret_key_2026')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 CORS(app, supports_credentials=True)
 
 # ---------------- SECURITY & RATE LIMITING ENGINE ----------------
-SESSION_INACTIVITY_TIMEOUT = 1800  # 30 minutes inactivity timeout
-RATE_LIMIT_MAX_FAILURES = 5
-RATE_LIMIT_WINDOW_SECONDS = 300   # 5 minutes window
-RATE_LIMIT_BLOCK_SECONDS = 60     # 60 seconds lockout
+SESSION_INACTIVITY_TIMEOUT = int(os.environ.get('SESSION_INACTIVITY_TIMEOUT', 1800))  # 30 minutes inactivity timeout
+RATE_LIMIT_MAX_FAILURES = int(os.environ.get('RATE_LIMIT_MAX_FAILURES', 5))
+RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get('RATE_LIMIT_WINDOW_SECONDS', 300))   # 5 minutes window
+RATE_LIMIT_BLOCK_SECONDS = int(os.environ.get('RATE_LIMIT_BLOCK_SECONDS', 60))     # 60 seconds lockout
 failed_attempts_registry = {}     # key -> [timestamps]
 
-ADMIN_DEFAULT_MFA_SECRET = "JBSWY3DPEHPK3PXP" # Base32 standard secret for Admin TOTP
+ADMIN_DEFAULT_MFA_SECRET = os.environ.get('ADMIN_MFA_SECRET', "JBSWY3DPEHPK3PXP") # Base32 standard secret for Admin TOTP
 
 def check_rate_limit(key):
     """Checks if a client/account has exceeded maximum failed attempts."""
