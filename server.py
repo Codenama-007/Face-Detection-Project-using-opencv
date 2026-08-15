@@ -389,16 +389,6 @@ def init_db():
             );
         """)
 
-        # Seed default institutions if empty
-        cursor.execute("SELECT COUNT(*) FROM institutions;")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("""
-                INSERT INTO institutions (institution_id, institution_name, institution_code, status) VALUES
-                ('INST-001', 'Apex Institute of Technology', 'APEX-TECH', 'ACTIVE'),
-                ('INST-002', 'Metro Cyber Academy', 'METRO-SEC', 'ACTIVE'),
-                ('INST-003', 'National Science University', 'NSU-LABS', 'ACTIVE');
-            """)
-
         # Seed single platform Admin if not exists
         cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'ADMIN';")
         if cursor.fetchone()[0] == 0:
@@ -408,45 +398,10 @@ def init_db():
                 VALUES ('Platform Administrator', 'admin', %s, 'ADMIN', NULL, 'ACTIVE', 'JBSWY3DPEHPK3PXP', TRUE);
             """, (admin_hash,))
 
-        # Seed test supervisors if not exists
-        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'SUPERVISOR';")
-        if cursor.fetchone()[0] == 0:
-            sup_hash = generate_password_hash("Supervisor@123")
-            cursor.execute("""
-                INSERT INTO users (name, username, password_hash, role, institution_id, status) VALUES
-                ('Dr. Sarah Mitchell', 'supervisor.apex', %s, 'SUPERVISOR', 'INST-001', 'ACTIVE'),
-                ('Prof. Alan Turing', 'supervisor.apex2', %s, 'SUPERVISOR', 'INST-001', 'ACTIVE'),
-                ('Commander David Vance', 'supervisor.metro', %s, 'SUPERVISOR', 'INST-002', 'ACTIVE');
-            """, (sup_hash, sup_hash, sup_hash))
-
-        # Seed test students if not exists
-        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'STUDENT';")
-        if cursor.fetchone()[0] == 0:
-            stu_hash = generate_password_hash("Student@123")
-            cursor.execute("""
-                INSERT INTO users (name, username, student_id, password_hash, role, institution_id, status) VALUES
-                ('Alex Rivera', 'student.alex', 'STU-8801', %s, 'STUDENT', 'INST-001', 'ACTIVE'),
-                ('Maya Lin', 'student.maya', 'STU-8802', %s, 'STUDENT', 'INST-001', 'ACTIVE'),
-                ('Liam Chen', 'student.liam', 'STU-9901', %s, 'STUDENT', 'INST-002', 'ACTIVE');
-            """, (stu_hash, stu_hash, stu_hash))
-
-        # Seed students table stubs
-        cursor.execute("""
-            INSERT INTO students (student_id, name, institution_id) VALUES
-            ('STU-8801', 'Alex Rivera', 'INST-001'),
-            ('STU-8802', 'Maya Lin', 'INST-001'),
-            ('STU-9901', 'Liam Chen', 'INST-002')
-            ON CONFLICT (student_id) DO NOTHING;
-        """)
-
-        # Update any null institution_ids
-        cursor.execute("UPDATE students SET institution_id = 'INST-001' WHERE institution_id IS NULL;")
-        cursor.execute("UPDATE exam_logs SET institution_id = 'INST-001' WHERE institution_id IS NULL;")
-
         conn.commit()
         cursor.close()
         conn.close()
-        print("Multi-institution database initialized successfully.")
+        print("Database schema verified (Zero fake data mode active).")
     except Exception as e:
         print(f"Error initializing DB: {e}")
 
@@ -632,14 +587,8 @@ def auth_mfa_verify():
     if not session.get('mfa_pending'):
         return jsonify({"error": "NO PENDING MFA SESSION"}), 400
 
-    data = request.json or {}
-    code = data.get('code', '').strip()
-    secret = session.get('mfa_secret', ADMIN_DEFAULT_MFA_SECRET)
-
-    # Verify standard TOTP code or bypass keyword for demo convenience
+    # Verify authentic RFC 6238 TOTP verification code
     valid_code = verify_totp_code(secret, code)
-    if not valid_code and (code == '123456' or code == generate_totp_code(secret)):
-        valid_code = True
 
     if not valid_code:
         record_failed_attempt(rate_key)

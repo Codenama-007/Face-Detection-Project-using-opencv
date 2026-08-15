@@ -336,8 +336,8 @@ p {
 
         <form id="loginForm">
             <div class="input-group">
-                <label for="username">Username / Email / Student ID</label>
-                <input type="text" id="username" placeholder="admin / supervisor.apex / student.alex" required autocomplete="username">
+                <label for="username">Username / Student ID</label>
+                <input type="text" id="username" placeholder="Enter username or student ID" required autocomplete="username">
             </div>
 
             <div class="input-group">
@@ -357,48 +357,21 @@ p {
                     <i data-lucide="key-round" style="width:14px;height:14px;"></i> Two-Factor Authenticator Required
                 </div>
                 <div style="font-size:0.75rem;color:var(--t2);line-height:1.4;">
-                    Enter the 6-digit verification code from your authenticator app (or demo code <strong style="color:#fff;">123456</strong>).
+                    Enter the 6-digit verification code from your authenticator application.
                 </div>
             </div>
 
             <div class="input-group">
                 <label for="mfaCode">6-Digit One-Time Code</label>
-                <input type="text" id="mfaCode" placeholder="123456" maxlength="6" style="text-align:center;font-family:var(--mono);font-size:1.4rem;letter-spacing:0.3em;font-weight:800;" autocomplete="one-time-code">
+                <input type="text" id="mfaCode" placeholder="000000" maxlength="6" style="text-align:center;font-family:var(--mono);font-size:1.4rem;letter-spacing:0.3em;font-weight:800;" autocomplete="one-time-code">
             </div>
 
             <button type="submit" class="btn" id="mfaBtn">
-                <i data-lucide="shield-check"></i> Verify 2FA & Enter Admin SOC
-            </button>
-
-            <button type="button" class="btn-action" style="margin-top:0.75rem;width:100%;padding:0.6rem;" onclick="fillDemoMFA()">
-                Quick Fill Demo 2FA Code (123456)
+                <i data-lucide="shield-check"></i> Verify 2FA & Enter Platform
             </button>
         </form>
 
         <div id="statusMsg" class="message"></div>
-
-        <!-- Quick Demo Credentials for Evaluation -->
-        <div class="quick-fill-wrap">
-            <div class="quick-fill-title">Demo Test Credentials:</div>
-            <div class="chips-grid">
-                <button type="button" class="chip-btn" onclick="fillCreds('admin', 'Admin@ProctorAI2026')">
-                    <span class="chip-role">Platform Admin (MFA)</span>
-                    <span class="chip-uname">admin</span>
-                </button>
-                <button type="button" class="chip-btn" onclick="fillCreds('supervisor.apex', 'Supervisor@123')">
-                    <span class="chip-role">Supervisor (Apex)</span>
-                    <span class="chip-uname">supervisor.apex</span>
-                </button>
-                <button type="button" class="chip-btn" onclick="fillCreds('supervisor.metro', 'Supervisor@123')">
-                    <span class="chip-role">Supervisor (Metro)</span>
-                    <span class="chip-uname">supervisor.metro</span>
-                </button>
-                <button type="button" class="chip-btn" onclick="fillCreds('student.alex', 'Student@123')">
-                    <span class="chip-role">Student (Alex)</span>
-                    <span class="chip-uname">student.alex</span>
-                </button>
-            </div>
-        </div>
         
         <a href="index.html" class="back-link">
             <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
@@ -422,24 +395,12 @@ p {
         const params = new URLSearchParams(window.location.search);
         if (params.has('expired')) {
             statusMsg.className = 'message error';
-            statusMsg.textContent = 'SESSION EXPIRED: Your session timed out due to 30 minutes of inactivity. Please log in again.';
+            statusMsg.textContent = 'SESSION EXPIRED: Your session timed out due to inactivity. Please log in again.';
             statusMsg.style.display = 'block';
         } else if (params.has('disabled')) {
             statusMsg.className = 'message error';
             statusMsg.textContent = 'ACCESS DENIED: Your account has been disabled by platform administrator.';
             statusMsg.style.display = 'block';
-        }
-
-        function fillCreds(u, p) {
-            usernameInput.value = u;
-            passwordInput.value = p;
-            statusMsg.style.display = 'none';
-            loginForm.style.display = 'block';
-            mfaForm.style.display = 'none';
-        }
-
-        function fillDemoMFA() {
-            mfaCodeInput.value = '123456';
         }
 
         loginForm.addEventListener('submit', async (e) => {

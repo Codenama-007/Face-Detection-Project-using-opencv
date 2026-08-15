@@ -637,7 +637,7 @@ body::before {
                 const logs = await res.json();
                 const tbody = document.getElementById('studentLogsTableBody');
                 if (logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--t3);">No telemetry anomalies recorded. All sessions clean.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--t3);font-weight:600;padding:2rem;">NO ACTIVITY RECORDED</td></tr>';
                     return;
                 }
                 tbody.innerHTML = logs.map(l => `

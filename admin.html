@@ -947,7 +947,7 @@ body::before {
                 // Render table
                 const tbody = document.getElementById('institutionsTableBody');
                 if (institutionsData.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No institutions created yet.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--t3);font-weight:600;padding:2rem;">NO INSTITUTIONS AVAILABLE</td></tr>';
                     return;
                 }
                 tbody.innerHTML = institutionsData.map(inst => `
@@ -981,14 +981,14 @@ body::before {
                 const users = await res.json();
                 const tbody = document.getElementById('supervisorsTableBody');
                 if (users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No supervisors found for this selection.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--t3);font-weight:600;padding:2rem;">NO SUPERVISORS AVAILABLE</td></tr>';
                     return;
                 }
                 tbody.innerHTML = users.map(u => `
                     <tr>
                         <td style="font-family:var(--mono);font-weight:700;color:var(--cyan);">${u.username}</td>
                         <td style="font-weight:600;">${u.name}</td>
-                        <td><span class="tag-pill">${u.institution_name || 'General'}</span></td>
+                        <td><span class="tag-pill">${u.institution_name || 'N/A'}</span></td>
                         <td><span class="status-badge ${u.status.toLowerCase()}">${u.status}</span></td>
                         <td style="color:var(--t3);font-size:0.75rem;">${u.created_at}</td>
                         <td>
@@ -1014,7 +1014,7 @@ body::before {
                 const users = await res.json();
                 const tbody = document.getElementById('studentsTableBody');
                 if (users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No students found for this selection.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--t3);font-weight:600;padding:2rem;">NO STUDENTS AVAILABLE</td></tr>';
                     return;
                 }
                 tbody.innerHTML = users.map(u => `
@@ -1022,7 +1022,7 @@ body::before {
                         <td style="font-family:var(--mono);color:var(--accent);font-weight:700;">${u.student_id || '-'}</td>
                         <td style="font-family:var(--mono);">${u.username}</td>
                         <td style="font-weight:600;">${u.name}</td>
-                        <td><span class="tag-pill">${u.institution_name || 'General'}</span></td>
+                        <td><span class="tag-pill">${u.institution_name || 'N/A'}</span></td>
                         <td><span class="status-badge ${u.status.toLowerCase()}">${u.status}</span></td>
                         <td style="color:var(--t3);font-size:0.75rem;">${u.created_at}</td>
                         <td>
@@ -1048,7 +1048,7 @@ body::before {
                 const logs = await res.json();
                 const tbody = document.getElementById('auditTableBody');
                 if (logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--t3);">No security events recorded.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--t3);font-weight:600;padding:2rem;">NO ACTIVITY RECORDED</td></tr>';
                     return;
                 }
                 tbody.innerHTML = logs.map(l => `
