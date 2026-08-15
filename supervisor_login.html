@@ -3,166 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supervisor Login | ProctorAI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Command Authentication | ProctorAI SOC</title>
+    <meta name="description" content="Supervisor Command Authentication Portal for ProctorAI Security Operations Center.">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --surface-color: #1e293b;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --danger: #ef4444;
-        }
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — SUPERVISOR COMMAND AUTHENTICATION
+   ═════════════════════════════════════════════════════════════════════ */
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        .container {
-            background: var(--surface-color);
-            padding: 2.5rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
+:root {
+    --bg-base:        #070a0f;
+    --bg-surface:     #0b1018;
+    --bg-elevated:    #0e1420;
+    
+    --panel-glass:    rgba(14, 20, 32, 0.85);
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-light:   rgba(255, 255, 255, 0.12);
+    --border-hover:   rgba(56, 189, 248, 0.28);
+    
+    --cyan:           #00e5ff;
+    --accent:         #38bdf8;
+    
+    --success:        #10b981;
+    --danger:         #ef4444;
+    --danger-dim:     rgba(239, 68, 68, 0.12);
+    --danger-bd:      rgba(239, 68, 68, 0.30);
+    
+    --t1: #f0f4ff;
+    --t2: #94a3b8;
+    --t3: #5c7098;
+    
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+}
 
-        .logo-icon {
-            width: 48px;
-            height: 48px;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
+body {
+    font-family: var(--font);
+    background-color: var(--bg-base);
+    color: var(--t1);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1.5rem;
+    position: relative;
+    overflow-x: hidden;
+}
 
-        h2 {
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
+/* Background Atmosphere */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 60% 45% at 50% 30%, rgba(14, 42, 80, 0.4) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 35% at 85% 85%, rgba(0, 229, 255, 0.06) 0%, transparent 60%),
+        #070a0f;
+    pointer-events: none;
+    z-index: 0;
+}
 
-        p {
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-        }
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(56, 189, 248, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.8;
+}
 
-        .input-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
+.container {
+    position: relative;
+    z-index: 1;
+    background: var(--panel-glass);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--border-subtle);
+    border-top: 1px solid var(--border-light);
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 229, 255, 0.05);
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+}
 
-        .input-group label {
-            display: block;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-        }
+.logo-badge {
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--cyan);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
+}
 
-        .input-group input {
-            width: 100%;
-            padding: 0.875rem;
-            border-radius: 0.5rem;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
-            font-family: inherit;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
+.logo-badge svg {
+    width: 28px;
+    height: 28px;
+}
 
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
+h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.35rem;
+}
 
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.2s;
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 1rem;
-        }
+p {
+    color: var(--t2);
+    margin-bottom: 2rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
 
-        .btn:hover {
-            background: var(--primary-hover);
-        }
+.input-group {
+    margin-bottom: 1.25rem;
+    text-align: left;
+}
 
-        .btn:disabled {
-            background: #334155;
-            cursor: not-allowed;
-            color: #94a3b8;
-        }
+.input-group label {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    color: var(--t2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
 
-        .message {
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            display: none;
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-        }
+.input-group input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(18, 26, 42, 0.8);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 0.92rem;
+    outline: none;
+    transition: all 0.2s ease;
+}
 
-        .back-link {
-            display: inline-block;
-            margin-top: 1.5rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.85rem;
-        }
-        
-        .back-link:hover {
-            color: white;
-        }
+.input-group input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+    background: rgba(25, 36, 58, 0.9);
+}
+
+.input-group input::placeholder {
+    color: var(--t3);
+}
+
+.btn {
+    background: linear-gradient(135deg, #0284c7 0%, #00e5ff 100%);
+    color: #070a0f;
+    border: none;
+    padding: 0.9rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    font-family: var(--font);
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 18px rgba(0, 229, 255, 0.25);
+    margin-top: 0.5rem;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 229, 255, 0.45);
+    filter: brightness(1.1);
+}
+
+.btn:disabled {
+    background: rgba(255, 255, 255, 0.08);
+    cursor: not-allowed;
+    color: var(--t3);
+    box-shadow: none;
+}
+
+.message {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: none;
+    background: var(--danger-dim);
+    color: #f87171;
+    border: 1px solid var(--danger-bd);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 1.75rem;
+    color: var(--t3);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.back-link:hover {
+    color: var(--cyan);
+}
     </style>
 </head>
 <body>
 
     <div class="container">
-        <i data-lucide="shield-check" class="logo-icon"></i>
-        <h2>Supervisor Login</h2>
-        <p>Authenticate to access the Proctor Dashboard.</p>
+        <div class="logo-badge">
+            <i data-lucide="shield-check"></i>
+        </div>
+        <h2>Supervisor Command Access</h2>
+        <p>Authenticate with credentials to access the ProctorAI Examination Defense Matrix.</p>
 
         <form id="loginForm">
             <div class="input-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" placeholder="Enter supervisor username" required autocomplete="off">
+                <label for="username">Command Username</label>
+                <input type="text" id="username" placeholder="admin" required autocomplete="off">
             </div>
 
             <div class="input-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" placeholder="Enter password" required>
+                <label for="password">Security Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
             </div>
 
             <button type="submit" class="btn" id="loginBtn">
-                <i data-lucide="log-in"></i> Login
+                <i data-lucide="log-in"></i> Authenticate & Enter SOC
             </button>
 
             <div id="statusMsg" class="message"></div>
         </form>
         
-        <a href="index.html" class="back-link">&larr; Back to Home</a>
+        <a href="index.html" class="back-link">
+            <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
+            Back to Platform Overview
+        </a>
     </div>
 
     <script>
@@ -178,7 +287,8 @@
             const password = document.getElementById('password').value.trim();
 
             loginBtn.disabled = true;
-            loginBtn.innerHTML = '<i class="lucide-loader"></i> Authenticating...';
+            loginBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Verifying Command Clearance...';
+            lucide.createIcons();
             statusMsg.style.display = 'none';
 
             try {
@@ -191,21 +301,19 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    // Backend session cookie is now set securely via HTTP
-                    // Redirect to the Enrollment Lobby
                     window.location.href = 'enrollment.html';
                 } else {
-                    statusMsg.textContent = result.error || 'Invalid credentials.';
+                    statusMsg.textContent = result.error || 'Invalid credentials. Access denied.';
                     statusMsg.style.display = 'block';
                     loginBtn.disabled = false;
-                    loginBtn.innerHTML = '<i data-lucide="log-in"></i> Login';
+                    loginBtn.innerHTML = '<i data-lucide="log-in"></i> Authenticate & Enter SOC';
                     lucide.createIcons();
                 }
             } catch (err) {
-                statusMsg.textContent = 'Network error. Is the server running?';
+                statusMsg.textContent = 'Network error. Is the AI backend server running?';
                 statusMsg.style.display = 'block';
                 loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i data-lucide="log-in"></i> Login';
+                loginBtn.innerHTML = '<i data-lucide="log-in"></i> Authenticate & Enter SOC';
                 lucide.createIcons();
             }
         });

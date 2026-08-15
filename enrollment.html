@@ -3,266 +3,455 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face ID Enrollment</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Biometric Identity Enrollment | ProctorAI</title>
+    <meta name="description" content="Secure Biometric Identity Enrollment & Face ID Registration for ProctorAI SOC.">
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --surface-color: #1e293b;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --success: #10b981;
-            --danger: #ef4444;
-        }
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — SECURE BIOMETRIC IDENTITY ENROLLMENT
+   ═════════════════════════════════════════════════════════════════════ */
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        .container {
-            background: var(--surface-color);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-        }
+:root {
+    --bg-base:        #070a0f;
+    --bg-surface:     #0b1018;
+    --bg-elevated:    #0e1420;
+    
+    --panel-glass:    rgba(14, 20, 32, 0.85);
+    --panel-card:     rgba(18, 26, 42, 0.70);
+    --panel-hover:    rgba(25, 36, 58, 0.85);
+    
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-light:   rgba(255, 255, 255, 0.12);
+    --border-hover:   rgba(56, 189, 248, 0.28);
+    --border-active:  rgba(56, 189, 248, 0.50);
+    
+    --cyan:           #00e5ff;
+    --accent:         #38bdf8;
+    --accent-dim:     rgba(56, 189, 248, 0.12);
+    --accent-bd:      rgba(56, 189, 248, 0.28);
+    
+    --success:        #10b981;
+    --success-dim:    rgba(16, 185, 129, 0.12);
+    --success-bd:     rgba(16, 185, 129, 0.28);
+    
+    --warning:        #f59e0b;
+    --warning-dim:    rgba(245, 158, 11, 0.12);
+    --warning-bd:     rgba(245, 158, 11, 0.28);
+    
+    --danger:         #ef4444;
+    --danger-dim:     rgba(239, 68, 68, 0.12);
+    --danger-bd:      rgba(239, 68, 68, 0.30);
+    
+    --t1: #f0f4ff;
+    --t2: #94a3b8;
+    --t3: #5c7098;
+    --t4: #2e3e58;
+    
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+}
 
-        h2 {
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
+body {
+    font-family: var(--font);
+    background-color: var(--bg-base);
+    color: var(--t1);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+    overflow-x: hidden;
+}
 
-        p {
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-        }
+/* Background Atmosphere */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 65% 45% at 50% 20%, rgba(14, 42, 80, 0.35) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 10% 90%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
+        #070a0f;
+    pointer-events: none;
+    z-index: 0;
+}
 
-        .video-container {
-            width: 100%;
-            height: 300px;
-            background: #000;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(56, 189, 248, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.8;
+}
 
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
+.container {
+    position: relative;
+    z-index: 1;
+    background: var(--panel-glass);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--border-subtle);
+    border-top: 1px solid var(--border-light);
+    border-radius: 20px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 229, 255, 0.05);
+    padding: 2.25rem;
+    width: 100%;
+    max-width: 520px;
+    text-align: center;
+}
 
-        .input-group {
-            margin-bottom: 1rem;
-            text-align: left;
-        }
+/* Top Icon & Titles */
+.enroll-shield-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--cyan);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.25);
+}
 
-        .input-group label {
-            display: block;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-        }
+.enroll-shield-icon svg {
+    width: 26px;
+    height: 26px;
+}
 
-        .input-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
+h2 {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.3rem;
+}
 
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
+p {
+    color: var(--t2);
+    margin-bottom: 1.5rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
 
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.875rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 500;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.2s;
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
+/* Tabs */
+.tabs {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 1.5rem;
+}
 
-        .btn:hover {
-            background: var(--primary-hover);
-        }
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--t3);
+    padding: 0.65rem;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-family: var(--font);
+    border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-        .btn:disabled {
-            background: #334155;
-            cursor: not-allowed;
-            color: #94a3b8;
-        }
+.tab-btn.active {
+    color: var(--cyan);
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
+}
 
-        .message {
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            display: none;
-        }
+.tab-content {
+    display: none;
+}
 
-        .message.success {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            display: block;
-        }
+.tab-content.active {
+    display: block;
+    animation: tabFadeIn 0.25s ease-out;
+}
 
-        .message.error {
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            display: block;
-        }
-        
-        .nav-link {
-            display: inline-block;
-            margin-top: 1.5rem;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.85rem;
-        }
-        .nav-link:hover {
-            color: white;
-        }
-        
-        .start-session-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            border: none;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            font-size: 1.1rem;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 1.5rem;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-        }
-        .start-session-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
-        }
-        
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid #334155;
-            margin-bottom: 1.5rem;
-        }
-        .tab-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            padding: 1rem;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 1rem;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .file-upload-zone {
-            border: 2px dashed #334155;
-            padding: 2rem;
-            text-align: center;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        .file-upload-zone:hover {
-            border-color: var(--primary);
-        }
-        .file-list {
-            max-height: 300px;
-            overflow-y: auto;
-            margin-bottom: 1rem;
-            background: #0f172a;
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-        }
-        .file-item {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem;
-            border-bottom: 1px solid #1e293b;
-        }
-        .file-item img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-        .file-item-info {
-            flex: 1;
-            display: flex;
-            gap: 0.5rem;
-        }
-        .file-item-info input {
-            padding: 0.4rem;
-            border-radius: 4px;
-            border: 1px solid #334155;
-            background: #1e293b;
-            color: white;
-            width: 50%;
-        }
+@keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Camera Video Preview Box */
+.video-container {
+    width: 100%;
+    height: 280px;
+    background: #020509;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+    position: relative;
+    border: 1px solid var(--border-subtle);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7);
+}
+
+.video-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0, 229, 255, 0.02) 3px,
+        rgba(0, 229, 255, 0.02) 4px
+    );
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Reticle Corner Marks */
+.video-container::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 16px;
+    height: 16px;
+    border-top: 2px solid var(--cyan);
+    border-left: 2px solid var(--cyan);
+    pointer-events: none;
+    z-index: 3;
+    filter: drop-shadow(0 0 4px var(--cyan));
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+/* Inputs */
+.input-group {
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    color: var(--t2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(18, 26, 42, 0.8);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 0.88rem;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.input-group input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 16px rgba(0, 229, 255, 0.25);
+    background: rgba(25, 36, 58, 0.9);
+}
+
+.input-group input::placeholder {
+    color: var(--t3);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #0284c7 0%, #00e5ff 100%);
+    color: #070a0f;
+    border: none;
+    font-size: 0.84rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px rgba(0, 229, 255, 0.25);
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 229, 255, 0.4);
+    filter: brightness(1.1);
+}
+
+.btn:disabled {
+    background: rgba(255, 255, 255, 0.08);
+    cursor: not-allowed;
+    color: var(--t3);
+    box-shadow: none;
+}
+
+/* Messages */
+.message {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: none;
+}
+
+.message.success {
+    background: var(--success-dim);
+    color: #34d399;
+    border: 1px solid var(--success-bd);
+    display: block;
+}
+
+.message.error {
+    background: var(--danger-dim);
+    color: #f87171;
+    border: 1px solid var(--danger-bd);
+    display: block;
+}
+
+/* Start Session Button */
+.start-session-btn {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    color: #fff;
+    border: none;
+    padding: 0.95rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    font-family: var(--font);
+    cursor: pointer;
+    width: 100%;
+    margin-top: 1rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
+}
+
+.start-session-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.55);
+    filter: brightness(1.08);
+}
+
+/* Bulk Upload Zone */
+.file-upload-zone {
+    border: 2px dashed rgba(56, 189, 248, 0.3);
+    background: rgba(18, 26, 42, 0.5);
+    padding: 2rem;
+    text-align: center;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.file-upload-zone:hover {
+    border-color: var(--cyan);
+    background: rgba(25, 36, 58, 0.7);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+}
+
+.file-list {
+    max-height: 240px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    background: rgba(7, 10, 15, 0.6);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.file-item:last-child {
+    border-bottom: none;
+}
+
+.file-item img {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+}
+
+.file-item-info {
+    flex: 1;
+    display: flex;
+    gap: 0.4rem;
+}
+
+.file-item-info input {
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    background: rgba(18, 26, 42, 0.9);
+    color: #fff;
+    font-size: 0.78rem;
+    width: 50%;
+}
     </style>
 </head>
 <body>
 
     <div class="container">
-        <i data-lucide="scan-face" style="width:48px;height:48px;color:var(--primary);margin-bottom:1rem;"></i>
-        <h2>Face ID Enrollment</h2>
-        <p>Register your face for the CCTV monitoring system.</p>
+        <div class="enroll-shield-icon">
+            <i data-lucide="scan-face"></i>
+        </div>
+        <h2>Identity Enrollment</h2>
+        <p>Biometric facial feature enrollment for ProctorAI Security Operations Center.</p>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Webcam</button>
-            <button class="tab-btn" onclick="switchTab('uploadTab', this)">Bulk Upload</button>
+            <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
+            <button class="tab-btn" onclick="switchTab('uploadTab', this)">Batch Upload</button>
         </div>
 
         <div id="webcamTab" class="tab-content active">
@@ -271,40 +460,40 @@
             </div>
 
             <div class="input-group">
-                <label for="studentName">Full Name</label>
-                <input type="text" id="studentName" placeholder="e.g. John Doe" autocomplete="off">
+                <label for="studentName">Student Full Name</label>
+                <input type="text" id="studentName" placeholder="e.g. Alex Johnson" autocomplete="off">
             </div>
 
             <div class="input-group">
-                <label for="studentId">Student ID</label>
-                <input type="text" id="studentId" placeholder="e.g. STU-1002" autocomplete="off">
+                <label for="studentId">Student Identification ID</label>
+                <input type="text" id="studentId" placeholder="e.g. STU-4091" autocomplete="off">
             </div>
 
             <button class="btn" id="captureBtn">
-                <i data-lucide="camera"></i> Enroll Face ID
+                <i data-lucide="camera"></i> Register Biometric Face ID
             </button>
         </div>
 
         <div id="uploadTab" class="tab-content">
             <div class="file-upload-zone" onclick="document.getElementById('fileInput').click()">
-                <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--text-secondary);margin-bottom:0.5rem;display:inline-block;"></i>
-                <p>Click to select photos or ID cards<br><small style="color:var(--text-secondary)">Tip: Name files as "ID-Name.jpg" to auto-fill</small></p>
+                <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--cyan);margin-bottom:0.5rem;display:inline-block;"></i>
+                <p style="margin-bottom:0;">Select photos or ID documents<br><small style="color:var(--t3);font-family:var(--mono);">Format: "ID-Name.jpg" to auto-parse</small></p>
             </div>
             <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
             
             <div class="file-list" id="fileList"></div>
             
             <button class="btn" id="uploadAllBtn" disabled>
-                <i data-lucide="upload"></i> Register All Selected
+                <i data-lucide="upload"></i> Enroll Batch Selected
             </button>
         </div>
 
         <div id="statusMsg" class="message"></div>
         
-        <hr style="border: 0; height: 1px; background: #334155; margin: 2rem 0;">
+        <hr style="border: 0; height: 1px; background: var(--border-subtle); margin: 1.5rem 0;">
         
         <button class="start-session-btn" id="startSessionBtn">
-            <i data-lucide="play-circle"></i> Start Exam Session & Enter Dashboard
+            <i data-lucide="shield-check"></i> Launch SOC Examination Defense Matrix
         </button>
     </div>
 
@@ -316,8 +505,6 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             btnElement.classList.add('active');
-            
-            // Re-render icons incase they are in hidden tabs initially
             lucide.createIcons();
         }
 
@@ -342,12 +529,13 @@
             const id = studentId.value.trim();
 
             if (!name || !id) {
-                showMsg('Please enter both Name and Student ID.', 'error');
+                showMsg('Please enter both Full Name and Student ID.', 'error');
                 return;
             }
 
             captureBtn.disabled = true;
-            captureBtn.innerHTML = '<i class="lucide-loader"></i> Processing...';
+            captureBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Processing Neural Alignment...';
+            lucide.createIcons();
 
             // Capture frame from video
             const canvas = document.createElement('canvas');
@@ -371,7 +559,7 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    showMsg('Successfully enrolled Face ID for ' + name + '!', 'success');
+                    showMsg('Successfully enrolled Face ID for ' + name + ' (' + id + ')!', 'success');
                     studentName.value = '';
                     studentId.value = '';
                 } else {
@@ -385,7 +573,7 @@
                 showMsg('Network error. Is the server running?', 'error');
             } finally {
                 captureBtn.disabled = false;
-                captureBtn.innerHTML = '<i data-lucide="camera"></i> Enroll Face ID';
+                captureBtn.innerHTML = '<i data-lucide="camera"></i> Register Biometric Face ID';
                 lucide.createIcons();
             }
         });
@@ -398,7 +586,8 @@
         const startSessionBtn = document.getElementById('startSessionBtn');
         startSessionBtn.addEventListener('click', async () => {
             startSessionBtn.disabled = true;
-            startSessionBtn.innerHTML = '<i class="lucide-loader"></i> Starting...';
+            startSessionBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Initializing SOC...';
+            lucide.createIcons();
             try {
                 const res = await fetch('/api/session/start', { method: 'POST' });
                 if (res.ok) {
@@ -411,12 +600,14 @@
                     let errText = await res.text();
                     showMsg('Failed to start session: ' + res.status + ' ' + errText, 'error');
                     startSessionBtn.disabled = false;
-                    startSessionBtn.innerHTML = '<i data-lucide="play-circle"></i> Start Exam Session & Enter Dashboard';
+                    startSessionBtn.innerHTML = '<i data-lucide="shield-check"></i> Launch SOC Examination Defense Matrix';
                     lucide.createIcons();
                 }
             } catch (err) {
                 showMsg('Network error starting session', 'error');
                 startSessionBtn.disabled = false;
+                startSessionBtn.innerHTML = '<i data-lucide="shield-check"></i> Launch SOC Examination Defense Matrix';
+                lucide.createIcons();
             }
         });
         
@@ -433,7 +624,6 @@
                 
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    // Try to parse ID-Name from filename
                     let defaultId = "";
                     let defaultName = "";
                     const nameParts = file.name.split('.')[0].split('-');
@@ -475,9 +665,9 @@
                 el.className = 'file-item';
                 
                 let iconHtml = '';
-                if (item.status === 'success') iconHtml = '<i data-lucide="check-circle" style="color:var(--success);width:20px;"></i>';
-                else if (item.status === 'error') iconHtml = '<i data-lucide="x-circle" style="color:var(--danger);width:20px;"></i>';
-                else if (item.status === 'uploading') iconHtml = '<i data-lucide="loader" style="color:var(--primary);width:20px;" class="lucide-spin"></i>';
+                if (item.status === 'success') iconHtml = '<i data-lucide="check-circle" style="color:var(--success);width:18px;"></i>';
+                else if (item.status === 'error') iconHtml = '<i data-lucide="x-circle" style="color:var(--danger);width:18px;"></i>';
+                else if (item.status === 'uploading') iconHtml = '<i data-lucide="loader" style="color:var(--cyan);width:18px;" class="lucide-spin"></i>';
                 
                 el.innerHTML = `
                     <img src="${item.dataUrl}">
@@ -500,12 +690,12 @@
         document.getElementById('uploadAllBtn').addEventListener('click', async () => {
             const btn = document.getElementById('uploadAllBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Processing...';
+            btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Enrolling Batch...';
             lucide.createIcons();
             
             for (let i = 0; i < selectedFilesData.length; i++) {
                 const item = selectedFilesData[i];
-                if (item.status === 'success') continue; // skip already uploaded
+                if (item.status === 'success') continue;
                 
                 if (!item.studentId || !item.studentName) {
                     item.status = 'error';
@@ -538,11 +728,10 @@
                 renderFileList();
             }
             
-            btn.innerHTML = '<i data-lucide="upload"></i> Register All Selected';
+            btn.innerHTML = '<i data-lucide="upload"></i> Enroll Batch Selected';
             btn.disabled = false;
             lucide.createIcons();
         });
-        
     </script>
 </body>
 </html>
