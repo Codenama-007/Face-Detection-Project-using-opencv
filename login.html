@@ -818,6 +818,20 @@ html, body {
     </main>
 
     <script>
+        // ═══════════════════════════════════════════════════════════════════
+        // CHECK IF INSTITUTION SETUP IS COMPLETED
+        // If not, redirect to setup_institution.html first
+        // ═══════════════════════════════════════════════════════════════════
+        (function checkSetupCompleted() {
+            const setupCompleted = sessionStorage.getItem('proctorai_setup_completed') || 
+                                   localStorage.getItem('proctorai_setup_completed');
+            
+            if (setupCompleted !== 'true') {
+                window.location.href = 'setup_institution.html';
+                return;
+            }
+        })();
+
         // Initialize Lucide Icons
         lucide.createIcons();
 

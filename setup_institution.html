@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProctorAI | Initial Institution Setup</title>
+    <meta name="description" content="Configure your institution for ProctorAI Examination Monitoring Platform">
+    
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — INITIAL INSTITUTION SETUP
+   PREMIUM ONBOARDING INTERFACE
+   ═════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg-base:        #06080c;
+    --bg-surface:     #0b0f17;
+    --bg-card:        #0e131d;
+    --bg-card-border: rgba(255, 255, 255, 0.08);
+    --bg-input:       #070a10;
+    --bg-input-focus: #0a0e16;
+
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-mid:     rgba(255, 255, 255, 0.12);
+    --border-active:  rgba(56, 189, 248, 0.4);
+
+    --accent-blue:    #38bdf8;
+    --accent-dark:    #0284c7;
+    --accent-dim:     rgba(56, 189, 248, 0.08);
+
+    --success:        #10b981;
+    --success-dim:    rgba(16, 185, 129, 0.08);
+    --success-border: rgba(16, 185, 129, 0.25);
+
+    --danger:         #f43f5e;
+    --danger-dim:     rgba(244, 63, 94, 0.08);
+    --danger-border:  rgba(244, 63, 94, 0.3);
+
+    --t1:             #f8fafc;
+    --t2:             #94a3b8;
+    --t3:             #64748b;
+    --t4:             #334155;
+
+    --font:           'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
+}
+
+html, body {
+    width: 100%;
+    min-height: 100vh;
+    font-family: var(--font);
+    background-color: var(--bg-base);
+    color: var(--t1);
+    line-height: 1.5;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── BACKGROUND LAYER ── */
+.bg-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.bg-radial-ambient {
+    position: absolute;
+    top: -10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(14, 28, 48, 0.3) 0%, rgba(6, 8, 12, 0) 70%);
+    filter: blur(80px);
+}
+
+.bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, #000 30%, transparent 90%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, #000 30%, transparent 90%);
+}
+
+/* ── ROOT LAYOUT ── */
+.app-layout {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.setup-container {
+    width: 100%;
+    max-width: 680px;
+    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ── HEADER SECTION ── */
+.setup-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.brand-badge-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+}
+
+.brand-icon-box {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #0b111a;
+    border: 1px solid var(--border-mid);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-blue);
+}
+
+.brand-name {
+    font-size: 1.3rem;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 50%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.setup-title {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+}
+
+.setup-subtitle {
+    font-size: 0.95rem;
+    color: var(--t2);
+    line-height: 1.6;
+}
+
+.progress-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--accent-blue);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 1rem;
+}
+
+.demo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    background: rgba(100, 116, 139, 0.08);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+    font-size: 0.62rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--t3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 0.75rem;
+}
+
+/* ── SETUP CARD ── */
+.setup-card {
+    position: relative;
+    width: 100%;
+    background: var(--bg-card);
+    border: 1px solid var(--bg-card-border);
+    border-top: 1px solid var(--border-mid);
+    border-radius: 18px;
+    padding: 2.5rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+    transition: all 0.3s ease;
+}
+
+/* ── FORM LAYOUT ── */
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--t3);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-label::before {
+    content: '';
+    width: 3px;
+    height: 12px;
+    background: var(--accent-blue);
+    border-radius: 99px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+    animation: fadeIn 0.4s ease-out backwards;
+}
+
+.form-group:nth-child(1) { animation-delay: 0.1s; }
+.form-group:nth-child(2) { animation-delay: 0.15s; }
+.form-group:nth-child(3) { animation-delay: 0.2s; }
+.form-group:nth-child(4) { animation-delay: 0.25s; }
+.form-group:nth-child(5) { animation-delay: 0.3s; }
+.form-group:nth-child(6) { animation-delay: 0.35s; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--t2);
+    margin-bottom: 0.5rem;
+}
+
+.required-indicator {
+    color: var(--danger);
+    font-size: 0.9rem;
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-mid);
+    background: var(--bg-input);
+    color: var(--t1);
+    font-family: var(--font);
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.form-input:hover,
+.form-select:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.form-input:focus,
+.form-select:focus {
+    border-color: var(--accent-blue);
+    background: var(--bg-input-focus);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.form-input::placeholder {
+    color: var(--t3);
+    font-size: 0.86rem;
+}
+
+.form-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+.form-select option {
+    background: var(--bg-card);
+    color: var(--t1);
+    padding: 0.5rem;
+}
+
+.field-hint {
+    font-size: 0.72rem;
+    color: var(--t4);
+    margin-top: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* ── VALIDATION ERROR ── */
+.error-message {
+    display: none;
+    margin-top: 0.5rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: var(--danger-dim);
+    border: 1px solid var(--danger-border);
+    color: #fecdd3;
+    animation: shakeError 0.3s ease-in-out;
+}
+
+.error-message.show {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
+}
+
+.form-input.error,
+.form-select.error {
+    border-color: var(--danger-border);
+    background: rgba(244, 63, 94, 0.03);
+}
+
+/* ── SUBMIT BUTTON ── */
+.btn-submit {
+    width: 100%;
+    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #00e5ff 100%);
+    color: #ffffff;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    font-family: var(--font);
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.btn-submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #0369a1 50%, #00e5ff 100%);
+    box-shadow: 0 8px 28px rgba(0, 229, 255, 0.45);
+    transform: translateY(-2px);
+}
+
+.btn-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-submit .spinner {
+    display: none;
+    animation: spin 0.8s linear infinite;
+}
+
+.btn-submit.loading .spinner {
+    display: inline-block;
+}
+
+.btn-submit.loading .btn-text {
+    display: none;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ── FOOTER ── */
+.setup-footer {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--t3);
+}
+
+.setup-footer a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.setup-footer a:hover {
+    color: #00e5ff;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+    .app-layout {
+        padding: 1.5rem 1rem;
+    }
+    
+    .setup-card {
+        padding: 2rem 1.5rem;
+        border-radius: 16px;
+    }
+    
+    .setup-title {
+        font-size: 1.6rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .setup-title {
+        font-size: 1.4rem;
+    }
+    
+    .setup-card {
+        padding: 1.75rem 1.25rem;
+    }
+    
+    .brand-name {
+        font-size: 1.1rem;
+    }
+}
+    </style>
+</head>
+<body>
+
+    <!-- Subtle Background -->
+    <div class="bg-canvas">
+        <div class="bg-radial-ambient"></div>
+        <div class="bg-grid"></div>
+    </div>
+
+    <!-- Main Setup Layout -->
+    <main class="app-layout">
+        <div class="setup-container">
+            
+            <!-- Header -->
+            <header class="setup-header">
+                <div class="brand-badge-wrap">
+                    <div class="brand-icon-box">
+                        <i data-lucide="shield-check" style="width:18px;height:18px;"></i>
+                    </div>
+                    <div class="brand-name">PROCTORAI</div>
+                </div>
+                
+                <h1 class="setup-title">Examination Monitoring Setup</h1>
+                <p class="setup-subtitle">Let's configure your institution to get started with AI-powered examination security.</p>
+                
+                <div class="progress-indicator">
+                    <span>●</span>
+                    <span>Initial Setup</span>
+                </div>
+                
+                <div class="demo-badge">
+                    <i data-lucide="info" style="width:10px;height:10px;"></i>
+                    <span>Demo Environment</span>
+                </div>
+            </header>
+
+            <!-- Setup Card -->
+            <div class="setup-card">
+                <form id="setupForm" novalidate>
+                    
+                    <!-- Institution Information -->
+                    <div class="form-section">
+                        <div class="section-label">Institution Information</div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="institutionName">
+                                <i data-lucide="building-2" style="width:14px;height:14px;"></i>
+                                <span>Institution Name</span>
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="institutionName" 
+                                class="form-input" 
+                                placeholder="Enter institution name"
+                                required
+                                autocomplete="organization"
+                            >
+                            <div class="error-message" id="institutionNameError">
+                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
+                                <span>Institution name is required</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="institutionType">
+                                <i data-lucide="landmark" style="width:14px;height:14px;"></i>
+                                <span>Institution Type</span>
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <select id="institutionType" class="form-select" required>
+                                <option value="" disabled selected>Select institution type</option>
+                                <option value="university">University</option>
+                                <option value="college">College</option>
+                                <option value="school">School</option>
+                                <option value="coaching">Coaching Institute</option>
+                                <option value="training">Training Institute</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <div class="error-message" id="institutionTypeError">
+                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
+                                <span>Institution type is required</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location Information -->
+                    <div class="form-section">
+                        <div class="section-label">Location Information</div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="country">
+                                <i data-lucide="globe" style="width:14px;height:14px;"></i>
+                                <span>Country</span>
+                                <span class="required-indicator">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="country" 
+                                class="form-input" 
+                                placeholder="e.g., India"
+                                required
+                                autocomplete="country-name"
+                            >
+                            <div class="error-message" id="countryError">
+                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
+                                <span>Country is required</span>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="state">
+                                    <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+                                    <span>State / Region</span>
+                                    <span class="required-indicator">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="state" 
+                                    class="form-input" 
+                                    placeholder="e.g., Maharashtra"
+                                    required
+                                    autocomplete="address-level1"
+                                >
+                                <div class="error-message" id="stateError">
+                                    <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
+                                    <span>State is required</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="city">
+                                    <i data-lucide="map" style="width:14px;height:14px;"></i>
+                                    <span>City</span>
+                                    <span class="required-indicator">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="city" 
+                                    class="form-input" 
+                                    placeholder="e.g., Mumbai"
+                                    required
+                                    autocomplete="address-level2"
+                                >
+                                <div class="error-message" id="cityError">
+                                    <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
+                                    <span>City is required</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="campus">
+                                <i data-lucide="building" style="width:14px;height:14px;"></i>
+                                <span>Campus / Location</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="campus" 
+                                class="form-input" 
+                                placeholder="e.g., Main Campus (Optional)"
+                                autocomplete="off"
+                            >
+                            <div class="field-hint">
+                                <i data-lucide="info" style="width:11px;height:11px;"></i>
+                                <span>Optional: Specify campus or branch location</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <i data-lucide="arrow-right" class="btn-icon" style="width:18px;height:18px;"></i>
+                        <span class="btn-text">Continue to ProctorAI</span>
+                        <i data-lucide="loader" class="spinner" style="width:18px;height:18px;"></i>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <footer class="setup-footer">
+                <p>ProctorAI Platform © 2026 &middot; <a href="index.html">Platform Overview</a></p>
+            </footer>
+
+        </div>
+    </main>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // DOM Elements
+        const form = document.getElementById('setupForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        const fields = {
+            institutionName: document.getElementById('institutionName'),
+            institutionType: document.getElementById('institutionType'),
+            country: document.getElementById('country'),
+            state: document.getElementById('state'),
+            city: document.getElementById('city'),
+            campus: document.getElementById('campus')
+        };
+
+        const errors = {
+            institutionName: document.getElementById('institutionNameError'),
+            institutionType: document.getElementById('institutionTypeError'),
+            country: document.getElementById('countryError'),
+            state: document.getElementById('stateError'),
+            city: document.getElementById('cityError')
+        };
+
+        // Check if setup is already completed
+        const setupCompleted = sessionStorage.getItem('proctorai_setup_completed') || 
+                               localStorage.getItem('proctorai_setup_completed');
+        
+        // If setup is completed and we're editing, load existing data
+        if (setupCompleted === 'true') {
+            const institutionDataStr = sessionStorage.getItem('proctorai_institution_data') || 
+                                       localStorage.getItem('proctorai_institution_data');
+            
+            if (institutionDataStr) {
+                try {
+                    const data = JSON.parse(institutionDataStr);
+                    fields.institutionName.value = data.institutionName || '';
+                    fields.institutionType.value = data.institutionType || '';
+                    fields.country.value = data.country || '';
+                    fields.state.value = data.state || '';
+                    fields.city.value = data.city || '';
+                    fields.campus.value = data.campus || '';
+                    
+                    // Update header text for edit mode
+                    document.querySelector('.setup-title').textContent = 'Edit Institution Details';
+                    document.querySelector('.setup-subtitle').textContent = 'Update your institution information.';
+                    document.querySelector('.btn-text').textContent = 'Save Changes';
+                    document.querySelector('.progress-indicator span:last-child').textContent = 'Edit Setup';
+                } catch (e) {
+                    console.warn('Could not load existing data', e);
+                }
+            }
+        }
+
+        // Validation Functions
+        function showError(fieldName) {
+            fields[fieldName].classList.add('error');
+            errors[fieldName].classList.add('show');
+        }
+
+        function hideError(fieldName) {
+            fields[fieldName].classList.remove('error');
+            errors[fieldName].classList.remove('show');
+        }
+
+        function validateField(fieldName) {
+            const field = fields[fieldName];
+            const value = field.value.trim();
+            
+            if (!value) {
+                showError(fieldName);
+                return false;
+            }
+            
+            hideError(fieldName);
+            return true;
+        }
+
+        function validateAllFields() {
+            let isValid = true;
+            
+            // Required fields
+            const requiredFields = ['institutionName', 'institutionType', 'country', 'state', 'city'];
+            
+            requiredFields.forEach(fieldName => {
+                if (!validateField(fieldName)) {
+                    isValid = false;
+                }
+            });
+            
+            return isValid;
+        }
+
+        // Real-time validation on blur
+        Object.keys(fields).forEach(fieldName => {
+            if (errors[fieldName]) {
+                fields[fieldName].addEventListener('blur', () => {
+                    if (fields[fieldName].value.trim()) {
+                        validateField(fieldName);
+                    }
+                });
+                
+                fields[fieldName].addEventListener('input', () => {
+                    if (errors[fieldName].classList.contains('show')) {
+                        hideError(fieldName);
+                    }
+                });
+            }
+        });
+
+        // Form Submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Validate all fields
+            if (!validateAllFields()) {
+                // Scroll to first error
+                const firstError = document.querySelector('.form-input.error, .form-select.error');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+                return;
+            }
+
+            // Collect setup data
+            const setupData = {
+                institutionName: fields.institutionName.value.trim(),
+                institutionType: fields.institutionType.value,
+                country: fields.country.value.trim(),
+                state: fields.state.value.trim(),
+                city: fields.city.value.trim(),
+                campus: fields.campus.value.trim() || 'Main Campus',
+                setupDate: new Date().toISOString()
+            };
+
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+
+            // Simulate brief processing (for smooth UX)
+            await new Promise(resolve => setTimeout(resolve, 600));
+
+            // Store setup data
+            try {
+                sessionStorage.setItem('proctorai_setup_completed', 'true');
+                sessionStorage.setItem('proctorai_institution_data', JSON.stringify(setupData));
+                localStorage.setItem('proctorai_setup_completed', 'true');
+                localStorage.setItem('proctorai_institution_data', JSON.stringify(setupData));
+            } catch (err) {
+                console.warn('Storage unavailable', err);
+            }
+
+            // Smooth transition to login
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.3s ease';
+            
+            setTimeout(() => {
+                // If this was an edit, go back to monitoring, otherwise go to login
+                const isEdit = sessionStorage.getItem('proctorai_demo_auth') === 'true';
+                window.location.href = isEdit ? 'monitoring.html' : 'login.html';
+            }, 300);
+        });
+
+        // Smooth entrance animation
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
