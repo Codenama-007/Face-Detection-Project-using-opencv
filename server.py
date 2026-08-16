@@ -2219,6 +2219,9 @@ _camera_paused = False
 _camera_open = False
 IDLE_RELEASE_SECONDS = 2.0
 
+smooth_face_boxes = {}
+smooth_boxes = {}
+
 
 def _camera_held():
     return _camera_open
@@ -2321,6 +2324,85 @@ def _camera_capture_worker():
         cap.release()
 
 
+def _render_hud_box(img, pt1, pt2, color, thickness, label, sublabel=None):
+    """Renders a clean, professional ProctorAI HUD bounding box with dark semi-transparent
+    header pills and crisp typography."""
+    x1, y1 = pt1
+    x2, y2 = pt2
+    h, w = img.shape[:2]
+    x1, y1 = max(0, x1), max(0, y1)
+    x2, y2 = min(w - 1, x2), min(h - 1, y2)
+    if x2 <= x1 or y2 <= y1:
+        return
+
+    # Draw primary bounding rectangle
+    cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
+
+    # Corner accent brackets for a sharp security look
+    corner_len = min(14, max(5, int((x2 - x1) * 0.15)))
+    cv2.line(img, (x1, y1), (x1 + corner_len, y1), color, thickness + 1)
+    cv2.line(img, (x1, y1), (x1, y1 + corner_len), color, thickness + 1)
+    cv2.line(img, (x2, y1), (x2 - corner_len, y1), color, thickness + 1)
+    cv2.line(img, (x2, y1), (x2, y1 + corner_len), color, thickness + 1)
+    cv2.line(img, (x1, y2), (x1 + corner_len, y2), color, thickness + 1)
+    cv2.line(img, (x1, y2), (x1, y2 - corner_len), color, thickness + 1)
+    cv2.line(img, (x2, y2), (x2 - corner_len, y2), color, thickness + 1)
+    cv2.line(img, (x2, y2), (x2, y2 - corner_len), color, thickness + 1)
+
+    # Header label pill
+    if label:
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        scale = 0.44
+        (tw, th), baseline = cv2.getTextSize(label, font, scale, 1)
+        px1 = x1
+        py2 = max(0, y1 - 3)
+        py1 = max(0, py2 - th - 6)
+        px2 = min(w - 1, px1 + tw + 8)
+
+        if py2 > py1 and px2 > px1:
+            sub = img[py1:py2, px1:px2]
+            if sub.size > 0:
+                bg = np.full(sub.shape, (15, 15, 15), dtype=np.uint8)
+                cv2.addWeighted(bg, 0.85, sub, 0.15, 0, sub)
+                cv2.rectangle(img, (px1, py1), (px2, py2), color, 1)
+                cv2.putText(img, label, (px1 + 4, py2 - 3), font, scale, color, 1, cv2.LINE_AA)
+
+    # Sublabel pill (underneath or inside)
+    if sublabel:
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        scale = 0.38
+        (stw, sth), sbase = cv2.getTextSize(sublabel, font, scale, 1)
+        spy1 = min(h - 1, y2 + 2)
+        spy2 = min(h - 1, spy1 + sth + 6)
+        spx1 = x1
+        spx2 = min(w - 1, spx1 + stw + 8)
+        if spy2 > spy1 and spx2 > spx1:
+            sub2 = img[spy1:spy2, spx1:spx2]
+            if sub2.size > 0:
+                bg2 = np.full(sub2.shape, (15, 15, 15), dtype=np.uint8)
+                cv2.addWeighted(bg2, 0.85, sub2, 0.15, 0, sub2)
+                cv2.rectangle(img, (spx1, spy1), (spx2, spy2), (60, 60, 60), 1)
+                cv2.putText(img, sublabel, (spx1 + 4, spy2 - 3), font, scale, (220, 220, 220), 1, cv2.LINE_AA)
+
+
+def _render_iris_marker(img, center, radius, color):
+    """Draws a subtle small visual indicator on the iris without obscuring the eye."""
+    if center is not None:
+        cx, cy = int(center[0]), int(center[1])
+        if 0 <= cx < img.shape[1] and 0 <= cy < img.shape[0]:
+            cv2.circle(img, (cx, cy), radius, color, -1, cv2.LINE_AA)
+            cv2.circle(img, (cx, cy), radius + 1, (255, 255, 255), 1, cv2.LINE_AA)
+
+
+def _render_gaze_arrow(img, start, end, color):
+    """Draws a subtle thin gaze vector indicator."""
+    if start is not None and end is not None:
+        p1 = (int(start[0]), int(start[1]))
+        p2 = (int(end[0]), int(end[1]))
+        if (p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2 > 4:
+            cv2.arrowedLine(img, p1, p2, color, 1, tipLength=0.35, line_type=cv2.LINE_AA)
+
+
 def _stream_worker():
     """Dedicated low-latency stream composer.
     Takes the freshest raw camera frame, composites the latest smoothed AI overlays,
@@ -2351,10 +2433,20 @@ def _stream_worker():
             draw_ops = list(_shared_draw_ops)
 
         for op in draw_ops:
-            if op[0] == 'rect':
+            kind = op[0]
+            if kind == 'hud_box':
+                # ('hud_box', (x1, y1), (x2, y2), color, thickness, label, sublabel)
+                _render_hud_box(frame, op[1], op[2], op[3], op[4], op[5], op[6] if len(op) > 6 else None)
+            elif kind == 'iris':
+                # ('iris', (cx, cy), radius, color)
+                _render_iris_marker(frame, op[1], op[2], op[3])
+            elif kind == 'gaze_arrow':
+                # ('gaze_arrow', (x1, y1), (x2, y2), color)
+                _render_gaze_arrow(frame, op[1], op[2], op[3])
+            elif kind == 'rect':
                 cv2.rectangle(frame, op[1], op[2], op[3], op[4])
-            else:
-                cv2.putText(frame, op[1], op[2], cv2.FONT_HERSHEY_SIMPLEX, op[3], op[4], op[5])
+            elif kind == 'text':
+                cv2.putText(frame, op[1], op[2], cv2.FONT_HERSHEY_SIMPLEX, op[3], op[4], op[5], cv2.LINE_AA)
 
         ret, buffer = cv2.imencode('.jpg', frame, JPEG_PARAMS)
         if ret:
@@ -2365,7 +2457,7 @@ def _ai_worker():
     """Asynchronous AI Detection Worker Thread.
     Runs YOLO person detection, MediaPipe FaceLandmarker, DeepSort, and behavior engines
     off the video stream's critical path. Never blocks camera preview."""
-    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, smooth_boxes
+    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, smooth_boxes, smooth_face_boxes
     last_ai_ts = 0.0
     last_log_time = 0.0
 
@@ -2408,16 +2500,16 @@ def _ai_worker():
 
         phone_boxes = []
         for d in phone_hits:
-            x1, y1, x2, y2 = [int(v) for v in d["bbox"]]
-            phone_boxes.append((x1, y1, x2, y2, d["conf"]))
-            draw_ops.append(('rect', (x1, y1), (x2, y2), (0, 0, 255), 3))
-            draw_ops.append(('text', f"PHONE {d['conf']:.0%}",
-                             (x1, max(12, y1 - 10)), 0.7, (0, 0, 255), 2))
+            px1, py1, px2, py2 = [int(v) for v in d["bbox"]]
+            pconf = float(d["conf"])
+            phone_boxes.append((px1, py1, px2, py2, pconf))
+            draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 0, 255), 2,
+                             "PHONE DETECTED", f"CONFIDENCE: {pconf:.0%}"))
 
         room_state["phone_detected"] = len(phone_boxes) > 0
         room_state["book_detected"] = False
 
-        # 3. MediaPipe FaceLandmarker analysis
+        # 3. MediaPipe FaceLandmarker analysis (all visible faces with real iris & head pose)
         face_obs_list = face_analyzer.analyze(frame)
 
         # 4. Face identification dispatch
@@ -2431,7 +2523,7 @@ def _ai_worker():
             id_faces = (_id_output["faces"]
                         if (now - _id_output["ts"]) <= ID_RESULT_TTL else [])
 
-        # 5. Tracking update
+        # 5. Tracking update (persons)
         tracks = tracker.update_tracks(person_detections, frame=frame)
 
         pending = False
@@ -2452,6 +2544,7 @@ def _ai_worker():
 
         current_students_in_frame = set()
         unknown_count = 0
+        used_face_indices = set()
 
         for track in tracks:
             if not track.is_confirmed():
@@ -2467,6 +2560,7 @@ def _ai_worker():
             if tx2 - tx1 < 40 or ty2 - ty1 < 40:
                 continue
 
+            # Identify unassigned tracks
             if track_id not in track_to_student:
                 if id_faces and now - last_counted_id.get(track_id, 0) > 0.4:
                     last_counted_id[track_id] = now
@@ -2494,6 +2588,7 @@ def _ai_worker():
                                 "institution_id": matched_inst,
                                 "suspicion_score": historical_risk_scores.get(sid, 0),
                                 "risk_score": historical_risk_scores.get(sid, 0),
+                                "trust_score": max(0.0, min(100.0, 100.0 - historical_risk_scores.get(sid, 0))),
                                 "status": "Active",
                                 "direction": "CENTER",
                                 "last_seen": now,
@@ -2512,15 +2607,20 @@ def _ai_worker():
                     behaviors[sid] = proctor_ai.StudentBehavior(
                         sid, tracked_students.get(sid, {}).get("name", sid))
 
+                # Associate nearest face observation
                 cx = (tx1 + tx2) / 2
-                my_obs, best_d = None, 1e9
-                for obs in face_obs_list:
+                my_obs, best_d, best_idx = None, 1e9, None
+                for idx, obs in enumerate(face_obs_list):
                     nx_, ny_ = obs.nose_xy
                     if tx1 <= nx_ <= tx2 and ty1 <= ny_ <= ty2:
                         d = abs(nx_ - cx)
                         if d < best_d:
-                            my_obs, best_d = obs, d
+                            my_obs, best_d, best_idx = obs, d, idx
 
+                if best_idx is not None:
+                    used_face_indices.add(best_idx)
+
+                # Attribute phones in person's vicinity
                 phone_conf = 0.0
                 ex = int((tx2 - tx1) * 0.20)
                 for (px1, py1, px2, py2, pconf) in phone_boxes:
@@ -2544,39 +2644,92 @@ def _ai_worker():
                               snap.get("direction", "CENTER"), le["label"])
                 tracked_students[sid]["_logged_event"] = le
 
-                # Low-latency adaptive bounding box smoothing
-                new_box = np.array([tx1, ty1, tx2, ty2], dtype=np.float32)
-                prev = smooth_boxes.get(sid)
-                if prev is None:
-                    sm = new_box
-                else:
-                    dist = float(np.max(np.abs(new_box - prev)))
-                    if dist > 12.0:
-                        alpha = 0.85  # Near-instant tracking during movement
-                    elif dist > 4.0:
-                        alpha = 0.65
-                    else:
-                        alpha = 0.40  # Anti-jitter when stationary
-                    sm = (1.0 - alpha) * prev + alpha * new_box
-                smooth_boxes[sid] = sm
-                sx1, sy1, sx2, sy2 = map(int, sm)
-
                 tier = snap["tier"]
-                color = (0, 255, 0)
-                if tier == "MEDIUM":
-                    color = (0, 165, 255)
-                elif tier in ("HIGH", "CRITICAL"):
-                    color = (0, 0, 255)
+                trust_pct = int(snap.get("trust_score", 100 - snap["suspicion_score"]))
 
-                label = f"{snap['name']} [{tier}] {int(snap['suspicion_score'])}"
-                sub = f"yaw {snap['yaw']:+.0f}  pitch {snap['pitch']:+.0f}  gaze {snap['gaze']}"
-                draw_ops.append(('rect', (sx1, sy1), (sx2, sy2), color, 2))
-                draw_ops.append(('text', label, (sx1, sy1 - 28), 0.55, color, 2))
-                draw_ops.append(('text', sub, (sx1, sy1 - 8), 0.45, (200, 200, 200), 1))
+                # Dynamic professional palette
+                if tier == "LOW":
+                    color = (0, 230, 115)       # Emerald Green
+                elif tier == "MEDIUM":
+                    color = (0, 165, 255)       # Amber
+                else:
+                    color = (0, 0, 255)         # Red Violation
+
+                # Primary Face Box with adaptive smoothing (follows head movements immediately)
+                if my_obs is not None:
+                    bx, by, bw, bh = my_obs.bbox
+                    pad_x, pad_y = int(bw * 0.08), int(bh * 0.10)
+                    raw_fb = np.array([
+                        max(0, bx - pad_x),
+                        max(0, by - pad_y),
+                        min(frame.shape[1], bx + bw + pad_x),
+                        min(frame.shape[0], by + bh + pad_y)
+                    ], dtype=np.float32)
+
+                    prev_fb = smooth_face_boxes.get(sid)
+                    if prev_fb is None:
+                        sm_fb = raw_fb
+                    else:
+                        fdist = float(np.max(np.abs(raw_fb - prev_fb)))
+                        falpha = 0.85 if fdist > 8.0 else (0.60 if fdist > 3.0 else 0.40)
+                        sm_fb = (1.0 - falpha) * prev_fb + falpha * raw_fb
+                    smooth_face_boxes[sid] = sm_fb
+                    sfx1, sfy1, sfx2, sfy2 = map(int, sm_fb)
+
+                    # Draw Face Bounding Box with Clean HUD Pills
+                    title = f"REGISTERED: {snap['name']}"
+                    sub = f"GAZE: {snap['gaze']} | TRUST: {trust_pct}%"
+                    draw_ops.append(('hud_box', (sfx1, sfy1), (sfx2, sfy2), color, 2, title, sub))
+
+                    # Subtle Iris Markers and Gaze Direction Indicator
+                    if my_obs.left_iris_xy and my_obs.right_iris_xy:
+                        draw_ops.append(('iris', my_obs.left_iris_xy, 2, (255, 220, 0)))
+                        draw_ops.append(('iris', my_obs.right_iris_xy, 2, (255, 220, 0)))
+
+                        # Draw subtle gaze vector when looking away
+                        if abs(my_obs.gaze_h - 0.5) > 0.12 or abs(my_obs.gaze_v - 0.5) > 0.12:
+                            dx = int((my_obs.gaze_h - 0.5) * 16)
+                            dy = int((my_obs.gaze_v - 0.5) * 16)
+                            draw_ops.append(('gaze_arrow', my_obs.left_iris_xy,
+                                             (my_obs.left_iris_xy[0] + dx, my_obs.left_iris_xy[1] + dy),
+                                             (255, 220, 0)))
+                            draw_ops.append(('gaze_arrow', my_obs.right_iris_xy,
+                                             (my_obs.right_iris_xy[0] + dx, my_obs.right_iris_xy[1] + dy),
+                                             (255, 220, 0)))
+                else:
+                    # Fallback to smoothed person box if face is momentarily occluded
+                    new_box = np.array([tx1, ty1, tx2, ty2], dtype=np.float32)
+                    prev = smooth_boxes.get(sid)
+                    if prev is None:
+                        sm = new_box
+                    else:
+                        dist = float(np.max(np.abs(new_box - prev)))
+                        alpha = 0.85 if dist > 12.0 else (0.65 if dist > 4.0 else 0.40)
+                        sm = (1.0 - alpha) * prev + alpha * new_box
+                    smooth_boxes[sid] = sm
+                    sx1, sy1, sx2, sy2 = map(int, sm)
+                    draw_ops.append(('hud_box', (sx1, sy1), (sx2, sy2), color, 2,
+                                     f"REGISTERED: {snap['name']}",
+                                     f"TRUST: {trust_pct}% | RISK: {int(snap['suspicion_score'])}"))
             else:
                 unknown_count += 1
-                draw_ops.append(('rect', (tx1, ty1), (tx2, ty2), (0, 0, 255), 2))
-                draw_ops.append(('text', f"UNKNOWN {track_id}", (tx1, ty1 - 10), 0.6, (0, 0, 255), 2))
+                draw_ops.append(('hud_box', (tx1, ty1), (tx2, ty2), (0, 0, 255), 2,
+                                 f"UNKNOWN PERSON #{track_id}", "ALERT: UNREGISTERED"))
+
+        # Render any unassigned faces (e.g. before full body track or unverified face)
+        for idx, obs in enumerate(face_obs_list):
+            if idx in used_face_indices:
+                continue
+            bx, by, bw, bh = obs.bbox
+            fx1 = max(0, bx - int(bw * 0.08))
+            fy1 = max(0, by - int(bh * 0.10))
+            fx2 = min(frame.shape[1], bx + bw + int(bw * 0.08))
+            fy2 = min(frame.shape[0], by + bh + int(bh * 0.08))
+            draw_ops.append(('hud_box', (fx1, fy1), (fx2, fy2), (255, 180, 50), 2,
+                             "FACE", f"GAZE: {obs.raw_gaze}"))
+            if obs.left_iris_xy and obs.right_iris_xy:
+                draw_ops.append(('iris', obs.left_iris_xy, 2, (255, 220, 0)))
+                draw_ops.append(('iris', obs.right_iris_xy, 2, (255, 220, 0)))
 
         # Handle absent students
         for sid in list(tracked_students.keys()):
@@ -2594,6 +2747,7 @@ def _ai_worker():
                     historical_risk_scores[sid] = tracked_students[sid].get("suspicion_score", 0)
                     tracked_students.pop(sid, None)
                     smooth_boxes.pop(sid, None)
+                    smooth_face_boxes.pop(sid, None)
                     to_delete = [tid for tid, s in track_to_student.items() if s == sid]
                     for tid in to_delete:
                         del track_to_student[tid]

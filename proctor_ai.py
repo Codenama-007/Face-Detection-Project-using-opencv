@@ -120,9 +120,10 @@ def tier_for(score):
 # ---------------------------------------------------------------------------
 
 class FaceObservation:
-    """One face found in one frame, with derived signals."""
+    """One face found in one frame, with derived signals and eye/iris landmarks."""
     __slots__ = ("nose_xy", "bbox", "yaw", "pitch", "roll", "gaze_h", "gaze_v",
-                 "mouth_open", "confidence")
+                 "mouth_open", "confidence", "left_iris_xy", "right_iris_xy",
+                 "left_eye_center", "right_eye_center", "raw_gaze")
 
     def __init__(self):
         self.nose_xy = (0, 0)
@@ -134,6 +135,11 @@ class FaceObservation:
         self.gaze_v = 0.5
         self.mouth_open = False
         self.confidence = 0.0
+        self.left_iris_xy = None
+        self.right_iris_xy = None
+        self.left_eye_center = None
+        self.right_eye_center = None
+        self.raw_gaze = "CENTER"
 
 
 class FaceAnalyzer:
@@ -189,9 +195,15 @@ class FaceAnalyzer:
             obs.bbox = (int(xs.min()), int(ys.min()),
                         int(xs.max() - xs.min()), int(ys.max() - ys.min()))
 
+            # Extract real iris and eye landmarks (MediaPipe 478-landmark topology)
+            if len(pts) >= 478:
+                obs.left_iris_xy = (int(pts[468, 0]), int(pts[468, 1]))
+                obs.right_iris_xy = (int(pts[473, 0]), int(pts[473, 1]))
+            if len(pts) >= 363:
+                obs.left_eye_center = (int((pts[33, 0] + pts[133, 0]) / 2), int((pts[33, 1] + pts[133, 1]) / 2))
+                obs.right_eye_center = (int((pts[362, 0] + pts[263, 0]) / 2), int((pts[362, 1] + pts[263, 1]) / 2))
+
             # ---- Head pose from the model's own 4x4 transformation matrix.
-            # Far more stable than a 6-point solvePnP, which was measured
-            # drifting tens of degrees on a stationary head.
             if i < len(mats):
                 R = np.array(mats[i])[:3, :3]
                 sy = math.sqrt(R[0, 0] ** 2 + R[1, 0] ** 2)
@@ -203,15 +215,12 @@ class FaceAnalyzer:
                     pitch = math.degrees(math.atan2(-R[1, 2], R[1, 1]))
                     yaw = math.degrees(math.atan2(-R[2, 0], sy))
                     roll = 0.0
-                # MediaPipe returns pitch mirrored relative to screen-space
                 obs.yaw, obs.pitch, obs.roll = yaw, -pitch, roll
 
             # ---- Gaze + mouth from trained blendshapes ----
             if i < len(shapes):
                 b = {c.category_name: c.score for c in shapes[i]}
 
-                # Horizontal: combine each eye's in/out look into one
-                # 0..1 scale where 0.5 is centred.
                 look_left = max(b.get("eyeLookOutLeft", 0.0),
                                 b.get("eyeLookInRight", 0.0))
                 look_right = max(b.get("eyeLookOutRight", 0.0),
@@ -222,12 +231,23 @@ class FaceAnalyzer:
                 look_down = (b.get("eyeLookDownLeft", 0.0) + b.get("eyeLookDownRight", 0.0)) / 2
                 obs.gaze_v = float(np.clip(0.5 + (look_down - look_up) / 2, 0, 1))
 
-                # Blinks squeeze the eyelids and corrupt vertical gaze
                 blink = max(b.get("eyeBlinkLeft", 0.0), b.get("eyeBlinkRight", 0.0))
                 if blink > 0.5:
                     obs.gaze_v = 0.5
 
                 obs.mouth_open = bool(b.get("jawOpen", 0.0) > JAW_OPEN_SCORE)
+
+            # Compute raw instant gaze label
+            raw_gaze = "CENTER"
+            if obs.gaze_h < 0.38:
+                raw_gaze = "RIGHT" if LABEL_FLIP else "LEFT"
+            elif obs.gaze_h > 0.62:
+                raw_gaze = "LEFT" if LABEL_FLIP else "RIGHT"
+            elif obs.gaze_v < 0.35:
+                raw_gaze = "UP"
+            elif obs.gaze_v > 0.65:
+                raw_gaze = "DOWN"
+            obs.raw_gaze = raw_gaze
 
             out.append(obs)
         return out
@@ -523,12 +543,14 @@ class StudentBehavior:
         return self.snapshot()
 
     def snapshot(self):
+        trust = max(0.0, min(100.0, round(100.0 - self.score, 1)))
         return {
             "id": self.sid,
             "name": self.name,
             "status": self.status,
             "suspicion_score": round(self.score, 1),
             "risk_score": round(self.score, 1),   # backward-compat for old UI
+            "trust_score": trust,                 # real trust score (100 - risk)
             "tier": tier_for(self.score),
             "yaw": self.yaw,
             "pitch": self.pitch,
