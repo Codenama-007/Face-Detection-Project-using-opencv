@@ -208,16 +208,164 @@ p.subtitle {
     line-height: 1.5;
 }
 
-/* Stage Progress Indicator */
+/* ═════════════════════════════════════════════════════════════════════
+   ENROLLMENT TIMELINE SYSTEM (LIVE CAMERA & BATCH UPLOAD)
+   ═════════════════════════════════════════════════════════════════════ */
+.timeline-wrapper {
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
 .stage-tracker {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(6, 9, 14, 0.6);
+    background: rgba(6, 9, 14, 0.75);
     border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    padding: 0.75rem 0.85rem;
-    margin-bottom: 0.5rem;
+    border-radius: 12px;
+    padding: 0.85rem 0.9rem;
+    position: relative;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+/* Background Progress Track & Smooth Fill */
+.timeline-progress-track {
+    position: absolute;
+    top: 20px;
+    left: 8%;
+    right: 8%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    z-index: 0;
+    border-radius: 2px;
+}
+
+.timeline-progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #10b981 0%, #00e5ff 100%);
+    border-radius: 2px;
+    transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+}
+
+.stage-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    user-select: none;
+    pointer-events: none; /* Disallow arbitrary click progression */
+}
+
+.stage-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #080c14;
+    border: 2px solid var(--t4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.60rem;
+    font-family: var(--mono);
+    font-weight: 800;
+    color: var(--t4);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stage-step.waiting .stage-dot {
+    opacity: 0.5;
+    border-color: rgba(255, 255, 255, 0.12);
+    color: var(--t3);
+}
+
+.stage-step.active .stage-dot {
+    background: rgba(0, 229, 255, 0.15);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
+    animation: stagePulse 2s infinite ease-in-out;
+}
+
+@keyframes stagePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 229, 255, 0.35); }
+    50%      { transform: scale(1.12); box-shadow: 0 0 18px rgba(0, 229, 255, 0.65); }
+}
+
+.stage-step.complete .stage-dot {
+    background: var(--success);
+    border-color: var(--success);
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.35);
+}
+
+.stage-step.error .stage-dot {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+}
+
+.stage-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
+.stage-num {
+    font-size: 0.50rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--t4);
+    letter-spacing: 0.04em;
+    transition: color 0.3s ease;
+}
+
+.stage-label {
+    font-size: 0.56rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--t3);
+    white-space: nowrap;
+    transition: color 0.3s ease;
+}
+
+.stage-step.waiting .stage-num,
+.stage-step.waiting .stage-label {
+    color: var(--t4);
+}
+
+.stage-step.active .stage-num {
+    color: var(--cyan);
+}
+
+.stage-step.active .stage-label {
+    color: var(--cyan);
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.25);
+}
+
+.stage-step.complete .stage-num {
+    color: var(--success);
+}
+
+.stage-step.complete .stage-label {
+    color: var(--success);
+}
+
+.stage-step.error .stage-num,
+.stage-step.error .stage-label {
+    color: var(--danger);
 }
 
 .stage-status-sub {
@@ -227,107 +375,40 @@ p.subtitle {
     font-family: var(--mono);
     margin-bottom: 1.25rem;
     letter-spacing: 0.03em;
-    min-height: 1.2rem;
-    transition: color 0.2s ease;
-}
-
-.stage-step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    position: relative;
-    flex: 1;
-}
-
-.stage-step::after {
-    content: '';
-    position: absolute;
-    top: 8px;
-    left: 60%;
-    width: 80%;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.08);
-    transition: background 0.3s ease;
-}
-
-.stage-step:last-child::after {
-    display: none;
-}
-
-.stage-step.complete::after {
-    background: var(--success);
-}
-
-.stage-dot {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.06);
-    border: 2px solid var(--t4);
+    min-height: 1.3rem;
+    transition: color 0.25s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1;
-    transition: all 0.3s ease;
+    gap: 0.4rem;
 }
 
-.stage-step.waiting .stage-dot {
-    opacity: 0.4;
-    border-color: rgba(255, 255, 255, 0.12);
+/* Responsive adjustments */
+@media (max-width: 520px) {
+    .stage-tracker {
+        padding: 0.75rem 0.5rem;
+    }
+    .stage-dot {
+        width: 18px;
+        height: 18px;
+        font-size: 0.52rem;
+    }
+    .stage-num {
+        display: none;
+    }
+    .stage-label {
+        font-size: 0.48rem;
+        letter-spacing: 0.02em;
+    }
+    .timeline-progress-track {
+        top: 17px;
+    }
 }
 
-.stage-step.active .stage-dot {
-    background: var(--cyan);
-    border-color: #ffffff;
-    box-shadow: 0 0 12px var(--cyan);
-    animation: stagePulse 2s infinite ease-in-out;
-}
-
-@keyframes stagePulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 10px var(--cyan); }
-    50%      { transform: scale(1.15); box-shadow: 0 0 18px var(--cyan); }
-}
-
-.stage-step.complete .stage-dot {
-    background: var(--success);
-    border-color: var(--success);
-    box-shadow: 0 0 8px var(--success);
-}
-
-.stage-step.error .stage-dot {
-    background: var(--danger);
-    border-color: var(--danger);
-    box-shadow: 0 0 10px var(--danger);
-}
-
-.stage-label {
-    font-size: 0.58rem;
-    font-weight: 800;
-    font-family: var(--mono);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--t3);
-    transition: color 0.3s ease;
-}
-
-.stage-step.waiting .stage-label {
-    opacity: 0.45;
-}
-
-.stage-step.active .stage-label {
-    color: var(--cyan);
-    opacity: 1;
-}
-
-.stage-step.complete .stage-label {
-    color: var(--success);
-    opacity: 1;
-}
-
-.stage-step.error .stage-label {
-    color: var(--danger);
-    opacity: 1;
+@media (max-width: 380px) {
+    .stage-label {
+        font-size: 0.42rem;
+    }
 }
 
 /* Tabs */
@@ -673,30 +754,109 @@ video {
         <h2>Secure Identity Enrollment</h2>
         <p class="subtitle">Biometric facial feature enrollment for ProctorAI Security Operations Center.</p>
 
-        <!-- Stage Progress Tracker -->
-        <div class="stage-tracker" id="stageTracker">
-            <div class="stage-step active" id="step-identity">
-                <div class="stage-dot"></div>
-                <span class="stage-label">Identity</span>
-            </div>
-            <div class="stage-step waiting" id="step-facescan">
-                <div class="stage-dot"></div>
-                <span class="stage-label">Face Scan</span>
-            </div>
-            <div class="stage-step waiting" id="step-align">
-                <div class="stage-dot"></div>
-                <span class="stage-label">Align</span>
-            </div>
-            <div class="stage-step waiting" id="step-enroll">
-                <div class="stage-dot"></div>
-                <span class="stage-label">Enroll</span>
-            </div>
-            <div class="stage-step waiting" id="step-ready">
-                <div class="stage-dot"></div>
-                <span class="stage-label">Ready</span>
+        <!-- Stage Progress Tracker (Live Camera Mode) -->
+        <div id="cameraTimeline" class="timeline-wrapper">
+            <div class="stage-tracker">
+                <div class="timeline-progress-track">
+                    <div class="timeline-progress-fill" id="cameraProgressFill"></div>
+                </div>
+                <div class="stage-step active" id="step-cam-identity">
+                    <div class="stage-dot">01</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">01</span>
+                        <span class="stage-label">Identity</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-cam-camera">
+                    <div class="stage-dot">02</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">02</span>
+                        <span class="stage-label">Camera</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-cam-facescan">
+                    <div class="stage-dot">03</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">03</span>
+                        <span class="stage-label">Face Scan</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-cam-align">
+                    <div class="stage-dot">04</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">04</span>
+                        <span class="stage-label">Align</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-cam-enroll">
+                    <div class="stage-dot">05</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">05</span>
+                        <span class="stage-label">Enroll</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-cam-ready">
+                    <div class="stage-dot">06</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">06</span>
+                        <span class="stage-label">Ready</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="stage-status-sub" id="timelineStatus">Identity profile required — enter name & student ID</div>
+
+        <!-- Stage Progress Tracker (Batch Upload Mode) -->
+        <div id="batchTimeline" class="timeline-wrapper" style="display: none;">
+            <div class="stage-tracker">
+                <div class="timeline-progress-track">
+                    <div class="timeline-progress-fill" id="batchProgressFill"></div>
+                </div>
+                <div class="stage-step active" id="step-batch-identity">
+                    <div class="stage-dot">01</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">01</span>
+                        <span class="stage-label">Identity</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-batch-select">
+                    <div class="stage-dot">02</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">02</span>
+                        <span class="stage-label">Select Files</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-batch-validate">
+                    <div class="stage-dot">03</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">03</span>
+                        <span class="stage-label">Validate</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-batch-extract">
+                    <div class="stage-dot">04</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">04</span>
+                        <span class="stage-label">Extract</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-batch-enroll">
+                    <div class="stage-dot">05</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">05</span>
+                        <span class="stage-label">Enroll</span>
+                    </div>
+                </div>
+                <div class="stage-step waiting" id="step-batch-ready">
+                    <div class="stage-dot">06</div>
+                    <div class="stage-meta">
+                        <span class="stage-num">06</span>
+                        <span class="stage-label">Ready</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stage-status-sub" id="timelineStatus">Enter student full name & identification ID</div>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
@@ -767,15 +927,38 @@ video {
         })();
 
         lucide.createIcons();
-        
-        function switchTab(tabId, btnElement) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            btnElement.classList.add('active');
-            lucide.createIcons();
-        }
 
+        // ═══════════════════════════════════════════════════════════════════
+        // TIMELINE & ENROLLMENT STATE MACHINE
+        // ═══════════════════════════════════════════════════════════════════
+        let currentMode = 'webcamTab';
+
+        // Live Camera Workflow State
+        const camState = {
+            identity: false,
+            cameraConnected: false,
+            cameraError: null,
+            faceDetected: false,
+            faceAligned: false,
+            enrolling: false,
+            enrollSuccess: false,
+            enrollError: null,
+            enrollMessage: ''
+        };
+
+        // Batch Upload Workflow State
+        const batchState = {
+            filesSelected: 0,
+            isValid: false,
+            isExtracted: false,
+            enrolling: false,
+            enrollSuccess: false,
+            enrollError: null,
+            processedCount: 0,
+            totalCount: 0
+        };
+
+        // DOM Element Bindings
         const video = document.getElementById('webcam');
         const captureBtn = document.getElementById('captureBtn');
         const studentName = document.getElementById('studentName');
@@ -783,74 +966,380 @@ video {
         const statusMsg = document.getElementById('statusMsg');
         const timelineStatus = document.getElementById('timelineStatus');
 
-        const steps = {
-            identity: document.getElementById('step-identity'),
-            facescan: document.getElementById('step-facescan'),
-            align: document.getElementById('step-align'),
-            enroll: document.getElementById('step-enroll'),
-            ready: document.getElementById('step-ready')
+        const cameraTimeline = document.getElementById('cameraTimeline');
+        const batchTimeline = document.getElementById('batchTimeline');
+        const cameraProgressFill = document.getElementById('cameraProgressFill');
+        const batchProgressFill = document.getElementById('batchProgressFill');
+
+        const camSteps = {
+            identity: document.getElementById('step-cam-identity'),
+            camera: document.getElementById('step-cam-camera'),
+            facescan: document.getElementById('step-cam-facescan'),
+            align: document.getElementById('step-cam-align'),
+            enroll: document.getElementById('step-cam-enroll'),
+            ready: document.getElementById('step-cam-ready')
         };
 
-        function updateTimeline(states, message, isError = false) {
-            Object.keys(states).forEach(key => {
-                if (steps[key]) {
-                    steps[key].className = 'stage-step ' + states[key];
-                }
-            });
-            if (timelineStatus && message) {
-                timelineStatus.textContent = message;
-                timelineStatus.style.color = isError ? 'var(--danger)' : (states.ready === 'complete' ? 'var(--success)' : 'var(--cyan)');
+        const batchSteps = {
+            identity: document.getElementById('step-batch-identity'),
+            select: document.getElementById('step-batch-select'),
+            validate: document.getElementById('step-batch-validate'),
+            extract: document.getElementById('step-batch-extract'),
+            enroll: document.getElementById('step-batch-enroll'),
+            ready: document.getElementById('step-batch-ready')
+        };
+
+        function setStepVisual(stepEl, numStr, state) {
+            if (!stepEl) return;
+            const dot = stepEl.querySelector('.stage-dot');
+            stepEl.className = 'stage-step ' + state;
+            if (state === 'complete') {
+                dot.innerHTML = '✓';
+            } else if (state === 'error') {
+                dot.innerHTML = '!';
+            } else {
+                dot.innerHTML = numStr;
             }
         }
 
-        // Check identity inputs
-        function checkIdentityState() {
+        // Live Camera Timeline Transition Engine
+        function updateLiveCameraTimeline() {
+            if (currentMode !== 'webcamTab') return;
+
             const name = studentName.value.trim();
             const id = studentId.value.trim();
-            const isCamReady = (video.readyState >= 2 && !video.paused);
-            
-            if (name && id) {
-                if (isCamReady) {
-                    updateTimeline({
-                        identity: 'complete',
-                        facescan: 'complete',
-                        align: 'active',
-                        enroll: 'waiting',
-                        ready: 'waiting'
-                    }, 'Identity profile verified · Align face with camera');
-                } else {
-                    updateTimeline({
-                        identity: 'complete',
-                        facescan: 'active',
-                        align: 'waiting',
-                        enroll: 'waiting',
-                        ready: 'waiting'
-                    }, 'Identity profile entered · Connecting camera stream...');
-                }
+            camState.identity = Boolean(name && id);
+
+            let progress = 0;
+            let statusText = '';
+            let isError = false;
+            let isSuccess = false;
+
+            // 1. IDENTITY
+            if (!camState.identity) {
+                setStepVisual(camSteps.identity, '01', 'active');
+                setStepVisual(camSteps.camera, '02', 'waiting');
+                setStepVisual(camSteps.facescan, '03', 'waiting');
+                setStepVisual(camSteps.align, '04', 'waiting');
+                setStepVisual(camSteps.enroll, '05', 'waiting');
+                setStepVisual(camSteps.ready, '06', 'waiting');
+                progress = 0;
+                statusText = 'Enter student full name & identification ID';
             } else {
-                updateTimeline({
-                    identity: 'active',
-                    facescan: 'waiting',
-                    align: 'waiting',
-                    enroll: 'waiting',
-                    ready: 'waiting'
-                }, 'Enter Student Full Name and Identification ID');
+                setStepVisual(camSteps.identity, '01', 'complete');
+                progress = 20;
+
+                // 2. CAMERA
+                if (camState.cameraError) {
+                    setStepVisual(camSteps.camera, '02', 'error');
+                    setStepVisual(camSteps.facescan, '03', 'waiting');
+                    setStepVisual(camSteps.align, '04', 'waiting');
+                    setStepVisual(camSteps.enroll, '05', 'waiting');
+                    setStepVisual(camSteps.ready, '06', 'waiting');
+                    statusText = 'Camera connection failed: ' + camState.cameraError;
+                    isError = true;
+                } else if (!camState.cameraConnected) {
+                    setStepVisual(camSteps.camera, '02', 'active');
+                    setStepVisual(camSteps.facescan, '03', 'waiting');
+                    setStepVisual(camSteps.align, '04', 'waiting');
+                    setStepVisual(camSteps.enroll, '05', 'waiting');
+                    setStepVisual(camSteps.ready, '06', 'waiting');
+                    statusText = 'Waiting for camera connection...';
+                } else {
+                    setStepVisual(camSteps.camera, '02', 'complete');
+                    progress = 40;
+
+                    // 3. FACE SCAN
+                    if (!camState.faceDetected) {
+                        setStepVisual(camSteps.facescan, '03', 'active');
+                        setStepVisual(camSteps.align, '04', 'waiting');
+                        setStepVisual(camSteps.enroll, '05', 'waiting');
+                        setStepVisual(camSteps.ready, '06', 'waiting');
+                        statusText = 'Scanning for face...';
+                    } else {
+                        setStepVisual(camSteps.facescan, '03', 'complete');
+                        progress = 60;
+
+                        // 4. ALIGN
+                        if (!camState.faceAligned) {
+                            setStepVisual(camSteps.align, '04', 'active');
+                            setStepVisual(camSteps.enroll, '05', 'waiting');
+                            setStepVisual(camSteps.ready, '06', 'waiting');
+                            statusText = 'Align your face inside the frame...';
+                        } else if (!camState.enrolling && !camState.enrollSuccess && !camState.enrollError) {
+                            setStepVisual(camSteps.align, '04', 'complete');
+                            setStepVisual(camSteps.enroll, '05', 'active');
+                            setStepVisual(camSteps.ready, '06', 'waiting');
+                            progress = 80;
+                            statusText = 'Face aligned & verified · Ready for biometric capture';
+                        } else if (camState.enrolling) {
+                            // 5. ENROLL (Processing)
+                            setStepVisual(camSteps.align, '04', 'complete');
+                            setStepVisual(camSteps.enroll, '05', 'active');
+                            setStepVisual(camSteps.ready, '06', 'waiting');
+                            progress = 80;
+                            statusText = camState.enrollMessage || 'Extracting facial landmarks & registering biometric template...';
+                        } else if (camState.enrollError) {
+                            // 5. ENROLL (Error)
+                            setStepVisual(camSteps.align, '04', 'complete');
+                            setStepVisual(camSteps.enroll, '05', 'error');
+                            setStepVisual(camSteps.ready, '06', 'waiting');
+                            progress = 80;
+                            statusText = camState.enrollError;
+                            isError = true;
+                        } else if (camState.enrollSuccess) {
+                            // 6. READY (Success)
+                            setStepVisual(camSteps.align, '04', 'complete');
+                            setStepVisual(camSteps.enroll, '05', 'complete');
+                            setStepVisual(camSteps.ready, '06', 'complete');
+                            progress = 100;
+                            statusText = 'Identity enrollment complete.';
+                            isSuccess = true;
+                        }
+                    }
+                }
+            }
+
+            if (cameraProgressFill) cameraProgressFill.style.width = progress + '%';
+            if (timelineStatus) {
+                timelineStatus.textContent = statusText;
+                timelineStatus.style.color = isError ? 'var(--danger)' : (isSuccess ? 'var(--success)' : 'var(--cyan)');
             }
         }
 
-        studentName.addEventListener('input', checkIdentityState);
-        studentId.addEventListener('input', checkIdentityState);
+        // Batch Upload Timeline Transition Engine
+        function updateBatchTimeline() {
+            if (currentMode !== 'uploadTab') return;
 
-        // The monitoring feed and this page cannot hold the webcam at the same
-        // time. Ask the server to let go of it before we open it here, and
-        // retry once if the device is still busy releasing.
+            let progress = 0;
+            let statusText = '';
+            let isError = false;
+            let isSuccess = false;
+
+            const count = selectedFilesData.length;
+
+            // 1. IDENTITY
+            if (count === 0) {
+                setStepVisual(batchSteps.identity, '01', 'active');
+                setStepVisual(batchSteps.select, '02', 'waiting');
+                setStepVisual(batchSteps.validate, '03', 'waiting');
+                setStepVisual(batchSteps.extract, '04', 'waiting');
+                setStepVisual(batchSteps.enroll, '05', 'waiting');
+                setStepVisual(batchSteps.ready, '06', 'waiting');
+                progress = 0;
+                statusText = 'Select student photos or ID documents...';
+            } else {
+                setStepVisual(batchSteps.identity, '01', 'complete');
+                // 2. SELECT FILES
+                setStepVisual(batchSteps.select, '02', 'complete');
+                progress = 20;
+
+                // 3. VALIDATE
+                const allValid = selectedFilesData.every(item => item.dataUrl && item.dataUrl.startsWith('data:image/'));
+                if (!allValid) {
+                    setStepVisual(batchSteps.validate, '03', 'error');
+                    setStepVisual(batchSteps.extract, '04', 'waiting');
+                    setStepVisual(batchSteps.enroll, '05', 'waiting');
+                    setStepVisual(batchSteps.ready, '06', 'waiting');
+                    progress = 40;
+                    statusText = 'Invalid file format detected in selection';
+                    isError = true;
+                } else {
+                    setStepVisual(batchSteps.validate, '03', 'complete');
+                    progress = 40;
+
+                    // 4. EXTRACT
+                    const allExtracted = selectedFilesData.every(item => item.studentId && item.studentId.trim() && item.studentName && item.studentName.trim());
+                    if (!allExtracted) {
+                        setStepVisual(batchSteps.extract, '04', 'active');
+                        setStepVisual(batchSteps.enroll, '05', 'waiting');
+                        setStepVisual(batchSteps.ready, '06', 'waiting');
+                        progress = 60;
+                        statusText = 'Extracting biometric information... enter missing Student IDs or Names';
+                    } else if (!batchState.enrolling && !batchState.enrollSuccess && !batchState.enrollError) {
+                        setStepVisual(batchSteps.extract, '04', 'complete');
+                        setStepVisual(batchSteps.enroll, '05', 'active');
+                        setStepVisual(batchSteps.ready, '06', 'waiting');
+                        progress = 80;
+                        statusText = `Extracted ${count} biometric profile${count > 1 ? 's' : ''} · Ready to enroll`;
+                    } else if (batchState.enrolling) {
+                        // 5. ENROLL (Processing)
+                        setStepVisual(batchSteps.extract, '04', 'complete');
+                        setStepVisual(batchSteps.enroll, '05', 'active');
+                        setStepVisual(batchSteps.ready, '06', 'waiting');
+                        progress = 80;
+                        statusText = `Registering biometric templates... (${batchState.processedCount}/${batchState.totalCount})`;
+                    } else if (batchState.enrollError) {
+                        // 5. ENROLL (Error)
+                        setStepVisual(batchSteps.extract, '04', 'complete');
+                        setStepVisual(batchSteps.enroll, '05', 'error');
+                        setStepVisual(batchSteps.ready, '06', 'waiting');
+                        progress = 80;
+                        statusText = batchState.enrollError;
+                        isError = true;
+                    } else if (batchState.enrollSuccess) {
+                        // 6. READY (Success)
+                        setStepVisual(batchSteps.extract, '04', 'complete');
+                        setStepVisual(batchSteps.enroll, '05', 'complete');
+                        setStepVisual(batchSteps.ready, '06', 'complete');
+                        progress = 100;
+                        statusText = 'Batch enrollment complete.';
+                        isSuccess = true;
+                    }
+                }
+            }
+
+            if (batchProgressFill) batchProgressFill.style.width = progress + '%';
+            if (timelineStatus) {
+                timelineStatus.textContent = statusText;
+                timelineStatus.style.color = isError ? 'var(--danger)' : (isSuccess ? 'var(--success)' : 'var(--cyan)');
+            }
+        }
+
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btnElement.classList.add('active');
+
+            currentMode = tabId;
+            if (tabId === 'webcamTab') {
+                cameraTimeline.style.display = 'block';
+                batchTimeline.style.display = 'none';
+                updateLiveCameraTimeline();
+            } else {
+                cameraTimeline.style.display = 'none';
+                batchTimeline.style.display = 'block';
+                updateBatchTimeline();
+            }
+            lucide.createIcons();
+        }
+
+        studentName.addEventListener('input', updateLiveCameraTimeline);
+        studentId.addEventListener('input', updateLiveCameraTimeline);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // REAL-TIME VIDEO FEED & FACE DETECTION ANALYZER
+        // ═══════════════════════════════════════════════════════════════════
         let localStream = null;
+        let detectorCanvas = document.createElement('canvas');
+        let detectorCtx = detectorCanvas.getContext('2d', { willReadFrequently: true });
+        let faceCheckInterval = null;
+
+        let nativeFaceDetector = null;
+        if ('FaceDetector' in window) {
+            try {
+                nativeFaceDetector = new FaceDetector({ fastMode: true, maxDetectedFaces: 2 });
+            } catch (e) {
+                nativeFaceDetector = null;
+            }
+        }
+
+        async function analyzeVideoFrame() {
+            if (currentMode !== 'webcamTab') return;
+            if (!video || video.readyState < 2 || video.paused || video.ended) {
+                camState.cameraConnected = false;
+                camState.faceDetected = false;
+                camState.faceAligned = false;
+                updateLiveCameraTimeline();
+                return;
+            }
+
+            camState.cameraConnected = true;
+
+            // 1. Native Face Detector API (Chromium / Experimental)
+            if (nativeFaceDetector) {
+                try {
+                    const faces = await nativeFaceDetector.detect(video);
+                    if (faces && faces.length > 0) {
+                        camState.faceDetected = true;
+                        const f = faces[0].boundingBox;
+                        const vw = video.videoWidth || 640;
+                        const vh = video.videoHeight || 480;
+                        const cx = (f.x + f.width / 2) / vw;
+                        const cy = (f.y + f.height / 2) / vh;
+                        const sizeRatio = (f.width * f.height) / (vw * vh);
+                        // Center within 0.28-0.72 and proper size
+                        camState.faceAligned = (cx >= 0.28 && cx <= 0.72 && cy >= 0.20 && cy <= 0.80 && sizeRatio >= 0.04 && sizeRatio <= 0.70);
+                    } else {
+                        camState.faceDetected = false;
+                        camState.faceAligned = false;
+                    }
+                    updateLiveCameraTimeline();
+                    return;
+                } catch (e) {
+                    // Fallback to canvas vision analysis
+                }
+            }
+
+            // 2. High-performance Canvas Computer Vision Fallback
+            try {
+                const w = 160;
+                const h = 120;
+                detectorCanvas.width = w;
+                detectorCanvas.height = h;
+                detectorCtx.drawImage(video, 0, 0, w, h);
+                const imgData = detectorCtx.getImageData(0, 0, w, h);
+                const data = imgData.data;
+
+                let skinPixelCount = 0;
+                let sumX = 0;
+                let sumY = 0;
+
+                const roiX1 = Math.floor(w * 0.12);
+                const roiX2 = Math.floor(w * 0.88);
+                const roiY1 = Math.floor(h * 0.08);
+                const roiY2 = Math.floor(h * 0.92);
+
+                for (let y = roiY1; y < roiY2; y += 2) {
+                    for (let x = roiX1; x < roiX2; x += 2) {
+                        const idx = (y * w + x) * 4;
+                        const r = data[idx];
+                        const g = data[idx + 1];
+                        const b = data[idx + 2];
+
+                        // Chrominance & skin-tone signature detection
+                        if (r > 55 && g > 35 && b > 20 && r > g && r > b && (r - g) >= 10 && Math.abs(r - g) > 6) {
+                            skinPixelCount++;
+                            sumX += x;
+                            sumY += y;
+                        }
+                    }
+                }
+
+                const sampleCount = ((roiY2 - roiY1) / 2) * ((roiX2 - roiX1) / 2);
+                const skinRatio = skinPixelCount / sampleCount;
+
+                if (skinRatio > 0.07) {
+                    camState.faceDetected = true;
+                    const avgX = sumX / skinPixelCount;
+                    const avgY = sumY / skinPixelCount;
+                    const normX = avgX / w;
+                    const normY = avgY / h;
+
+                    // Centered within frame
+                    camState.faceAligned = (normX >= 0.30 && normX <= 0.70 && normY >= 0.25 && normY <= 0.75 && skinRatio <= 0.75);
+                } else {
+                    camState.faceDetected = false;
+                    camState.faceAligned = false;
+                }
+            } catch (e) {
+                // Ignore canvas access errors
+            }
+
+            updateLiveCameraTimeline();
+        }
+
+        function startFaceDetectionLoop() {
+            if (faceCheckInterval) clearInterval(faceCheckInterval);
+            faceCheckInterval = setInterval(analyzeVideoFrame, 200);
+        }
 
         async function startWebcam() {
             try {
                 await fetch('/api/camera/pause', { method: 'POST' });
             } catch (e) {
-                // Server unreachable - still try the camera directly
+                // Server unreachable - still try local camera
             }
 
             for (let attempt = 1; attempt <= 3; attempt++) {
@@ -859,7 +1348,10 @@ video {
                     video.srcObject = localStream;
                     video.onloadedmetadata = () => {
                         video.play();
-                        checkIdentityState();
+                        camState.cameraConnected = true;
+                        camState.cameraError = null;
+                        startFaceDetectionLoop();
+                        updateLiveCameraTimeline();
                     };
                     captureBtn.disabled = false;
                     return;
@@ -872,13 +1364,9 @@ video {
                     }
                     showMsg('Error accessing webcam: ' + err.message, 'error');
                     captureBtn.disabled = true;
-                    updateTimeline({
-                        identity: 'active',
-                        facescan: 'error',
-                        align: 'waiting',
-                        enroll: 'waiting',
-                        ready: 'waiting'
-                    }, 'Camera connection failed: ' + err.message, true);
+                    camState.cameraConnected = false;
+                    camState.cameraError = err.message;
+                    updateLiveCameraTimeline();
                     return;
                 }
             }
@@ -886,13 +1374,15 @@ video {
 
         startWebcam();
 
-        // Hand the camera back to the monitoring feed when leaving this page
         function releaseWebcam() {
+            if (faceCheckInterval) {
+                clearInterval(faceCheckInterval);
+                faceCheckInterval = null;
+            }
             if (localStream) {
                 localStream.getTracks().forEach(t => t.stop());
                 localStream = null;
             }
-            // keepalive lets the request finish even as the page unloads
             try {
                 fetch('/api/camera/resume', { method: 'POST', keepalive: true });
             } catch (e) {}
@@ -901,19 +1391,16 @@ video {
         window.addEventListener('pagehide', releaseWebcam);
         window.addEventListener('beforeunload', releaseWebcam);
 
+        // ═══════════════════════════════════════════════════════════════════
+        // LIVE CAMERA BIOMETRIC ENROLLMENT
+        // ═══════════════════════════════════════════════════════════════════
         captureBtn.addEventListener('click', async () => {
             const name = studentName.value.trim();
             const id = studentId.value.trim();
 
             if (!name || !id) {
                 showMsg('Please enter both Full Name and Student ID.', 'error');
-                updateTimeline({
-                    identity: 'error',
-                    facescan: 'waiting',
-                    align: 'waiting',
-                    enroll: 'waiting',
-                    ready: 'waiting'
-                }, 'Both Student Name and ID are required to proceed', true);
+                updateLiveCameraTimeline();
                 return;
             }
 
@@ -921,17 +1408,12 @@ video {
             captureBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Processing Neural Alignment...';
             lucide.createIcons();
 
-            updateTimeline({
-                identity: 'complete',
-                facescan: 'complete',
-                align: 'complete',
-                enroll: 'active',
-                ready: 'waiting'
-            }, 'Extracting facial landmarks & registering biometric template...');
+            camState.enrolling = true;
+            camState.enrollSuccess = false;
+            camState.enrollError = null;
+            camState.enrollMessage = 'Extracting facial landmarks...';
+            updateLiveCameraTimeline();
 
-            // Guided multi-angle capture. A single photo cannot represent a
-            // face across pose and lighting, so we collect a short sequence
-            // and the server stores one template per usable frame.
             const POSES = [
                 'Look straight at the camera',
                 'Turn your head slightly LEFT',
@@ -958,16 +1440,23 @@ video {
                 for (const pose of POSES) {
                     for (let s = 3; s > 0; s--) {
                         captureBtn.innerHTML = `${pose} — ${s}`;
+                        camState.enrollMessage = `${pose} — ${s}`;
+                        updateLiveCameraTimeline();
                         await wait(600);
                     }
                     for (let k = 0; k < SHOTS_PER_POSE; k++) {
                         snap();
                         captureBtn.innerHTML = `${pose} — captured ${images.length}`;
+                        camState.enrollMessage = `${pose} — captured ${images.length} frames`;
+                        updateLiveCameraTimeline();
                         await wait(220);
                     }
                 }
 
                 captureBtn.innerHTML = `Processing ${images.length} frames…`;
+                camState.enrollMessage = 'Registering biometric template...';
+                updateLiveCameraTimeline();
+
                 const response = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -984,36 +1473,27 @@ video {
                     showMsg(result.message || ('Successfully enrolled Face ID for ' + name + ' (' + id + ')!'), 'success');
                     studentName.value = '';
                     studentId.value = '';
-                    updateTimeline({
-                        identity: 'complete',
-                        facescan: 'complete',
-                        align: 'complete',
-                        enroll: 'complete',
-                        ready: 'complete'
-                    }, '✓ Biometric enrollment complete — template stored in database');
+                    camState.enrolling = false;
+                    camState.enrollSuccess = true;
+                    camState.enrollError = null;
+                    updateLiveCameraTimeline();
                 } else {
                     if (response.status === 401) {
                         window.location.href = 'login.html';
                         return;
                     }
                     showMsg(result.error || 'Failed to enroll face.', 'error');
-                    updateTimeline({
-                        identity: 'complete',
-                        facescan: 'complete',
-                        align: 'error',
-                        enroll: 'error',
-                        ready: 'waiting'
-                    }, result.error || 'Enrollment failed — please realign and retry', true);
+                    camState.enrolling = false;
+                    camState.enrollSuccess = false;
+                    camState.enrollError = result.error || 'Enrollment failed — please realign and retry';
+                    updateLiveCameraTimeline();
                 }
             } catch (err) {
                 showMsg('Network error. Is the server running?', 'error');
-                updateTimeline({
-                    identity: 'complete',
-                    facescan: 'complete',
-                    align: 'active',
-                    enroll: 'error',
-                    ready: 'waiting'
-                }, 'Network error communicating with AI server', true);
+                camState.enrolling = false;
+                camState.enrollSuccess = false;
+                camState.enrollError = 'Network error communicating with AI server';
+                updateLiveCameraTimeline();
             } finally {
                 captureBtn.disabled = false;
                 captureBtn.innerHTML = '<i data-lucide="camera"></i> Register Biometric Face ID';
@@ -1021,7 +1501,6 @@ video {
             }
         });
 
-        // Tell the supervisor what the button will actually do
         captureBtn.title = 'Captures ~18 frames across 6 head positions (about 20 seconds)';
 
         function showMsg(msg, type) {
@@ -1057,7 +1536,9 @@ video {
             }
         });
         
-        // --- BULK UPLOAD LOGIC ---
+        // ═══════════════════════════════════════════════════════════════════
+        // BATCH UPLOAD LOGIC & STATE ENGINE
+        // ═══════════════════════════════════════════════════════════════════
         let selectedFilesData = [];
         
         function handleFiles(files) {
@@ -1090,6 +1571,7 @@ video {
                     });
                     
                     renderFileList();
+                    updateBatchTimeline();
                 };
                 reader.readAsDataURL(file);
             }
@@ -1118,8 +1600,8 @@ video {
                 el.innerHTML = `
                     <img src="${item.dataUrl}">
                     <div class="file-item-info">
-                        <input type="text" placeholder="ID" value="${item.studentId}" onchange="updateFileData(${item.id}, 'studentId', this.value)">
-                        <input type="text" placeholder="Name" value="${item.studentName}" onchange="updateFileData(${item.id}, 'studentName', this.value)">
+                        <input type="text" placeholder="ID" value="${item.studentId}" oninput="updateFileData(${item.id}, 'studentId', this.value)">
+                        <input type="text" placeholder="Name" value="${item.studentName}" oninput="updateFileData(${item.id}, 'studentName', this.value)">
                     </div>
                     <div id="status-${item.id}">${iconHtml}</div>
                 `;
@@ -1130,7 +1612,10 @@ video {
         
         function updateFileData(id, field, value) {
             const item = selectedFilesData.find(x => x.id === id);
-            if (item) item[field] = value;
+            if (item) {
+                item[field] = value;
+                updateBatchTimeline();
+            }
         }
         
         document.getElementById('uploadAllBtn').addEventListener('click', async () => {
@@ -1139,13 +1624,30 @@ video {
             btn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Enrolling Batch...';
             lucide.createIcons();
             
+            batchState.enrolling = true;
+            batchState.enrollSuccess = false;
+            batchState.enrollError = null;
+            batchState.processedCount = 0;
+            batchState.totalCount = selectedFilesData.length;
+            updateBatchTimeline();
+
+            let successCount = 0;
+            let failureCount = 0;
+            
             for (let i = 0; i < selectedFilesData.length; i++) {
                 const item = selectedFilesData[i];
-                if (item.status === 'success') continue;
+                if (item.status === 'success') {
+                    successCount++;
+                    batchState.processedCount++;
+                    continue;
+                }
                 
                 if (!item.studentId || !item.studentName) {
                     item.status = 'error';
+                    failureCount++;
+                    batchState.processedCount++;
                     renderFileList();
+                    updateBatchTimeline();
                     continue;
                 }
                 
@@ -1165,19 +1667,37 @@ video {
                     
                     if (response.ok) {
                         item.status = 'success';
+                        successCount++;
                     } else {
                         item.status = 'error';
+                        failureCount++;
                     }
                 } catch (e) {
                     item.status = 'error';
+                    failureCount++;
                 }
+                batchState.processedCount++;
                 renderFileList();
+                updateBatchTimeline();
             }
             
+            batchState.enrolling = false;
+            if (failureCount === 0 && successCount > 0) {
+                batchState.enrollSuccess = true;
+                batchState.enrollError = null;
+            } else if (failureCount > 0) {
+                batchState.enrollSuccess = false;
+                batchState.enrollError = `Batch enrollment finished: ${successCount} succeeded, ${failureCount} failed`;
+            }
+            updateBatchTimeline();
+
             btn.innerHTML = '<i data-lucide="upload"></i> Enroll Batch Selected';
             btn.disabled = false;
             lucide.createIcons();
         });
+
+        // Initialize state on load
+        updateLiveCameraTimeline();
     </script>
 </body>
 </html>
