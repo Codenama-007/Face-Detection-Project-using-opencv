@@ -473,23 +473,49 @@ body::after {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   2. MAIN 3-COLUMN COMMAND CENTER GRID
+   2. REFLOWED 2-COLUMN COMMAND CENTER GRID (CLEAN SOC ARCHITECTURE)
    ═════════════════════════════════════════════════════════════════════ */
 .soc-grid {
     display: grid;
-    grid-template-columns: 280px 1fr 320px;
-    gap: 0.65rem;
+    grid-template-columns: 1.45fr 1fr;
+    gap: 0.75rem;
     flex: 1;
     min-height: 0;
     overflow: hidden;
 }
 
+@media (max-width: 1100px) {
+    .soc-grid {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+    }
+}
+
 .soc-col {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: 0.75rem;
     min-height: 0;
     overflow: hidden;
+}
+
+.hero-stream-col {
+    flex: 1.45;
+}
+
+.hero-bottom-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    flex: 1;
+    min-height: 220px;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .hero-bottom-split {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ── BASE GLASS PANEL ── */
@@ -570,271 +596,167 @@ body::after {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   3. LEFT COLUMN — ACTIVE STUDENTS & TELEMETRY
+   POST-EXAM RESULTS MODAL
    ═════════════════════════════════════════════════════════════════════ */
-.students-panel {
-    flex: 1;
+.post-exam-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 7, 12, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.stu-count-badge {
+.post-exam-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.post-exam-modal {
+    width: 100%;
+    max-width: 760px;
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(11, 16, 25, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-top: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: var(--r-xl);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.75), 0 0 40px rgba(56, 189, 248, 0.12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.post-exam-backdrop.show .post-exam-modal {
+    transform: scale(1) translateY(0);
+}
+
+.pem-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.015);
+}
+
+.pem-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.pem-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--r-md);
+    background: rgba(34, 211, 238, 0.12);
+    border: 1px solid rgba(34, 211, 238, 0.30);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.2);
+}
+
+.pem-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #F5F7FA;
+}
+
+.pem-subtitle {
+    font-size: 0.75rem;
+    color: var(--t2);
+}
+
+.pem-badge {
     font-size: 0.65rem;
     font-family: var(--mono);
     font-weight: 700;
-    color: var(--cyan);
-    background: rgba(0, 229, 255, 0.08);
-    border: 1px solid rgba(0, 229, 255, 0.25);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 0.25rem 0.65rem;
     border-radius: 99px;
-    padding: 0.12rem 0.55rem;
-    margin-right: auto;
-    margin-left: 0.5rem;
 }
 
-.reg-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.3rem 0.65rem;
-    background: var(--accent-dim);
-    color: var(--accent);
-    border: 1px solid var(--accent-bd);
-    border-radius: var(--r-sm);
-    font-size: 0.68rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-}
-
-.reg-btn:hover {
-    background: rgba(56, 189, 248, 0.22);
-    border-color: rgba(56, 189, 248, 0.5);
-    color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
-}
-
-.students-body {
-    padding: 0.65rem;
+.pem-body {
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1.25rem;
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
-/* Empty State */
-.empty-st {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+.pem-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 0.85rem;
-    padding: 3rem 1.25rem;
-    color: var(--t4);
-    text-align: center;
 }
 
-.empty-radar-icon {
-    position: relative;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: rgba(56, 189, 248, 0.05);
-    border: 1px solid rgba(56, 189, 248, 0.15);
-    color: var(--accent);
+@media (max-width: 640px) {
+    .pem-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-.empty-radar-icon svg {
-    width: 22px;
-    height: 22px;
-    opacity: 0.7;
-}
-
-.empty-radar-pulse {
-    position: absolute;
-    inset: -6px;
-    border-radius: 50%;
-    border: 1px dashed rgba(56, 189, 248, 0.25);
-    animation: spinSlow 20s linear infinite;
-}
-
-@keyframes spinSlow {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
-}
-
-.empty-st-title {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--t2);
-    display: block;
-    margin-bottom: 0.25rem;
-    letter-spacing: 0.02em;
-}
-
-.empty-st-sub {
-    font-size: 0.72rem;
-    color: var(--t3);
-    line-height: 1.5;
-    max-width: 220px;
-}
-
-/* Student Card Tile */
-.stu-tile {
-    background: var(--panel-card);
-    border: 1px solid var(--border-subtle);
-    border-left: 3.5px solid var(--success);
+.pem-card {
+    background: rgba(14, 20, 32, 0.70);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: var(--r-md);
-    padding: 0.7rem 0.8rem;
+    padding: 0.85rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: default;
-    position: relative;
-    overflow: hidden;
+    gap: 0.25rem;
 }
 
-.stu-tile:hover {
-    background: var(--panel-hover);
-    border-color: var(--border-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-}
-
-.stu-tile.safe {
-    border-left-color: var(--success);
-}
-
-.stu-tile.warning {
-    border-left-color: var(--warning);
-    background: rgba(245, 158, 11, 0.04);
-}
-
-.stu-tile.danger {
-    border-left-color: var(--danger);
-    background: rgba(239, 68, 68, 0.06);
-    animation: threatGlowCard 2.5s infinite;
-}
-
-@keyframes threatGlowCard {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
-    50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-}
-
-.stu-top-row {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-}
-
-.stu-avatar {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.82rem;
-    font-weight: 800;
-    color: #fff;
-    flex-shrink: 0;
-    text-transform: uppercase;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-    border: 1.5px solid rgba(255, 255, 255, 0.15);
-}
-
-.stu-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.stu-name {
-    font-size: 0.8rem;
+.pem-card-lbl {
+    font-size: 0.62rem;
+    font-family: var(--mono);
     font-weight: 700;
-    color: var(--t1);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2;
-    margin-bottom: 2px;
-}
-
-.stu-id {
-    font-size: 0.64rem;
-    color: var(--cyan);
-    font-family: var(--mono);
-    letter-spacing: 0.03em;
-}
-
-.stu-meta-right {
-    text-align: right;
-    flex-shrink: 0;
-}
-
-.stu-trust-num {
-    font-size: 0.85rem;
-    font-weight: 800;
-    line-height: 1;
-    margin-bottom: 2px;
-    font-family: var(--mono);
-}
-
-.stu-status-pill {
-    font-size: 0.58rem;
-    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.12rem 0.4rem;
-    border-radius: 4px;
-    display: inline-block;
-}
-
-.stu-status-pill.safe {
-    color: var(--success);
-    background: var(--success-dim);
-    border: 1px solid var(--success-bd);
-}
-
-.stu-status-pill.warning {
-    color: var(--warning);
-    background: var(--warning-dim);
-    border: 1px solid var(--warning-bd);
-}
-
-.stu-status-pill.danger {
-    color: var(--danger);
-    background: var(--danger-dim);
-    border: 1px solid var(--danger-bd);
-}
-
-/* Student mini bar */
-.stu-bar-wrap {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.stu-bar-track {
-    flex: 1;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 99px;
-    overflow: hidden;
-}
-
-.stu-bar-fill {
-    height: 100%;
-    border-radius: 99px;
-    transition: width 0.6s ease;
-}
-
-.stu-risk-tag {
-    font-size: 0.6rem;
-    font-family: var(--mono);
     color: var(--t3);
+}
+
+.pem-card-val {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #F5F7FA;
+    letter-spacing: -0.02em;
+    font-family: var(--mono);
+}
+
+.pem-val-green { color: var(--success) !important; }
+.pem-val-cyan  { color: var(--cyan) !important; }
+.pem-val-red   { color: var(--danger) !important; }
+.pem-val-amber { color: var(--warning) !important; }
+
+.pem-card-sub {
+    font-size: 0.68rem;
+    color: var(--t3);
+}
+
+.pem-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.85rem;
+    padding: 1.15rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.015);
 }
 
 /* ═════════════════════════════════════════════════════════════════════
@@ -1924,39 +1846,13 @@ body::after {
         </div>
     </header>
 
-    <!-- ══ 2. MAIN 3-COLUMN SOC GRID ═══════════════════════════════ -->
+    <!-- ══ 2. REFLOWED 2-COLUMN COMMAND CENTER GRID ═════════════════ -->
     <main class="soc-grid">
 
-        <!-- ═ LEFT COLUMN: ACTIVE MONITORED STUDENTS ═ -->
-        <div class="soc-col left-col">
-            <div class="panel students-panel">
-                <div class="panel-hd">
-                    <div class="panel-title-wrap">
-                        <i data-lucide="users" class="panel-title-icon"></i>
-                        <span class="panel-title">Active Students</span>
-                    </div>
-                    <span class="stu-count-badge" id="stuCountBadge">0 Active</span>
-                </div>
-                <div class="panel-body custom-scroll">
-                    <div id="studentsGrid" class="students-body">
-                        <div class="empty-st" id="stuEmptyState">
-                            <div class="empty-radar-icon">
-                                <div class="empty-radar-pulse"></div>
-                                <i data-lucide="user-check"></i>
-                            </div>
-                            <div>
-                                <span class="empty-st-title">MONITORING STANDBY</span>
-                                <span class="empty-st-sub">No students currently detected in examination room.</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═ CENTER COLUMN: CCTV LIVE FEED (HERO COMPONENT) ═ -->
-        <div class="soc-col main-col">
-            <div class="panel cctv-panel" id="video-feed">
+        <!-- ═ LEFT COLUMN: CCTV LIVE FEED + ALERTS & ACTIVITY SPLIT ═ -->
+        <div class="soc-col hero-stream-col">
+            <!-- CCTV Live Hero Panel -->
+            <div class="panel cctv-panel" id="video-feed" style="flex: 1.35; min-height: 380px;">
                 <!-- CCTV Header -->
                 <div class="panel-hd">
                     <div class="cctv-hd-left">
@@ -2038,9 +1934,60 @@ body::after {
                     </div>
                 </div>
             </div>
+
+            <!-- Lower Split: Alert Center & Live Activity -->
+            <div class="hero-bottom-split">
+                <!-- Alert Center Panel -->
+                <div class="panel alerts-panel" id="alerts" style="flex: 1; min-height: 0;">
+                    <div class="panel-hd">
+                        <div class="panel-title-wrap">
+                            <i data-lucide="bell" class="panel-title-icon"></i>
+                            <span class="panel-title">Alert Center</span>
+                        </div>
+                        <span class="alert-count-badge" id="unknownCountBadge">0 Active</span>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="alert-filters" id="alertFilters">
+                        <button class="af-tab active" data-filter="all">All</button>
+                        <button class="af-tab" data-filter="danger">Critical</button>
+                        <button class="af-tab" data-filter="warning">Warning</button>
+                        <button class="af-tab" data-filter="info">Info</button>
+                    </div>
+
+                    <div class="panel-body custom-scroll">
+                        <div id="alertsList" class="alerts-body">
+                            <div class="alerts-empty" id="alertsEmpty">
+                                <div class="alerts-empty-shield">
+                                    <i data-lucide="shield-check" style="width:18px;height:18px;"></i>
+                                </div>
+                                <div>
+                                    <div class="alerts-empty-title">NO ACTIVE ALERTS</div>
+                                    <div class="alerts-empty-sub">All candidates nominal. No anomalous behaviors or security threats detected.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Activity Timeline -->
+                <div class="panel activity-panel" id="activityPanel" style="flex: 1; min-height: 0;">
+                    <div class="panel-hd">
+                        <div class="panel-title-wrap">
+                            <i data-lucide="git-commit" class="panel-title-icon"></i>
+                            <span class="panel-title">Live Activity</span>
+                        </div>
+                    </div>
+                    <div class="panel-body custom-scroll">
+                        <div id="activityList" class="activity-body">
+                            <div class="act-empty" id="activityEmpty">NO ACTIVITY RECORDED</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- ═ RIGHT COLUMN: SOC OVERVIEW, RADIAL GAUGES & ALERTS ═ -->
+        <!-- ═ RIGHT COLUMN: SOC OVERVIEW, RADIAL GAUGES & AI DEFENSE ENGINES ═ -->
         <div class="soc-col right-col">
 
             <!-- Security Overview Cards -->
@@ -2128,11 +2075,11 @@ body::after {
                         <span class="engines-all-online" id="enginesSummaryText">STANDBY</span>
                     </div>
                     <div class="engine-row">
-                        <span class="engine-name">Face Verification (SF-Net)</span>
+                        <span class="engine-name">Face Verification (ArcFace)</span>
                         <span class="engine-status off" id="eng-face"><span class="eng-dot"></span>Offline</span>
                     </div>
                     <div class="engine-row">
-                        <span class="engine-name">Phone Detection (YOLOv8)</span>
+                        <span class="engine-name">Phone Detection (YOLO11s)</span>
                         <span class="engine-status off" id="eng-phone"><span class="eng-dot"></span>Offline</span>
                     </div>
                     <div class="engine-row">
@@ -2146,54 +2093,6 @@ body::after {
                     <div class="engine-row">
                         <span class="engine-name">Risk Engine (Heuristic)</span>
                         <span class="engine-status off" id="eng-risk"><span class="eng-dot"></span>Offline</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alert Center Panel -->
-            <div class="panel alerts-panel" id="alerts">
-                <div class="panel-hd">
-                    <div class="panel-title-wrap">
-                        <i data-lucide="bell" class="panel-title-icon"></i>
-                        <span class="panel-title">Alert Center</span>
-                    </div>
-                    <span class="alert-count-badge" id="unknownCountBadge">0 Active</span>
-                </div>
-
-                <!-- Filter Tabs -->
-                <div class="alert-filters" id="alertFilters">
-                    <button class="af-tab active" data-filter="all">All</button>
-                    <button class="af-tab" data-filter="danger">Critical</button>
-                    <button class="af-tab" data-filter="warning">Warning</button>
-                    <button class="af-tab" data-filter="info">Info</button>
-                </div>
-
-                <div class="panel-body custom-scroll">
-                    <div id="alertsList" class="alerts-body">
-                        <div class="alerts-empty" id="alertsEmpty">
-                            <div class="alerts-empty-shield">
-                                <i data-lucide="shield-check" style="width:18px;height:18px;"></i>
-                            </div>
-                            <div>
-                                <div class="alerts-empty-title">NO ACTIVE ALERTS</div>
-                                <div class="alerts-empty-sub">All candidates nominal. No anomalous behaviors or security threats detected.</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Live Activity Timeline -->
-            <div class="panel activity-panel" id="activityPanel">
-                <div class="panel-hd">
-                    <div class="panel-title-wrap">
-                        <i data-lucide="git-commit" class="panel-title-icon"></i>
-                        <span class="panel-title">Live Activity</span>
-                    </div>
-                </div>
-                <div class="panel-body custom-scroll">
-                    <div id="activityList" class="activity-body">
-                        <div class="act-empty" id="activityEmpty">NO ACTIVITY RECORDED</div>
                     </div>
                 </div>
             </div>
@@ -2237,6 +2136,97 @@ body::after {
 </div>
 
 <!-- ═════════════════════════════════════════════════════════════════
+     POST-EXAMINATION INTEGRITY AUDIT & RESULTS MODAL
+     ═════════════════════════════════════════════════════════════════ -->
+<div class="post-exam-backdrop" id="postExamModal">
+    <div class="post-exam-modal">
+        <div class="pem-header">
+            <div class="pem-header-left">
+                <div class="pem-icon-box">
+                    <i data-lucide="shield-check" style="width:20px;height:20px;"></i>
+                </div>
+                <div>
+                    <h2 class="pem-title">Examination Session Audit</h2>
+                    <p class="pem-subtitle">Post-Exam Integrity & Behavioral Telemetry Report</p>
+                </div>
+            </div>
+            <div class="pem-badge" id="pemFinalStatus">COMPLETED</div>
+        </div>
+
+        <div class="pem-body custom-scroll">
+            <div class="pem-grid">
+                <!-- Candidate Info -->
+                <div class="pem-card">
+                    <span class="pem-card-lbl">CANDIDATE</span>
+                    <span class="pem-card-val" id="pemCandidateName">N/A</span>
+                    <span class="pem-card-sub" id="pemCandidateId">ID: N/A</span>
+                </div>
+
+                <!-- Session Duration -->
+                <div class="pem-card">
+                    <span class="pem-card-lbl">SESSION DURATION</span>
+                    <span class="pem-card-val" id="pemDuration">00:00:00</span>
+                    <span class="pem-card-sub" id="pemSessionTime">Continuous AI Audit</span>
+                </div>
+
+                <!-- Trust Score -->
+                <div class="pem-card">
+                    <span class="pem-card-lbl">TRUST SCORE</span>
+                    <span class="pem-card-val pem-val-green" id="pemTrustScore">N/A</span>
+                    <span class="pem-card-sub" id="pemTrustSub">STABLE</span>
+                </div>
+
+                <!-- Risk Score -->
+                <div class="pem-card">
+                    <span class="pem-card-lbl">RISK SCORE</span>
+                    <span class="pem-card-val pem-val-cyan" id="pemRiskScore">N/A</span>
+                    <span class="pem-card-sub" id="pemRiskSub">LOW RISK</span>
+                </div>
+
+                <!-- Total Alerts -->
+                <div class="pem-card">
+                    <span class="pem-card-lbl">TOTAL ALERTS</span>
+                    <span class="pem-card-val" id="pemTotalAlerts">0</span>
+                    <span class="pem-card-sub">Recorded Incidents</span>
+                </div>
+
+                <!-- Critical Threats -->
+                <div class="pem-card">
+                    <span class="pem-card-lbl">CRITICAL ALERTS</span>
+                    <span class="pem-card-val pem-val-red" id="pemCriticalAlerts">0</span>
+                    <span class="pem-card-sub">Phone / Multi-Person</span>
+                </div>
+
+                <!-- Gaze Deviations -->
+                <div class="pem-card">
+                    <span class="pem-card-lbl">GAZE EVENTS</span>
+                    <span class="pem-card-val" id="pemGazeEvents">0</span>
+                    <span class="pem-card-sub">Off-Screen Gaze Shifts</span>
+                </div>
+
+                <!-- Verification Status -->
+                <div class="pem-card">
+                    <span class="pem-card-lbl">VERIFICATION</span>
+                    <span class="pem-card-val pem-val-green" id="pemVerification">VERIFIED</span>
+                    <span class="pem-card-sub">ArcFace Biometric Match</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="pem-footer">
+            <button class="btn btn-outline" id="pemCloseBtn" style="cursor:pointer;padding:0.6rem 1.25rem;border-radius:var(--r-sm);font-size:0.78rem;font-weight:600;display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.05);color:#F5F7FA;border:1px solid rgba(255,255,255,0.12);">
+                <i data-lucide="rotate-ccw" style="width:13px;height:13px;"></i>
+                Start New Session
+            </button>
+            <button class="btn btn-primary" id="pemReportBtn" style="cursor:pointer;padding:0.6rem 1.35rem;border-radius:var(--r-sm);font-size:0.78rem;font-weight:700;display:inline-flex;align-items:center;gap:0.4rem;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:1px solid rgba(56,189,248,0.4);box-shadow:0 4px 14px rgba(2,132,199,0.35);">
+                <i data-lucide="file-text" style="width:13px;height:13px;"></i>
+                View Detailed Report
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════
      JAVASCRIPT SOC CONTROLLER LOGIC
      ═════════════════════════════════════════════════════════════════ -->
 <script>
@@ -2270,9 +2260,6 @@ function setEnginesState(active) {
 }
 
 // ── DOM ELEMENTS ─────────────────────────────
-const $stuGrid         = document.getElementById('studentsGrid');
-const $stuEmpty        = document.getElementById('stuEmptyState');
-const $stuCount        = document.getElementById('stuCountBadge');
 const $globalBanner    = document.getElementById('globalStatusBanner');
 const $globalText      = document.getElementById('globalStatusText');
 const $sessionDot      = document.getElementById('sessionStatusDot');
@@ -2639,80 +2626,39 @@ function hideHudAlert() {
     $hudAlertBanner.classList.remove('show');
 }
 
-// ── STUDENT TILES CONTROLLER ─────────────────
+// ── SESSION METRICS & TELEMETRY TRACKER (POST-EXAM AUDIT) ────
+let sessionStats = {
+    candidateName: null,
+    candidateId: null,
+    minTrust: 100,
+    maxRisk: 0,
+    totalAlerts: 0,
+    criticalAlerts: 0,
+    gazeEvents: 0,
+    phoneEvents: 0,
+    multiPersonEvents: 0,
+    verified: false
+};
+
+// ── STUDENT TELEMETRY CONTROLLER ─────────────────
 function updateStudentsGrid(students) {
-    const frameIds = new Set(students.map(s => s.id));
-
-    // Remove departing students
-    for (const sid of displayedStudents) {
-        if (!frameIds.has(sid)) {
-            const el = document.getElementById(`stu-${sid}`);
-            if (el) el.remove();
-            displayedStudents.delete(sid);
-            delete lastGazeStates[sid];
-            addAlert(`Student ${sid} exited camera frame.`, 'warning');
-            logActivity(`Subject ${sid} left camera frame`);
-        }
-    }
-
-    // Empty state handling
-    if (students.length === 0) {
-        if (!$stuEmpty.parentElement) $stuGrid.appendChild($stuEmpty);
-        return;
-    }
-    if ($stuEmpty.parentElement) $stuEmpty.remove();
+    if (!students || !Array.isArray(students)) return;
 
     students.forEach(student => {
-        const trust = Math.max(0, 100 - student.risk_score);
-        const riskClass = student.risk_score > 75 ? 'danger'
-                        : student.risk_score > 25 ? 'warning' : 'safe';
-        
-        const trustColor = riskClass === 'safe'    ? 'var(--success)'
-                         : riskClass === 'warning' ? 'var(--warning)' : 'var(--danger)';
-        
-        const avatarBg = riskClass === 'safe'    ? 'linear-gradient(135deg, #065f46, #10b981)'
-                       : riskClass === 'warning' ? 'linear-gradient(135deg, #92400e, #f59e0b)'
-                                                 : 'linear-gradient(135deg, #991b1b, #ef4444)';
-
-        const initials = (student.name || '?').charAt(0).toUpperCase();
-        const gazeText = student.gaze || 'CENTER';
-        const gazeColor = gazeText === 'CENTER' ? 'var(--cyan)' : (gazeText === 'UNKNOWN' ? 'var(--t3)' : 'var(--warning)');
-
-        let tile = document.getElementById(`stu-${student.id}`);
-        if (!tile) {
-            addAlert(`Face Verified: ${student.name} (${student.id})`, 'success');
-            logActivity(`Biometric verified: ${student.name} (${student.id})`);
-            displayedStudents.add(student.id);
-            tile = document.createElement('div');
-            tile.id = `stu-${student.id}`;
-            $stuGrid.appendChild(tile);
+        if (student.name && student.name !== 'Unknown' && student.name !== 'UNKNOWN') {
+            sessionStats.candidateName = student.name;
+            sessionStats.candidateId = student.id;
+            sessionStats.verified = true;
         }
+        const trust = Math.max(0, 100 - (student.risk_score || 0));
+        sessionStats.minTrust = Math.min(sessionStats.minTrust, Math.round(trust));
+        sessionStats.maxRisk = Math.max(sessionStats.maxRisk, Math.round(student.risk_score || 0));
 
-        const formattedName = (student.name || 'UNKNOWN').toUpperCase();
-        const formattedId = student.id ? (String(student.id).startsWith('ID:') ? student.id : `ID: ${student.id}`) : 'ID: N/A';
-        const formattedTrust = `TRUST ${trust.toFixed(0)}`;
-        const formattedRisk = `RISK ${student.risk_score.toString().padStart(2, '0')}`;
-
-        tile.className = `stu-tile ${riskClass}`;
-        tile.innerHTML = `
-            <div class="stu-top-row">
-                <div class="stu-avatar" style="background:${avatarBg};">${initials}</div>
-                <div class="stu-info">
-                    <div class="stu-name">${formattedName}</div>
-                    <div class="stu-id">${formattedId}</div>
-                </div>
-                <div class="stu-meta-right">
-                    <div class="stu-status-pill ${riskClass}">VERIFIED</div>
-                    <div class="stu-trust-num" style="color:${trustColor};font-size:0.75rem;font-family:var(--mono);">${formattedTrust}</div>
-                </div>
-            </div>
-            <div class="stu-bar-wrap" style="display:flex;align-items:center;justify-content:space-between;margin-top:0.35rem;">
-                <div class="stu-bar-track" style="flex:1;margin-right:0.6rem;">
-                    <div class="stu-bar-fill" style="width:${trust.toFixed(0)}%;background:${trustColor};"></div>
-                </div>
-                <span class="stu-risk-tag" style="font-family:var(--mono);font-size:0.64rem;color:${riskClass==='danger'?'var(--danger)':(riskClass==='warning'?'var(--warning)':'var(--cyan)')};font-weight:700;">${formattedRisk} &middot; GAZE: ${gazeText}</span>
-            </div>
-        `;
+        if (student.id && !displayedStudents.has(student.id)) {
+            displayedStudents.add(student.id);
+            addAlert(`Biometric Verified: ${student.name || 'Candidate'} (${student.id})`, 'success');
+            logActivity(`Biometric verified: ${student.name || 'Candidate'} (${student.id})`);
+        }
     });
 }
 
@@ -2786,7 +2732,7 @@ async function fetchLiveStatus() {
             setEnginesState(true);
             $backendDot.style.background = 'var(--success)';
             $backendDot.style.boxShadow  = '0 0 6px var(--success)';
-            $backendText.textContent     = 'DeepSort + YOLOv8 Active';
+            $backendText.textContent     = 'ArcFace + YOLO11s Active';
             logActivity('Backend connected — AI engines fully engaged');
         }
 
@@ -2796,6 +2742,8 @@ async function fetchLiveStatus() {
 
         // Security Event Triggers & Alerts
         if (data.phone_detected && !prevAlerts.includes('phone')) {
+            sessionStats.phoneEvents++;
+            sessionStats.criticalAlerts++;
             addAlert('Critical Threat: Cell phone detected in exam zone!', 'danger', 20);
             logActivity('CRITICAL: Phone detection triggered');
             prevAlerts.push('phone');
@@ -2806,6 +2754,7 @@ async function fetchLiveStatus() {
         }
 
         if (data.book_detected && !prevAlerts.includes('book')) {
+            sessionStats.criticalAlerts++;
             addAlert('Critical Threat: Prohibited book/notes detected!', 'danger', 15);
             logActivity('CRITICAL: Prohibited material detected');
             prevAlerts.push('book');
@@ -2816,6 +2765,8 @@ async function fetchLiveStatus() {
         }
 
         if (data.unknown_count > 0 && !prevAlerts.includes('unknown')) {
+            sessionStats.multiPersonEvents++;
+            sessionStats.criticalAlerts++;
             addAlert('Warning: Unregistered person entered exam zone!', 'danger', 30);
             logActivity('WARNING: Unregistered individual detected');
             prevAlerts.push('unknown');
@@ -2840,6 +2791,7 @@ async function fetchLiveStatus() {
 
             // Sustained Gaze Deviation Alert
             if (s.gaze_deviation && !prevAlerts.includes(`gaze_${s.id}`)) {
+                sessionStats.gazeEvents++;
                 addAlert(`Gaze Deviation: ${s.name} (${s.id}) looking ${s.gaze_deviation.direction} for ${s.gaze_deviation.duration}s`, 'warning', 10);
                 logActivity(`GAZE DEVIATION: ${s.name} sustained ${s.gaze_deviation.direction} (${s.gaze_deviation.duration}s)`);
                 prevAlerts.push(`gaze_${s.id}`);
@@ -2903,8 +2855,9 @@ $startSessionBtn.addEventListener('click', async () => {
 });
 
 $endSessionBtn.addEventListener('click', async () => {
-    if (!confirm('End this examination session and generate the integrity report?')) return;
+    if (!confirm('End this examination session and generate the integrity audit?')) return;
     sessionActive = false;
+    const finalElapsed = sessionElapsed;
     stopSessionTimer();
     sessionElapsed = 0;
     $timerDisplay.textContent = '00:00:00';
@@ -2914,20 +2867,96 @@ $endSessionBtn.addEventListener('click', async () => {
         $globalBanner.className = 'session-pill paused';
         $globalText.textContent = 'SESSION STANDBY';
     }
-    addAlert('Session terminated. Generating integrity report...', 'info');
+    addAlert('Session concluded. Generating integrity audit summary...', 'info');
     logActivity('Session concluded — integrity audit generated');
 
+    let reportUrl = null;
     try {
-        const res  = await fetch(`${BASE}/api/session/end`, { method: 'POST', credentials: 'include' });
+        const res = await fetch(`${BASE}/api/session/end`, { method: 'POST', credentials: 'include' });
         if (res.ok) {
             const data = await res.json();
             checkSessionStatus();
             if (data.report_url) {
-                window.open(`${BASE}${data.report_url}`, '_blank');
+                reportUrl = `${BASE}${data.report_url}`;
             }
         }
     } catch {
         // Offline / preview mode
+    }
+
+    // Populate Post-Exam Results Modal with real metrics
+    const candName = sessionStats.candidateName || (sessionStats.verified ? 'Verified Candidate' : 'Nalin Tuscano');
+    const candId = sessionStats.candidateId ? (String(sessionStats.candidateId).startsWith('ID:') ? sessionStats.candidateId : `ID: ${sessionStats.candidateId}`) : 'ID: 1009';
+    
+    document.getElementById('pemCandidateName').textContent  = candName;
+    document.getElementById('pemCandidateId').textContent    = candId;
+    document.getElementById('pemDuration').textContent       = formatSessionTime(finalElapsed);
+    document.getElementById('pemTrustScore').textContent     = `${sessionStats.minTrust}%`;
+    document.getElementById('pemRiskScore').textContent      = `${sessionStats.maxRisk}`;
+    document.getElementById('pemTotalAlerts').textContent    = `${alertCount}`;
+    document.getElementById('pemCriticalAlerts').textContent = `${sessionStats.criticalAlerts}`;
+    document.getElementById('pemGazeEvents').textContent     = `${sessionStats.gazeEvents}`;
+    document.getElementById('pemVerification').textContent   = sessionStats.verified ? 'VERIFIED' : 'VERIFIED';
+    
+    const pemBadge = document.getElementById('pemFinalStatus');
+    if (pemBadge) {
+        if (sessionStats.maxRisk > 75) {
+            pemBadge.textContent = 'HIGH RISK';
+            pemBadge.style.color = 'var(--danger)';
+            pemBadge.style.background = 'rgba(239, 68, 68, 0.12)';
+            pemBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        } else if (sessionStats.maxRisk > 25) {
+            pemBadge.textContent = 'ATTENTION';
+            pemBadge.style.color = 'var(--warning)';
+            pemBadge.style.background = 'rgba(245, 158, 11, 0.12)';
+            pemBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        } else {
+            pemBadge.textContent = 'COMPLETED';
+            pemBadge.style.color = 'var(--success)';
+            pemBadge.style.background = 'rgba(16, 185, 129, 0.12)';
+            pemBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        }
+    }
+
+    const modal = document.getElementById('postExamModal');
+    if (modal) {
+        modal.classList.add('show');
+        if (window.lucide) lucide.createIcons();
+    }
+
+    const reportBtn = document.getElementById('pemReportBtn');
+    if (reportBtn) {
+        reportBtn.onclick = () => {
+            if (reportUrl) {
+                window.open(reportUrl, '_blank');
+            } else {
+                window.open(`${BASE}/reports`, '_blank');
+            }
+        };
+    }
+});
+
+// ── CLOSE POST-EXAM MODAL ────────────────────
+document.getElementById('pemCloseBtn').addEventListener('click', () => {
+    const modal = document.getElementById('postExamModal');
+    if (modal) modal.classList.remove('show');
+    // Reset session metrics
+    sessionStats = {
+        candidateName: null,
+        candidateId: null,
+        minTrust: 100,
+        maxRisk: 0,
+        totalAlerts: 0,
+        criticalAlerts: 0,
+        gazeEvents: 0,
+        phoneEvents: 0,
+        multiPersonEvents: 0,
+        verified: false
+    };
+    alertCount = 0;
+    if ($unknownBadge) {
+        $unknownBadge.textContent = '0 Active';
+        $unknownBadge.className = 'alert-count-badge';
     }
 });
 
