@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProctorAI — AI-Powered Examination Operations Platform</title>
+    <title>ProctorAI — Demo Access Portal</title>
     <meta name="description" content="ProctorAI Demo Access Portal — AI-Powered Examination Security & Live Monitoring Operations.">
     
     <!-- Google Fonts: Inter & JetBrains Mono -->
@@ -16,7 +16,7 @@
 
     <style>
 /* ═════════════════════════════════════════════════════════════════════
-   PROCTORAI — HACKATHON DEMO AUTHENTICATION GATE
+   PROCTORAI — HACKATHON DEMO ACCESS GATE
    MONOCHROMATIC & DEEP GRAPHITE WITH STEEL BLUE ACCENTS
    ═════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after {
@@ -35,11 +35,12 @@
 
     --border-subtle:  rgba(255, 255, 255, 0.06);
     --border-mid:     rgba(255, 255, 255, 0.12);
-    --border-active:  rgba(56, 189, 248, 0.4);
+    --border-active:  rgba(56, 189, 248, 0.45);
 
     --accent-blue:    #38bdf8;
     --accent-dark:    #0284c7;
     --accent-dim:     rgba(56, 189, 248, 0.08);
+    --cyan:           #00e5ff;
 
     --success:        #10b981;
     --success-dim:    rgba(16, 185, 129, 0.08);
@@ -67,6 +68,7 @@ html, body {
     line-height: 1.5;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── SUBTLE BACKGROUND DEPTH ── */
@@ -84,7 +86,7 @@ html, body {
     left: 25%;
     width: 800px;
     height: 800px;
-    background: radial-gradient(circle, rgba(14, 28, 48, 0.3) 0%, rgba(6, 8, 12, 0) 70%);
+    background: radial-gradient(circle, rgba(14, 28, 48, 0.35) 0%, rgba(6, 8, 12, 0) 70%);
     filter: blur(80px);
 }
 
@@ -122,14 +124,14 @@ html, body {
     justify-content: space-between;
     height: 100%;
     max-width: 580px;
-    padding: 1.5rem 0;
+    padding: 1rem 0;
 }
 
 .brand-badge-wrap {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.75rem;
 }
 
 .brand-icon-box {
@@ -148,15 +150,15 @@ html, body {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    padding: 0.3rem 0.75rem;
+    padding: 0.25rem 0.75rem;
     border-radius: 99px;
-    background: #090e15;
-    border: 1px solid var(--border-subtle);
-    font-size: 0.68rem;
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    font-size: 0.7rem;
     font-weight: 700;
     font-family: var(--mono);
-    letter-spacing: 0.08em;
-    color: var(--t2);
+    color: var(--accent-blue);
+    letter-spacing: 0.06em;
     text-transform: uppercase;
 }
 
@@ -164,161 +166,148 @@ html, body {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 6px var(--success);
+    background: var(--accent-blue);
+    box-shadow: 0 0 8px var(--accent-blue);
+    animation: livePulse 2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
 }
 
 .hero-heading {
-    font-size: 3.25rem;
+    font-size: 3.2rem;
     font-weight: 900;
     letter-spacing: -0.04em;
     line-height: 1.05;
-    margin-bottom: 0.85rem;
     color: #ffffff;
+    margin-bottom: 0.5rem;
 }
 
 .hero-subhead {
-    font-size: 0.78rem;
+    font-size: 1.15rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
     color: var(--accent-blue);
-    margin-bottom: 1.25rem;
-    font-family: var(--mono);
+    letter-spacing: -0.01em;
+    margin-bottom: 1rem;
 }
 
 .hero-lead {
     font-size: 0.95rem;
     color: var(--t2);
-    font-weight: 400;
     line-height: 1.6;
-    margin-bottom: 2.25rem;
+    margin-bottom: 2rem;
 }
 
-/* ── ABSTRACT SCHEMATIC FRAME ── */
+/* ── ABSTRACT TECHNICAL SCHEMATIC (DECORATIVE) ── */
 .ai-reticle-canvas {
     position: relative;
     width: 100%;
-    height: 190px;
-    background: #080c13;
+    height: 150px;
+    background: rgba(11, 15, 23, 0.6);
     border: 1px solid var(--border-subtle);
-    border-radius: 14px;
+    border-radius: 12px;
+    margin-bottom: 2rem;
     overflow: hidden;
-    margin-bottom: 2.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Corner Reticle Ticks */
 .reticle-corner {
     position: absolute;
-    width: 12px;
-    height: 12px;
-    border: 1.5px solid var(--t3);
-    opacity: 0.5;
+    width: 10px;
+    height: 10px;
+    border-color: rgba(56, 189, 248, 0.4);
     pointer-events: none;
 }
-.rc-tl { top: 10px; left: 10px; border-right: none; border-bottom: none; }
-.rc-tr { top: 10px; right: 10px; border-left: none; border-bottom: none; }
-.rc-bl { bottom: 10px; left: 10px; border-right: none; border-top: none; }
-.rc-br { bottom: 10px; right: 10px; border-left: none; border-top: none; }
 
-/* Subtle Laser Scan Line */
+.rc-tl { top: 8px; left: 8px; border-top: 2px solid; border-left: 2px solid; }
+.rc-tr { top: 8px; right: 8px; border-top: 2px solid; border-right: 2px solid; }
+.rc-bl { bottom: 8px; left: 8px; border-bottom: 2px solid; border-left: 2px solid; }
+.rc-br { bottom: 8px; right: 8px; border-bottom: 2px solid; border-right: 2px solid; }
+
 .laser-scan-line {
     position: absolute;
+    top: 0;
     left: 0;
     right: 0;
-    height: 1px;
+    height: 2px;
     background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
-    opacity: 0.6;
-    animation: laserScan 4s ease-in-out infinite;
-    pointer-events: none;
+    box-shadow: 0 0 10px var(--accent-blue);
+    animation: scanAnim 3.5s ease-in-out infinite alternate;
 }
 
-@keyframes laserScan {
-    0% { top: 10%; opacity: 0; }
-    20% { opacity: 0.7; }
-    80% { opacity: 0.7; }
-    100% { top: 90%; opacity: 0; }
+@keyframes scanAnim {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(148px); }
 }
 
-/* Optical Reticle Center */
 .optical-center-box {
-    position: relative;
-    width: 74px;
-    height: 74px;
-    border: 1px dashed var(--t4);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.optical-center-inner {
-    width: 38px;
-    height: 38px;
-    border: 1px solid var(--t3);
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
+    border: 1px dashed rgba(56, 189, 248, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--accent-blue);
+    animation: rotateBox 16s linear infinite;
+}
+
+@keyframes rotateBox {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .ai-spec-tag {
     position: absolute;
-    bottom: 10px;
-    left: 14px;
-    font-family: var(--mono);
-    font-size: 0.62rem;
-    color: var(--t4);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.ai-lock-tag {
-    position: absolute;
-    top: 10px;
-    right: 14px;
+    bottom: 8px;
+    left: 12px;
     font-family: var(--mono);
     font-size: 0.62rem;
     color: var(--t3);
     letter-spacing: 0.08em;
-    font-weight: 700;
 }
 
-/* ── CAPABILITY PILLS ── */
+.ai-lock-tag {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--success);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+/* Capability Highlight Pills */
 .caps-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
+    gap: 0.85rem;
 }
 
 .cap-item {
-    background: #080c14;
+    background: rgba(14, 19, 29, 0.7);
     border: 1px solid var(--border-subtle);
     border-radius: 10px;
-    padding: 0.8rem 0.8rem;
+    padding: 0.75rem 0.85rem;
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    transition: border-color 0.2s;
-}
-
-.cap-item:hover {
-    border-color: var(--border-mid);
 }
 
 .cap-icon {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border-radius: 6px;
-    background: #0d1420;
-    color: var(--accent-blue);
+    background: rgba(56, 189, 248, 0.08);
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--accent-blue);
     flex-shrink: 0;
 }
 
@@ -328,93 +317,244 @@ html, body {
 }
 
 .cap-title {
-    font-size: 0.74rem;
+    font-size: 0.76rem;
     font-weight: 700;
     color: var(--t1);
+    line-height: 1.2;
 }
 
 .cap-sub {
-    font-size: 0.62rem;
+    font-size: 0.65rem;
     color: var(--t3);
-    font-family: var(--mono);
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   RIGHT AUTH COLUMN: LOGIN & DEMO GATE CARD
+   RIGHT COLUMN: DEMO ACCESS GATE CARD
    ═════════════════════════════════════════════════════════════════════ */
 .auth-col {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
     width: 100%;
 }
 
+/* ── TOP PROGRESS BAR ── */
+.progress-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.65rem;
+    margin-bottom: 1.5rem;
+    background: rgba(14, 19, 29, 0.7);
+    border: 1px solid var(--border-subtle);
+    padding: 0.5rem 1.15rem;
+    border-radius: 99px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    width: fit-content;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--t3);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--border-subtle);
+    color: var(--t3);
+    font-size: 0.6rem;
+    font-weight: 800;
+}
+
+.step-item.completed {
+    color: var(--success);
+}
+
+.step-item.completed .step-num {
+    background: var(--success);
+    color: #06080c;
+}
+
+.step-item.active {
+    color: var(--accent-blue);
+}
+
+.step-item.active .step-num {
+    background: var(--accent-blue);
+    color: #06080c;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.step-divider {
+    color: var(--t4);
+    font-size: 0.65rem;
+}
+
+/* ── AUTH CARD ── */
 .auth-card {
     position: relative;
     width: 100%;
-    max-width: 440px;
+    max-width: 480px;
     background: var(--bg-card);
     border: 1px solid var(--bg-card-border);
     border-top: 1px solid var(--border-mid);
-    border-radius: 20px;
-    padding: 2.5rem 2.25rem;
+    border-radius: 18px;
+    padding: 2.5rem;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
-    transition: all 0.3s ease;
 }
 
-/* Card Header */
 .card-header-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.25rem 0.65rem;
+    padding: 0.2rem 0.6rem;
     border-radius: 99px;
-    background: #080c14;
-    border: 1px solid var(--border-subtle);
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.2);
     font-size: 0.65rem;
-    font-weight: 800;
+    font-weight: 700;
     font-family: var(--mono);
     color: var(--accent-blue);
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1rem;
 }
 
 .card-title {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 800;
-    letter-spacing: -0.025em;
     color: #ffffff;
-    margin-bottom: 0.3rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4rem;
 }
 
 .card-subtitle {
-    font-size: 0.82rem;
+    font-size: 0.86rem;
     color: var(--t2);
-    margin-bottom: 1.85rem;
     line-height: 1.5;
+    margin-bottom: 1.75rem;
 }
 
-/* ── FORM ELEMENTS ── */
+/* ── INSTITUTION CONTEXT PILL ── */
+.inst-context-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+.inst-pill-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+}
+
+.inst-pill-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(56, 189, 248, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-blue);
+    flex-shrink: 0;
+}
+
+.inst-pill-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.inst-pill-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--t1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.inst-pill-loc {
+    font-size: 0.65rem;
+    color: var(--t3);
+    font-family: var(--mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.inst-edit-link {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent-blue);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+    padding: 0.2rem 0.45rem;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.inst-edit-link:hover {
+    background: rgba(56, 189, 248, 0.1);
+}
+
+/* ── FORM CONTROLS ── */
 .form-group {
     margin-bottom: 1.25rem;
-    text-align: left;
 }
 
 .form-label {
     display: block;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+    font-weight: 600;
     color: var(--t2);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.45rem;
 }
 
 .input-container {
     position: relative;
     display: flex;
     align-items: center;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.85rem 1rem 0.85rem 2.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-mid);
+    background: var(--bg-input);
+    color: var(--t1);
+    font-family: var(--font);
+    font-size: 0.88rem;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.form-input.has-toggle {
+    padding-right: 2.75rem;
 }
 
 .input-icon-leading {
@@ -425,19 +565,6 @@ html, body {
     transition: color 0.2s;
 }
 
-.form-input {
-    width: 100%;
-    padding: 0.85rem 1rem 0.85rem 2.75rem;
-    border-radius: 10px;
-    border: 1px solid var(--border-mid);
-    background: var(--bg-input);
-    color: #ffffff;
-    font-family: var(--font);
-    font-size: 0.9rem;
-    outline: none;
-    transition: all 0.2s ease;
-}
-
 .form-input:hover {
     border-color: rgba(255, 255, 255, 0.2);
 }
@@ -445,28 +572,27 @@ html, body {
 .form-input:focus {
     border-color: var(--accent-blue);
     background: var(--bg-input-focus);
-    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
 }
 
-.form-input:focus ~ .input-icon-leading,
-.form-input:focus + .input-icon-leading {
+.form-input:focus ~ .input-icon-leading {
     color: var(--accent-blue);
 }
 
 .form-input::placeholder {
     color: var(--t3);
-    font-size: 0.86rem;
+    font-size: 0.85rem;
 }
 
 /* Password Toggle Button */
 .pwd-toggle-btn {
     position: absolute;
-    right: 0.8rem;
+    right: 0.75rem;
     background: transparent;
     border: none;
     color: var(--t3);
     cursor: pointer;
-    padding: 0.3rem;
+    padding: 0.35rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -478,16 +604,16 @@ html, body {
     color: var(--t1);
 }
 
-/* ── PRIMARY CTA BUTTON ── */
+/* ── SUBMIT CTA BUTTON ── */
 .btn-submit {
     width: 100%;
     background: #0284c7;
     color: #ffffff;
     border: 1px solid rgba(56, 189, 248, 0.4);
-    padding: 0.9rem 1.4rem;
+    padding: 0.95rem 1.4rem;
     border-radius: 10px;
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     font-family: var(--font);
     letter-spacing: 0.02em;
     cursor: pointer;
@@ -496,13 +622,15 @@ html, body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    margin-top: 0.65rem;
+    margin-top: 0.75rem;
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.25);
 }
 
 .btn-submit:hover:not(:disabled) {
     background: #0369a1;
     border-color: var(--accent-blue);
     transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3);
 }
 
 .btn-submit:active:not(:disabled) {
@@ -514,17 +642,17 @@ html, body {
     cursor: not-allowed;
 }
 
-/* ── STATUS & ERROR NOTIFICATION BANNERS ── */
+/* ── STATUS BANNERS & NOTIFICATIONS ── */
 .status-banner {
     display: none;
     margin-top: 1.15rem;
-    padding: 0.8rem 0.95rem;
+    padding: 0.75rem 0.95rem;
     border-radius: 8px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     line-height: 1.4;
     text-align: left;
-    animation: bannerFade 0.25s ease-out;
+    animation: bannerFade 0.2s ease-out;
 }
 
 @keyframes bannerFade {
@@ -544,8 +672,8 @@ html, body {
 
 @keyframes shakeError {
     0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-4px); }
-    40%, 80% { transform: translateX(4px); }
+    25%, 75% { transform: translateX(-3px); }
+    50% { transform: translateX(3px); }
 }
 
 .status-banner.success {
@@ -557,12 +685,33 @@ html, body {
     color: #a7f3d0;
 }
 
-/* ── FOOTER ACTIONS ── */
+/* ── HONEST DEMO NOTICE ── */
+.demo-security-notice {
+    margin-top: 1.25rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-subtle);
+    font-size: 0.7rem;
+    color: var(--t3);
+    line-height: 1.45;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45rem;
+}
+
+.demo-security-notice i {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: var(--t3);
+}
+
+/* ── CARD FOOTER ── */
 .card-footer-nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1.65rem;
+    margin-top: 1.5rem;
     padding-top: 1.15rem;
     border-top: 1px solid var(--border-subtle);
 }
@@ -590,7 +739,7 @@ html, body {
     text-transform: uppercase;
 }
 
-/* ── SPINNER ANIMATION ── */
+/* ── SPINNER ── */
 .lucide-spin {
     animation: spin 0.9s linear infinite;
 }
@@ -600,9 +749,7 @@ html, body {
     to   { transform: rotate(360deg); }
 }
 
-/* ═════════════════════════════════════════════════════════════════════
-   RESPONSIVE ADAPTATIONS
-   ═════════════════════════════════════════════════════════════════════ */
+/* ── RESPONSIVE ── */
 @media (max-width: 1080px) {
     .app-layout {
         grid-template-columns: 1fr;
@@ -648,7 +795,7 @@ html, body {
 </head>
 <body>
 
-    <!-- Subtle Background Ambient Grid Layer -->
+    <!-- Subtle Background Grid Layer -->
     <div class="bg-canvas">
         <div class="bg-radial-ambient"></div>
         <div class="bg-grid"></div>
@@ -678,7 +825,7 @@ html, body {
                     Enterprise Examination Operations Platform. Continuous biometric verification, behavioral gaze estimation, and multi-tenant proctor command infrastructure.
                 </p>
 
-                <!-- Abstract Technical Schematic (Purely Decorative) -->
+                <!-- Technical Schematic Box -->
                 <div class="ai-reticle-canvas">
                     <div class="reticle-corner rc-tl"></div>
                     <div class="reticle-corner rc-tr"></div>
@@ -687,16 +834,14 @@ html, body {
                     <div class="laser-scan-line"></div>
 
                     <div class="optical-center-box">
-                        <div class="optical-center-inner">
-                            <i data-lucide="scan-face" style="width:20px;height:20px;"></i>
-                        </div>
+                        <i data-lucide="scan-face" style="width:20px;height:20px;"></i>
                     </div>
 
                     <span class="ai-spec-tag">NEURAL BIOMETRIC PIPELINE</span>
                     <span class="ai-lock-tag">SYSTEM READY</span>
                 </div>
 
-                <!-- Core Capability Highlight Pills -->
+                <!-- Capability Highlight Pills -->
                 <div class="caps-grid">
                     <div class="cap-item">
                         <div class="cap-icon">
@@ -739,6 +884,25 @@ html, body {
 
         <!-- ═ RIGHT COLUMN: DEMO ACCESS GATE CARD ═ -->
         <section class="auth-col">
+            
+            <!-- Progress Stepper (01 SETUP -> 02 DEMO ACCESS -> 03 PROCTORAI) -->
+            <nav class="progress-stepper" aria-label="Authentication Steps">
+                <a href="setup_institution.html?edit=1" class="step-item completed" style="text-decoration:none;">
+                    <span class="step-num"><i data-lucide="check" style="width:10px;height:10px;"></i></span>
+                    <span>Setup</span>
+                </a>
+                <span class="step-divider">&bull;</span>
+                <div class="step-item active">
+                    <span class="step-num">02</span>
+                    <span>Demo Access</span>
+                </div>
+                <span class="step-divider">&bull;</span>
+                <div class="step-item">
+                    <span class="step-num">03</span>
+                    <span>ProctorAI</span>
+                </div>
+            </nav>
+
             <div class="auth-card" id="authCard">
                 
                 <!-- Card Header Top Badge -->
@@ -749,6 +913,23 @@ html, body {
 
                 <h2 class="card-title">Welcome to ProctorAI</h2>
                 <p class="card-subtitle">Enter your email and any password to access the live examination operations console.</p>
+
+                <!-- Active Institution Context Pill -->
+                <div class="inst-context-pill" id="instContextPill">
+                    <div class="inst-pill-left">
+                        <div class="inst-pill-icon">
+                            <i data-lucide="building-2" style="width:13px;height:13px;"></i>
+                        </div>
+                        <div class="inst-pill-info">
+                            <span class="inst-pill-name" id="pillInstName">Configured Institution</span>
+                            <span class="inst-pill-loc" id="pillInstLoc">Location</span>
+                        </div>
+                    </div>
+                    <a href="setup_institution.html?edit=1" class="inst-edit-link" title="Edit Institution Setup">
+                        <i data-lucide="edit-2" style="width:11px;height:11px;"></i>
+                        <span>Edit</span>
+                    </a>
+                </div>
 
                 <!-- Demo Entry Form -->
                 <form id="demoLoginForm" novalidate>
@@ -776,7 +957,7 @@ html, body {
                             <input 
                                 type="password" 
                                 id="userPassword" 
-                                class="form-input" 
+                                class="form-input has-toggle" 
                                 placeholder="••••••••••••" 
                                 required 
                                 autocomplete="current-password"
@@ -803,6 +984,12 @@ html, body {
                 <!-- Status & Error Alert Notification Container -->
                 <div id="statusBanner" class="status-banner"></div>
 
+                <!-- Honest Security Notice -->
+                <div class="demo-security-notice">
+                    <i data-lucide="info" style="width:13px;height:13px;"></i>
+                    <span><strong>Demo Access Gate:</strong> Accepts any valid email &amp; non-empty password for hackathon evaluation. No passwords or credentials are stored or sent over network.</span>
+                </div>
+
                 <!-- Footer Navigation -->
                 <div class="card-footer-nav">
                     <a href="index.html" class="footer-link">
@@ -819,7 +1006,7 @@ html, body {
 
     <script>
         // ═══════════════════════════════════════════════════════════════════
-        // CHECK IF INSTITUTION SETUP IS COMPLETED
+        // STEP 1 GATE: CHECK IF INSTITUTION SETUP IS COMPLETED
         // If not, redirect to setup_institution.html first
         // ═══════════════════════════════════════════════════════════════════
         (function checkSetupCompleted() {
@@ -827,7 +1014,7 @@ html, body {
                                    localStorage.getItem('proctorai_setup_completed');
             
             if (setupCompleted !== 'true') {
-                window.location.href = 'setup_institution.html';
+                window.location.replace('setup_institution.html');
                 return;
             }
         })();
@@ -843,8 +1030,28 @@ html, body {
         const statusBanner = document.getElementById('statusBanner');
         const pwdToggleBtn = document.getElementById('pwdToggleBtn');
         const pwdEyeIcon = document.getElementById('pwdEyeIcon');
+        const pillInstName = document.getElementById('pillInstName');
+        const pillInstLoc = document.getElementById('pillInstLoc');
 
-        // Check for URL parameters
+        // Display user's real setup institution data in the context pill
+        (function renderInstitutionContext() {
+            const raw = sessionStorage.getItem('proctorai_institution_data') || localStorage.getItem('proctorai_institution_data');
+            if (raw) {
+                try {
+                    const data = JSON.parse(raw);
+                    if (data.institutionName) pillInstName.textContent = data.institutionName;
+                    const locParts = [];
+                    if (data.city) locParts.push(data.city);
+                    if (data.state) locParts.push(data.state);
+                    if (data.country) locParts.push(data.country);
+                    if (locParts.length > 0) pillInstLoc.textContent = locParts.join(', ');
+                } catch (e) {
+                    console.warn('Could not parse institution setup data', e);
+                }
+            }
+        })();
+
+        // Check for URL parameters (e.g. logged_out)
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('logged_out')) {
             showBanner('Signed out successfully. Enter email to resume.', 'success');
@@ -893,7 +1100,7 @@ html, body {
             }
 
             if (!EMAIL_REGEX.test(email)) {
-                showBanner('Please enter a valid email address (e.g. name@gmail.com).', 'error');
+                showBanner('Please enter a valid email address (e.g. proctor@domain.com).', 'error');
                 emailInput.focus();
                 return;
             }
@@ -906,7 +1113,7 @@ html, body {
             }
 
             if (password.length < 3) {
-                showBanner('Password is too short (minimum 3 characters required).', 'error');
+                showBanner('Password must be at least 3 characters.', 'error');
                 passwordInput.focus();
                 return;
             }
@@ -916,7 +1123,7 @@ html, body {
             enterBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Entering ProctorAI...</span>';
             lucide.createIcons();
 
-            // Store temporary session state (no passwords or secrets stored)
+            // Store temporary session state (NEVER store passwords or secrets)
             try {
                 sessionStorage.setItem('proctorai_demo_auth', 'true');
                 sessionStorage.setItem('proctorai_demo_email', email);
@@ -929,9 +1136,12 @@ html, body {
             showBanner(`Access granted for ${email}. Initializing ProctorAI console...`, 'success');
 
             // Smooth transition into existing ProctorAI monitoring dashboard
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.25s ease';
+
             setTimeout(() => {
                 window.location.href = 'monitoring.html';
-            }, 400);
+            }, 300);
         });
     </script>
 </body>

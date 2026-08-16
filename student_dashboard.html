@@ -472,7 +472,7 @@ body::before {
                 <div class="meta-grid">
                     <div class="meta-box">
                         <div class="meta-box-label">Institution</div>
-                        <div class="meta-box-val" id="profileInstitution">Apex Institute of Technology</div>
+                        <div class="meta-box-val" id="profileInstitution">N/A</div>
                     </div>
                     <div class="meta-box">
                         <div class="meta-box-label">Biometric Model</div>
@@ -518,12 +518,6 @@ body::before {
                         </div>
                         <div class="meta-box">
                             <div class="meta-box-label">Integrity Status</div>
-                            <div class="meta-box-val" style="color:var(--cyan);">Verified Clear</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
 
         <!-- Examination Zone Guidelines & Pre-Check -->
@@ -583,6 +577,20 @@ body::before {
     </main>
 
     <script>
+        (function enforceAuthGate() {
+            const setupCompleted = sessionStorage.getItem('proctorai_setup_completed') || localStorage.getItem('proctorai_setup_completed');
+            const demoAuth = sessionStorage.getItem('proctorai_demo_auth') || localStorage.getItem('proctorai_demo_auth');
+
+            if (setupCompleted !== 'true') {
+                window.location.replace('setup_institution.html');
+                return;
+            }
+            if (demoAuth !== 'true') {
+                window.location.replace('login.html');
+                return;
+            }
+        })();
+
         async function init() {
             lucide.createIcons();
             await checkAuth();

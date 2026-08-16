@@ -244,13 +244,20 @@
     <script src="replay.js"></script>
     <script>
         // ═══════════════════════════════════════════════════════════════════
-        // DEMO AUTHENTICATION CHECK
-        // Redirect to login if not authenticated
+        // DEMO AUTHENTICATION & SETUP CHECK
+        // Redirect to setup/login if not authenticated
         // ═══════════════════════════════════════════════════════════════════
         (function checkAuth() {
+            const setupCompleted = sessionStorage.getItem('proctorai_setup_completed') || localStorage.getItem('proctorai_setup_completed');
             const demoAuth = sessionStorage.getItem('proctorai_demo_auth') || localStorage.getItem('proctorai_demo_auth');
+
+            if (setupCompleted !== 'true') {
+                window.location.replace('setup_institution.html');
+                return;
+            }
             if (demoAuth !== 'true') {
-                window.location.href = 'login.html';
+                window.location.replace('login.html');
+                return;
             }
         })();
 

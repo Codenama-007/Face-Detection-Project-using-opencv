@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProctorAI | Initial Institution Setup</title>
-    <meta name="description" content="Configure your institution for ProctorAI Examination Monitoring Platform">
+    <title>ProctorAI | Institution Setup</title>
+    <meta name="description" content="Configure your examination environment for ProctorAI AI-Powered Examination Security.">
     
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,8 +16,8 @@
 
     <style>
 /* ═════════════════════════════════════════════════════════════════════
-   PROCTORAI — INITIAL INSTITUTION SETUP
-   PREMIUM ONBOARDING INTERFACE
+   PROCTORAI — PREMIUM INSTITUTION SETUP
+   DEEP GRAPHITE & STEEL BLUE COMMAND INTERFACE
    ═════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -30,16 +30,19 @@
     --bg-surface:     #0b0f17;
     --bg-card:        #0e131d;
     --bg-card-border: rgba(255, 255, 255, 0.08);
+    --bg-card-hover:  #111827;
     --bg-input:       #070a10;
     --bg-input-focus: #0a0e16;
+    --bg-dropdown:    #0e1420;
 
     --border-subtle:  rgba(255, 255, 255, 0.06);
     --border-mid:     rgba(255, 255, 255, 0.12);
-    --border-active:  rgba(56, 189, 248, 0.4);
+    --border-active:  rgba(56, 189, 248, 0.45);
 
     --accent-blue:    #38bdf8;
     --accent-dark:    #0284c7;
     --accent-dim:     rgba(56, 189, 248, 0.08);
+    --cyan:           #00e5ff;
 
     --success:        #10b981;
     --success-dim:    rgba(16, 185, 129, 0.08);
@@ -67,9 +70,10 @@ html, body {
     line-height: 1.5;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── BACKGROUND LAYER ── */
+/* ── SUBTLE BACKGROUND DEPTH ── */
 .bg-canvas {
     position: fixed;
     inset: 0;
@@ -80,24 +84,24 @@ html, body {
 
 .bg-radial-ambient {
     position: absolute;
-    top: -10%;
+    top: -15%;
     left: 50%;
     transform: translateX(-50%);
-    width: 800px;
-    height: 800px;
-    background: radial-gradient(circle, rgba(14, 28, 48, 0.3) 0%, rgba(6, 8, 12, 0) 70%);
-    filter: blur(80px);
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, rgba(14, 28, 48, 0.35) 0%, rgba(6, 8, 12, 0) 70%);
+    filter: blur(90px);
 }
 
 .bg-grid {
     position: absolute;
     inset: 0;
     background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
-    background-size: 40px 40px;
-    mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, #000 30%, transparent 90%);
-    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, #000 30%, transparent 90%);
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 38px 38px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 90%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 90%);
 }
 
 /* ── ROOT LAYOUT ── */
@@ -106,21 +110,22 @@ html, body {
     z-index: 1;
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding: 2.5rem 1.5rem;
 }
 
 .setup-container {
     width: 100%;
-    max-width: 680px;
-    animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    max-width: 740px;
+    animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes fadeSlideUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(18px);
     }
     to {
         opacity: 1;
@@ -128,17 +133,85 @@ html, body {
     }
 }
 
+/* ── TOP PROGRESS BAR ── */
+.progress-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    background: rgba(14, 19, 29, 0.7);
+    border: 1px solid var(--border-subtle);
+    padding: 0.6rem 1.25rem;
+    border-radius: 99px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--t3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: all 0.25s ease;
+}
+
+.step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: var(--border-subtle);
+    color: var(--t3);
+    font-size: 0.62rem;
+    font-weight: 800;
+}
+
+.step-item.active {
+    color: var(--accent-blue);
+}
+
+.step-item.active .step-num {
+    background: var(--accent-blue);
+    color: #06080c;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.step-item.completed {
+    color: var(--success);
+}
+
+.step-item.completed .step-num {
+    background: var(--success);
+    color: #06080c;
+}
+
+.step-divider {
+    color: var(--t4);
+    font-size: 0.7rem;
+}
+
 /* ── HEADER SECTION ── */
 .setup-header {
     text-align: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
 }
 
 .brand-badge-wrap {
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
 }
 
 .brand-icon-box {
@@ -153,62 +226,48 @@ html, body {
     color: var(--accent-blue);
 }
 
-.brand-name {
-    font-size: 1.3rem;
-    font-weight: 900;
-    letter-spacing: -0.03em;
-    background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 50%, #38bdf8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.brand-title-badge {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-blue);
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+}
+
+.demo-env-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 99px;
+    background: rgba(100, 116, 139, 0.1);
+    border: 1px solid rgba(100, 116, 139, 0.25);
+    font-size: 0.65rem;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--t2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-left: 0.5rem;
 }
 
 .setup-title {
-    font-size: 2rem;
+    font-size: 2.1rem;
     font-weight: 800;
     letter-spacing: -0.03em;
     color: #ffffff;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 .setup-subtitle {
     font-size: 0.95rem;
     color: var(--t2);
-    line-height: 1.6;
-}
-
-.progress-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 99px;
-    background: rgba(56, 189, 248, 0.08);
-    border: 1px solid rgba(56, 189, 248, 0.2);
-    font-size: 0.68rem;
-    font-weight: 700;
-    font-family: var(--mono);
-    color: var(--accent-blue);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-top: 1rem;
-}
-
-.demo-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 99px;
-    background: rgba(100, 116, 139, 0.08);
-    border: 1px solid rgba(100, 116, 139, 0.2);
-    font-size: 0.62rem;
-    font-weight: 700;
-    font-family: var(--mono);
-    color: var(--t3);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-top: 0.75rem;
+    line-height: 1.5;
 }
 
 /* ── SETUP CARD ── */
@@ -224,9 +283,24 @@ html, body {
     transition: all 0.3s ease;
 }
 
-/* ── FORM LAYOUT ── */
+/* ── FORM SECTIONS ── */
 .form-section {
     margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0;
+}
+
+.section-label-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
 }
 
 .section-label {
@@ -234,8 +308,7 @@ html, body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--t3);
-    margin-bottom: 1.25rem;
+    color: var(--t2);
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -249,28 +322,28 @@ html, body {
     border-radius: 99px;
 }
 
+.section-badge-req {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--t3);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 1.15rem;
+    margin-bottom: 1.15rem;
 }
 
 .form-group {
-    margin-bottom: 1.25rem;
-    animation: fadeIn 0.4s ease-out backwards;
+    position: relative;
+    margin-bottom: 1.15rem;
 }
 
-.form-group:nth-child(1) { animation-delay: 0.1s; }
-.form-group:nth-child(2) { animation-delay: 0.15s; }
-.form-group:nth-child(3) { animation-delay: 0.2s; }
-.form-group:nth-child(4) { animation-delay: 0.25s; }
-.form-group:nth-child(5) { animation-delay: 0.3s; }
-.form-group:nth-child(6) { animation-delay: 0.35s; }
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.form-row .form-group {
+    margin-bottom: 0;
 }
 
 .form-label {
@@ -280,12 +353,18 @@ html, body {
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--t2);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.45rem;
 }
 
 .required-indicator {
     color: var(--danger);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    margin-left: 2px;
+}
+
+.input-container {
+    position: relative;
+    width: 100%;
 }
 
 .form-input,
@@ -297,9 +376,28 @@ html, body {
     background: var(--bg-input);
     color: var(--t1);
     font-family: var(--font);
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     outline: none;
     transition: all 0.2s ease;
+}
+
+.form-input.has-icon {
+    padding-left: 2.5rem;
+}
+
+.input-icon-lead {
+    position: absolute;
+    left: 0.95rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--t3);
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.form-input:focus ~ .input-icon-lead,
+.form-input:focus + .input-icon-lead {
+    color: var(--accent-blue);
 }
 
 .form-input:hover,
@@ -311,12 +409,12 @@ html, body {
 .form-select:focus {
     border-color: var(--accent-blue);
     background: var(--bg-input-focus);
-    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
 }
 
 .form-input::placeholder {
     color: var(--t3);
-    font-size: 0.86rem;
+    font-size: 0.85rem;
 }
 
 .form-select {
@@ -331,60 +429,205 @@ html, body {
 .form-select option {
     background: var(--bg-card);
     color: var(--t1);
-    padding: 0.5rem;
+    padding: 0.6rem;
 }
 
-.field-hint {
-    font-size: 0.72rem;
-    color: var(--t4);
-    margin-top: 0.4rem;
+/* ── SEARCHABLE CUSTOM DROPDOWN (COUNTRY / STATE) ── */
+.custom-select-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select-trigger {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-mid);
+    background: var(--bg-input);
+    color: var(--t1);
+    font-size: 0.88rem;
+    font-family: var(--font);
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.3rem;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    user-select: none;
 }
 
-/* ── VALIDATION ERROR ── */
-.error-message {
+.custom-select-trigger.has-icon {
+    padding-left: 2.5rem;
+}
+
+.custom-select-trigger:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.custom-select-trigger.active {
+    border-color: var(--accent-blue);
+    background: var(--bg-input-focus);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+.custom-select-trigger .placeholder {
+    color: var(--t3);
+}
+
+.custom-select-trigger .chevron {
+    color: var(--t3);
+    transition: transform 0.2s ease;
+}
+
+.custom-select-trigger.active .chevron {
+    transform: rotate(180deg);
+    color: var(--accent-blue);
+}
+
+.custom-dropdown-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--bg-dropdown);
+    border: 1px solid var(--border-mid);
+    border-radius: 12px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+    z-index: 99;
     display: none;
-    margin-top: 0.5rem;
-    padding: 0.6rem 0.8rem;
-    border-radius: 8px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    background: var(--danger-dim);
-    border: 1px solid var(--danger-border);
-    color: #fecdd3;
-    animation: shakeError 0.3s ease-in-out;
+    overflow: hidden;
+    animation: dropFade 0.2s ease-out;
 }
 
-.error-message.show {
+@keyframes dropFade {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-dropdown-panel.open {
+    display: block;
+}
+
+.dropdown-search-box {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(0, 0, 0, 0.25);
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
+.dropdown-search-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--t1);
+    font-family: var(--font);
+    font-size: 0.82rem;
+    outline: none;
+}
+
+.dropdown-search-input::placeholder {
+    color: var(--t3);
+}
+
+.dropdown-options-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.35rem;
+}
+
+.dropdown-options-list::-webkit-scrollbar {
+    width: 4px;
+}
+.dropdown-options-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+.dropdown-option {
+    padding: 0.55rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    color: var(--t2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.15s ease;
+}
+
+.dropdown-option:hover,
+.dropdown-option.highlighted {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--t1);
+}
+
+.dropdown-option.selected {
+    background: var(--accent-dim);
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+.dropdown-empty-msg {
+    padding: 1rem;
+    text-align: center;
+    color: var(--t3);
+    font-size: 0.8rem;
+}
+
+/* ── INLINE ERROR VALIDATION ── */
+.error-msg {
+    display: none;
+    margin-top: 0.4rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #fca5a5;
+    align-items: center;
+    gap: 0.35rem;
+    animation: shakeError 0.25s ease-in-out;
+}
+
+.error-msg.visible {
+    display: flex;
+}
+
 @keyframes shakeError {
     0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-4px); }
-    40%, 80% { transform: translateX(4px); }
+    25%, 75% { transform: translateX(-3px); }
+    50% { transform: translateX(3px); }
 }
 
-.form-input.error,
-.form-select.error {
+.form-input.is-invalid,
+.form-select.is-invalid,
+.custom-select-trigger.is-invalid {
     border-color: var(--danger-border);
-    background: rgba(244, 63, 94, 0.03);
+    background: rgba(244, 63, 94, 0.04);
 }
 
-/* ── SUBMIT BUTTON ── */
+.form-input.is-invalid:focus,
+.custom-select-trigger.is-invalid.active {
+    box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
+}
+
+.field-hint {
+    font-size: 0.72rem;
+    color: var(--t3);
+    margin-top: 0.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* ── PRIMARY CTA BUTTON ── */
 .btn-submit {
     width: 100%;
-    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #00e5ff 100%);
+    background: #0284c7;
     color: #ffffff;
     border: 1px solid rgba(56, 189, 248, 0.4);
-    padding: 1rem 1.5rem;
+    padding: 0.95rem 1.5rem;
     border-radius: 10px;
     font-weight: 700;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     font-family: var(--font);
     letter-spacing: 0.02em;
     cursor: pointer;
@@ -394,14 +637,14 @@ html, body {
     justify-content: center;
     gap: 0.6rem;
     margin-top: 1rem;
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.25);
 }
 
 .btn-submit:hover:not(:disabled) {
-    background: linear-gradient(135deg, #2563eb 0%, #0369a1 50%, #00e5ff 100%);
-    box-shadow: 0 8px 28px rgba(0, 229, 255, 0.45);
-    transform: translateY(-2px);
+    background: #0369a1;
+    border-color: var(--accent-blue);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3);
 }
 
 .btn-submit:active:not(:disabled) {
@@ -413,29 +656,174 @@ html, body {
     cursor: not-allowed;
 }
 
-.btn-submit .spinner {
-    display: none;
-    animation: spin 0.8s linear infinite;
+/* ── SETUP SUMMARY CONFIRMATION MODAL ── */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 6, 10, 0.85);
+    backdrop-filter: blur(16px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
 }
 
-.btn-submit.loading .spinner {
-    display: inline-block;
+.modal-backdrop.open {
+    opacity: 1;
+    pointer-events: all;
 }
 
-.btn-submit.loading .btn-text {
-    display: none;
+.summary-card {
+    width: 100%;
+    max-width: 580px;
+    background: #0d121c;
+    border: 1px solid var(--border-mid);
+    border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+    padding: 2.2rem;
+    transform: scale(0.96) translateY(10px);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+.modal-backdrop.open .summary-card {
+    transform: scale(1) translateY(0);
+}
+
+.summary-header {
+    text-align: left;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: 1.25rem;
+}
+
+.summary-badge {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--accent-blue);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+}
+
+.summary-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+}
+
+.summary-subtitle {
+    font-size: 0.85rem;
+    color: var(--t2);
+    margin-top: 0.25rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.summary-item {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+}
+
+.summary-item.full-width {
+    grid-column: span 2;
+}
+
+.summary-key {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--t3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.25rem;
+}
+
+.summary-val {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--t1);
+    word-break: break-word;
+}
+
+.summary-actions {
+    display: flex;
+    gap: 0.85rem;
+}
+
+.btn-secondary {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border-mid);
+    color: var(--t2);
+    padding: 0.85rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--t1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary-confirm {
+    flex: 1.4;
+    background: #0284c7;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #ffffff;
+    padding: 0.85rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.25);
+}
+
+.btn-primary-confirm:hover:not(:disabled) {
+    background: #0369a1;
+    border-color: var(--accent-blue);
+    transform: translateY(-1px);
+}
+
+.btn-primary-confirm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* ── FOOTER ── */
 .setup-footer {
     margin-top: 2rem;
     text-align: center;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: var(--t3);
 }
 
@@ -446,7 +834,7 @@ html, body {
 }
 
 .setup-footer a:hover {
-    color: #00e5ff;
+    color: var(--cyan);
 }
 
 /* ── RESPONSIVE ── */
@@ -456,37 +844,36 @@ html, body {
     }
     
     .setup-card {
-        padding: 2rem 1.5rem;
+        padding: 1.75rem 1.25rem;
         border-radius: 16px;
     }
     
     .setup-title {
-        font-size: 1.6rem;
+        font-size: 1.7rem;
     }
-    
+
     .form-row {
         grid-template-columns: 1fr;
+        gap: 1.15rem;
     }
-}
 
-@media (max-width: 480px) {
-    .setup-title {
-        font-size: 1.4rem;
+    .summary-grid {
+        grid-template-columns: 1fr;
     }
-    
-    .setup-card {
-        padding: 1.75rem 1.25rem;
+
+    .summary-item.full-width {
+        grid-column: span 1;
     }
-    
-    .brand-name {
-        font-size: 1.1rem;
+
+    .summary-actions {
+        flex-direction: column-reverse;
     }
 }
     </style>
 </head>
 <body>
 
-    <!-- Subtle Background -->
+    <!-- Subtle Ambient Layer -->
     <div class="bg-canvas">
         <div class="bg-radial-ambient"></div>
         <div class="bg-grid"></div>
@@ -496,305 +883,529 @@ html, body {
     <main class="app-layout">
         <div class="setup-container">
             
+            <!-- Progress Indicator -->
+            <nav class="progress-stepper" aria-label="Setup Steps">
+                <div class="step-item active" id="step1">
+                    <span class="step-num">01</span>
+                    <span>Institution Setup</span>
+                </div>
+                <span class="step-divider">&bull;</span>
+                <div class="step-item" id="step2">
+                    <span class="step-num">02</span>
+                    <span>Demo Access</span>
+                </div>
+                <span class="step-divider">&bull;</span>
+                <div class="step-item" id="step3">
+                    <span class="step-num">03</span>
+                    <span>ProctorAI</span>
+                </div>
+            </nav>
+
             <!-- Header -->
             <header class="setup-header">
                 <div class="brand-badge-wrap">
                     <div class="brand-icon-box">
-                        <i data-lucide="shield-check" style="width:18px;height:18px;"></i>
+                        <i data-lucide="shield-check" style="width:20px;height:20px;"></i>
                     </div>
-                    <div class="brand-name">PROCTORAI</div>
+                    <span class="brand-title-badge">PROCTORAI</span>
+                    <span class="demo-env-badge">
+                        <i data-lucide="sparkles" style="width:11px;height:11px;"></i>
+                        <span>Hackathon Demo</span>
+                    </span>
                 </div>
                 
-                <h1 class="setup-title">Examination Monitoring Setup</h1>
-                <p class="setup-subtitle">Let's configure your institution to get started with AI-powered examination security.</p>
-                
-                <div class="progress-indicator">
-                    <span>●</span>
-                    <span>Initial Setup</span>
-                </div>
-                
-                <div class="demo-badge">
-                    <i data-lucide="info" style="width:10px;height:10px;"></i>
-                    <span>Demo Environment</span>
-                </div>
+                <h1 class="setup-title" id="pageTitle">INSTITUTION SETUP</h1>
+                <p class="setup-subtitle" id="pageSubtitle">Configure your examination environment</p>
             </header>
 
-            <!-- Setup Card -->
+            <!-- Setup Form Card -->
             <div class="setup-card">
-                <form id="setupForm" novalidate>
+                <form id="institutionSetupForm" novalidate>
                     
-                    <!-- Institution Information -->
+                    <!-- 1. Institution Identity -->
                     <div class="form-section">
-                        <div class="section-label">Institution Information</div>
+                        <div class="section-label-wrap">
+                            <div class="section-label">Institution Details</div>
+                            <span class="section-badge-req">Required</span>
+                        </div>
                         
+                        <!-- Institution Name -->
                         <div class="form-group">
                             <label class="form-label" for="institutionName">
-                                <i data-lucide="building-2" style="width:14px;height:14px;"></i>
                                 <span>Institution Name</span>
                                 <span class="required-indicator">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="institutionName" 
-                                class="form-input" 
-                                placeholder="Enter institution name"
-                                required
-                                autocomplete="organization"
-                            >
-                            <div class="error-message" id="institutionNameError">
-                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
-                                <span>Institution name is required</span>
+                            <div class="input-container">
+                                <input 
+                                    type="text" 
+                                    id="institutionName" 
+                                    class="form-input has-icon" 
+                                    placeholder="Enter institution name"
+                                    required
+                                    autocomplete="organization"
+                                    spellcheck="false"
+                                >
+                                <i data-lucide="building-2" class="input-icon-lead" style="width:16px;height:16px;"></i>
+                            </div>
+                            <div class="error-msg" id="institutionNameError">
+                                <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                <span>Institution name is required.</span>
                             </div>
                         </div>
 
+                        <!-- Institution Type -->
                         <div class="form-group">
                             <label class="form-label" for="institutionType">
-                                <i data-lucide="landmark" style="width:14px;height:14px;"></i>
                                 <span>Institution Type</span>
                                 <span class="required-indicator">*</span>
                             </label>
-                            <select id="institutionType" class="form-select" required>
-                                <option value="" disabled selected>Select institution type</option>
-                                <option value="university">University</option>
-                                <option value="college">College</option>
-                                <option value="school">School</option>
-                                <option value="coaching">Coaching Institute</option>
-                                <option value="training">Training Institute</option>
-                                <option value="other">Other</option>
-                            </select>
-                            <div class="error-message" id="institutionTypeError">
-                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
-                                <span>Institution type is required</span>
+                            <div class="input-container">
+                                <select id="institutionType" class="form-select" required>
+                                    <option value="" disabled selected>Select institution type</option>
+                                    <option value="University">University</option>
+                                    <option value="College">College</option>
+                                    <option value="School">School</option>
+                                    <option value="Coaching Institute">Coaching Institute</option>
+                                    <option value="Training Institute">Training Institute</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="error-msg" id="institutionTypeError">
+                                <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                <span>Please select an institution type.</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Location Information -->
+                    <!-- 2. Location Details -->
                     <div class="form-section">
-                        <div class="section-label">Location Information</div>
+                        <div class="section-label-wrap">
+                            <div class="section-label">Geographic Location</div>
+                            <span class="section-badge-req">Required</span>
+                        </div>
                         
+                        <!-- Country (Custom Searchable Dropdown) -->
                         <div class="form-group">
-                            <label class="form-label" for="country">
-                                <i data-lucide="globe" style="width:14px;height:14px;"></i>
+                            <label class="form-label" for="countryTrigger">
                                 <span>Country</span>
                                 <span class="required-indicator">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="country" 
-                                class="form-input" 
-                                placeholder="e.g., India"
-                                required
-                                autocomplete="country-name"
-                            >
-                            <div class="error-message" id="countryError">
-                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
-                                <span>Country is required</span>
+                            <div class="custom-select-wrap" id="countrySelectWrap">
+                                <div class="custom-select-trigger has-icon" id="countryTrigger" tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox">
+                                    <span id="countrySelectedText" class="placeholder">Select country</span>
+                                    <i data-lucide="chevron-down" class="chevron" style="width:14px;height:14px;"></i>
+                                </div>
+                                <i data-lucide="globe" class="input-icon-lead" style="width:16px;height:16px;"></i>
+                                
+                                <div class="custom-dropdown-panel" id="countryDropdownPanel">
+                                    <div class="dropdown-search-box">
+                                        <i data-lucide="search" style="width:13px;height:13px;color:var(--t3);"></i>
+                                        <input type="text" id="countrySearchInput" class="dropdown-search-input" placeholder="Search country..." autocomplete="off">
+                                    </div>
+                                    <div class="dropdown-options-list" id="countryOptionsList" role="listbox">
+                                        <!-- Dynamically generated country items -->
+                                    </div>
+                                </div>
+                                <input type="hidden" id="countryHiddenInput" value="">
+                            </div>
+                            <div class="error-msg" id="countryError">
+                                <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                <span>Country selection is required.</span>
                             </div>
                         </div>
 
+                        <!-- State / Region & City Row -->
                         <div class="form-row">
+                            <!-- State / Region (Dynamic searchable or custom input) -->
                             <div class="form-group">
-                                <label class="form-label" for="state">
-                                    <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+                                <label class="form-label" for="stateInput">
                                     <span>State / Region</span>
                                     <span class="required-indicator">*</span>
                                 </label>
-                                <input 
-                                    type="text" 
-                                    id="state" 
-                                    class="form-input" 
-                                    placeholder="e.g., Maharashtra"
-                                    required
-                                    autocomplete="address-level1"
-                                >
-                                <div class="error-message" id="stateError">
-                                    <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
-                                    <span>State is required</span>
+                                <div class="input-container" id="stateContainer">
+                                    <input 
+                                        type="text" 
+                                        id="stateInput" 
+                                        class="form-input has-icon" 
+                                        placeholder="Enter or select state"
+                                        required
+                                        autocomplete="address-level1"
+                                        list="stateDatalist"
+                                    >
+                                    <i data-lucide="map-pin" class="input-icon-lead" style="width:16px;height:16px;"></i>
+                                    <datalist id="stateDatalist"></datalist>
+                                </div>
+                                <div class="error-msg" id="stateError">
+                                    <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                    <span>State or region is required.</span>
                                 </div>
                             </div>
 
+                            <!-- City -->
                             <div class="form-group">
-                                <label class="form-label" for="city">
-                                    <i data-lucide="map" style="width:14px;height:14px;"></i>
+                                <label class="form-label" for="cityInput">
                                     <span>City</span>
                                     <span class="required-indicator">*</span>
                                 </label>
-                                <input 
-                                    type="text" 
-                                    id="city" 
-                                    class="form-input" 
-                                    placeholder="e.g., Mumbai"
-                                    required
-                                    autocomplete="address-level2"
-                                >
-                                <div class="error-message" id="cityError">
-                                    <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
-                                    <span>City is required</span>
+                                <div class="input-container">
+                                    <input 
+                                        type="text" 
+                                        id="cityInput" 
+                                        class="form-input has-icon" 
+                                        placeholder="Enter city name"
+                                        required
+                                        autocomplete="address-level2"
+                                    >
+                                    <i data-lucide="map" class="input-icon-lead" style="width:16px;height:16px;"></i>
+                                </div>
+                                <div class="error-msg" id="cityError">
+                                    <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                    <span>City is required.</span>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Campus / Location -->
                         <div class="form-group">
-                            <label class="form-label" for="campus">
-                                <i data-lucide="building" style="width:14px;height:14px;"></i>
+                            <label class="form-label" for="campusInput">
                                 <span>Campus / Location</span>
                                 <span class="required-indicator">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="campus" 
-                                class="form-input" 
-                                placeholder="e.g., Main Campus"
-                                required
-                                autocomplete="off"
-                            >
-                            <div class="error-message" id="campusError">
-                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
-                                <span>Campus location is required</span>
+                            <div class="input-container">
+                                <input 
+                                    type="text" 
+                                    id="campusInput" 
+                                    class="form-input has-icon" 
+                                    placeholder="Example: North Campus / Main Campus"
+                                    required
+                                    autocomplete="off"
+                                >
+                                <i data-lucide="navigation" class="input-icon-lead" style="width:16px;height:16px;"></i>
+                            </div>
+                            <div class="error-msg" id="campusError">
+                                <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                <span>Campus or location is required.</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Academic Information -->
+                    <!-- 3. Academic & Examination Context -->
                     <div class="form-section">
-                        <div class="section-label">Academic Information</div>
+                        <div class="section-label-wrap">
+                            <div class="section-label">Examination Scope</div>
+                            <span class="section-badge-req">Required</span>
+                        </div>
                         
+                        <!-- Examination Department / Division -->
                         <div class="form-group">
-                            <label class="form-label" for="department">
-                                <i data-lucide="briefcase" style="width:14px;height:14px;"></i>
+                            <label class="form-label" for="departmentInput">
                                 <span>Examination Department / Division</span>
                                 <span class="required-indicator">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="department" 
-                                class="form-input" 
-                                placeholder="e.g., Computer Science Department"
-                                required
-                                autocomplete="off"
-                            >
-                            <div class="error-message" id="departmentError">
-                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
-                                <span>Department is required</span>
+                            <div class="input-container">
+                                <input 
+                                    type="text" 
+                                    id="departmentInput" 
+                                    class="form-input has-icon" 
+                                    placeholder="Example: Computer Science Department"
+                                    required
+                                    autocomplete="off"
+                                >
+                                <i data-lucide="briefcase" class="input-icon-lead" style="width:16px;height:16px;"></i>
+                            </div>
+                            <div class="error-msg" id="departmentError">
+                                <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                <span>Examination department is required.</span>
                             </div>
                         </div>
 
+                        <!-- Examination Type -->
                         <div class="form-group">
-                            <label class="form-label" for="examType">
-                                <i data-lucide="file-text" style="width:14px;height:14px;"></i>
+                            <label class="form-label" for="examTypeSelect">
                                 <span>Examination Type</span>
                                 <span class="required-indicator">*</span>
                             </label>
-                            <select id="examType" class="form-select" required>
-                                <option value="" disabled selected>Select examination type</option>
-                                <option value="university">University Examination</option>
-                                <option value="college">College Examination</option>
-                                <option value="school">School Examination</option>
-                                <option value="entrance">Entrance Examination</option>
-                                <option value="internal">Internal Assessment</option>
-                                <option value="competitive">Competitive Examination</option>
-                                <option value="other">Other</option>
-                            </select>
-                            <div class="error-message" id="examTypeError">
-                                <i data-lucide="alert-circle" style="width:14px;height:14px;"></i>
-                                <span>Examination type is required</span>
+                            <div class="input-container">
+                                <select id="examTypeSelect" class="form-select" required>
+                                    <option value="" disabled selected>Select examination type</option>
+                                    <option value="University Examination">University Examination</option>
+                                    <option value="College Examination">College Examination</option>
+                                    <option value="School Examination">School Examination</option>
+                                    <option value="Entrance Examination">Entrance Examination</option>
+                                    <option value="Internal Assessment">Internal Assessment</option>
+                                    <option value="Competitive Examination">Competitive Examination</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="error-msg" id="examTypeError">
+                                <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                <span>Please select an examination type.</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Optional Contact Information -->
+                    <!-- 4. Optional Contact & Facility -->
                     <div class="form-section">
-                        <div class="section-label">Contact Information (Optional)</div>
+                        <div class="section-label-wrap">
+                            <div class="section-label">Facility & Contact</div>
+                            <span class="section-badge-req" style="color:var(--t4);">Optional</span>
+                        </div>
                         
+                        <!-- Institution Website -->
                         <div class="form-group">
-                            <label class="form-label" for="website">
-                                <i data-lucide="globe" style="width:14px;height:14px;"></i>
+                            <label class="form-label" for="websiteInput">
                                 <span>Institution Website</span>
                             </label>
-                            <input 
-                                type="url" 
-                                id="website" 
-                                class="form-input" 
-                                placeholder="e.g., https://www.institution.edu"
-                                autocomplete="url"
-                            >
-                            <div class="field-hint">
-                                <i data-lucide="info" style="width:11px;height:11px;"></i>
-                                <span>Optional: Institution website URL</span>
+                            <div class="input-container">
+                                <input 
+                                    type="url" 
+                                    id="websiteInput" 
+                                    class="form-input has-icon" 
+                                    placeholder="Example: https://www.university.edu"
+                                    autocomplete="url"
+                                >
+                                <i data-lucide="link-2" class="input-icon-lead" style="width:16px;height:16px;"></i>
+                            </div>
+                            <div class="error-msg" id="websiteError">
+                                <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                <span>Please enter a valid website URL (e.g. https://...).</span>
                             </div>
                         </div>
 
+                        <!-- Contact Email & Exam Room Row -->
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label" for="contactEmail">
-                                    <i data-lucide="mail" style="width:14px;height:14px;"></i>
-                                    <span>Contact Email</span>
+                                <label class="form-label" for="contactEmailInput">
+                                    <span>Institution Contact Email</span>
                                 </label>
-                                <input 
-                                    type="email" 
-                                    id="contactEmail" 
-                                    class="form-input" 
-                                    placeholder="e.g., admin@institution.edu"
-                                    autocomplete="email"
-                                >
+                                <div class="input-container">
+                                    <input 
+                                        type="email" 
+                                        id="contactEmailInput" 
+                                        class="form-input has-icon" 
+                                        placeholder="Example: proctor@university.edu"
+                                        autocomplete="email"
+                                    >
+                                    <i data-lucide="mail" class="input-icon-lead" style="width:16px;height:16px;"></i>
+                                </div>
+                                <div class="error-msg" id="contactEmailError">
+                                    <i data-lucide="alert-circle" style="width:13px;height:13px;"></i>
+                                    <span>Please enter a valid email address.</span>
+                                </div>
                             </div>
 
                             <div class="form-group">
-                                <label class="form-label" for="examRoom">
-                                    <i data-lucide="door-open" style="width:14px;height:14px;"></i>
+                                <label class="form-label" for="examRoomInput">
                                     <span>Examination Room / Hall</span>
                                 </label>
-                                <input 
-                                    type="text" 
-                                    id="examRoom" 
-                                    class="form-input" 
-                                    placeholder="e.g., Main Examination Hall"
-                                    autocomplete="off"
-                                >
+                                <div class="input-container">
+                                    <input 
+                                        type="text" 
+                                        id="examRoomInput" 
+                                        class="form-input has-icon" 
+                                        placeholder="Example: Main Examination Hall"
+                                        autocomplete="off"
+                                    >
+                                    <i data-lucide="door-open" class="input-icon-lead" style="width:16px;height:16px;"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Submit Button -->
-                    <button type="submit" class="btn-submit" id="submitBtn">
-                        <i data-lucide="arrow-right" class="btn-icon" style="width:18px;height:18px;"></i>
-                        <span class="btn-text">Review & Continue</span>
-                        <i data-lucide="loader" class="spinner" style="width:18px;height:18px;"></i>
+                    <!-- Submit Review Button -->
+                    <button type="submit" class="btn-submit" id="reviewBtn">
+                        <span id="btnText">Review & Continue</span>
+                        <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
                     </button>
                 </form>
             </div>
 
             <!-- Footer -->
             <footer class="setup-footer">
-                <p>ProctorAI Platform © 2026 &middot; <a href="index.html">Platform Overview</a></p>
+                <p>ProctorAI Enterprise Platform &copy; 2026 &middot; <a href="index.html">Overview</a></p>
             </footer>
 
         </div>
     </main>
 
+    <!-- ══ SETUP SUMMARY CONFIRMATION MODAL ══ -->
+    <div class="modal-backdrop" id="summaryModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="summary-card">
+            <div class="summary-header">
+                <div class="summary-badge">
+                    <i data-lucide="check-circle" style="width:13px;height:13px;"></i>
+                    <span>Review Configuration</span>
+                </div>
+                <h2 class="summary-title" id="modalTitle">INSTITUTION CONFIGURATION</h2>
+                <p class="summary-subtitle">Please verify your examination setup before entering the platform.</p>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-item full-width">
+                    <div class="summary-key">Institution Name</div>
+                    <div class="summary-val" id="sumInstName">—</div>
+                </div>
+
+                <div class="summary-item">
+                    <div class="summary-key">Institution Type</div>
+                    <div class="summary-val" id="sumInstType">—</div>
+                </div>
+
+                <div class="summary-item">
+                    <div class="summary-key">Location</div>
+                    <div class="summary-val" id="sumLocation">—</div>
+                </div>
+
+                <div class="summary-item">
+                    <div class="summary-key">Campus / Location</div>
+                    <div class="summary-val" id="sumCampus">—</div>
+                </div>
+
+                <div class="summary-item">
+                    <div class="summary-key">Department / Division</div>
+                    <div class="summary-val" id="sumDepartment">—</div>
+                </div>
+
+                <div class="summary-item full-width">
+                    <div class="summary-key">Examination Type</div>
+                    <div class="summary-val" id="sumExamType">—</div>
+                </div>
+
+                <div class="summary-item" id="sumRoomWrap">
+                    <div class="summary-key">Examination Room / Hall</div>
+                    <div class="summary-val" id="sumRoom">N/A</div>
+                </div>
+
+                <div class="summary-item" id="sumContactWrap">
+                    <div class="summary-key">Contact / Website</div>
+                    <div class="summary-val" id="sumContact">N/A</div>
+                </div>
+            </div>
+
+            <div class="summary-actions">
+                <button type="button" class="btn-secondary" id="editSetupBtn">
+                    <i data-lucide="edit-3" style="width:14px;height:14px;"></i>
+                    <span>Edit Setup</span>
+                </button>
+                <button type="button" class="btn-primary-confirm" id="confirmContinueBtn">
+                    <span>Confirm & Continue</span>
+                    <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ SCRIPT LOGIC ══ -->
     <script>
         // Initialize Lucide Icons
         lucide.createIcons();
 
-        // DOM Elements
-        const form = document.getElementById('setupForm');
-        const submitBtn = document.getElementById('submitBtn');
-        
-        const fields = {
-            institutionName: document.getElementById('institutionName'),
-            institutionType: document.getElementById('institutionType'),
-            country: document.getElementById('country'),
-            state: document.getElementById('state'),
-            city: document.getElementById('city'),
-            campus: document.getElementById('campus'),
-            department: document.getElementById('department'),
-            examType: document.getElementById('examType'),
-            website: document.getElementById('website'),
-            contactEmail: document.getElementById('contactEmail'),
-            examRoom: document.getElementById('examRoom')
-        };
+        // Comprehensive Country & State Dataset
+        const COUNTRIES = [
+            { name: "India", code: "IN", states: [
+                "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", 
+                "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", 
+                "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", 
+                "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", 
+                "West Bengal", "Delhi (NCT)", "Jammu and Kashmir", "Ladakh", "Chandigarh", "Puducherry"
+            ]},
+            { name: "United States", code: "US", states: [
+                "California", "Texas", "Florida", "New York", "Illinois", "Pennsylvania", "Ohio", 
+                "Georgia", "North Carolina", "Michigan", "New Jersey", "Virginia", "Washington", 
+                "Arizona", "Massachusetts", "Tennessee", "Indiana", "Missouri", "Maryland", "Wisconsin", 
+                "Colorado", "Minnesota", "South Carolina", "Alabama", "Louisiana", "Kentucky", "Oregon"
+            ]},
+            { name: "United Kingdom", code: "GB", states: [
+                "England", "Scotland", "Wales", "Northern Ireland", "Greater London", "Greater Manchester", 
+                "West Midlands", "West Yorkshire", "Merseyside", "South Yorkshire"
+            ]},
+            { name: "Canada", code: "CA", states: [
+                "Ontario", "Quebec", "British Columbia", "Alberta", "Manitoba", "Saskatchewan", 
+                "Nova Scotia", "New Brunswick", "Newfoundland and Labrador", "Prince Edward Island"
+            ]},
+            { name: "Australia", code: "AU", states: [
+                "New South Wales", "Victoria", "Queensland", "Western Australia", "South Australia", 
+                "Tasmania", "Australian Capital Territory", "Northern Territory"
+            ]},
+            { name: "Germany", code: "DE", states: [
+                "Bavaria", "Baden-Württemberg", "North Rhine-Westphalia", "Hesse", "Saxony", "Berlin", 
+                "Lower Saxony", "Rhineland-Palatinate", "Hamburg", "Schleswig-Holstein"
+            ]},
+            { name: "United Arab Emirates", code: "AE", states: [
+                "Abu Dhabi", "Dubai", "Sharjah", "Ajman", "Ras Al Khaimah", "Fujairah", "Umm Al Quwain"
+            ]},
+            { name: "Singapore", code: "SG", states: [
+                "Central Region", "East Region", "North Region", "North-East Region", "West Region"
+            ]},
+            { name: "Japan", code: "JP", states: [
+                "Tokyo", "Osaka", "Kanagawa", "Aichi", "Saitama", "Chiba", "Hyogo", "Hokkaido", "Fukuoka", "Kyoto"
+            ]},
+            { name: "France", code: "FR", states: [
+                "Île-de-France", "Auvergne-Rhône-Alpes", "Nouvelle-Aquitaine", "Occitanie", "Hauts-de-France", 
+                "Provence-Alpes-Côte d'Azur", "Grand Est", "Pays de la Loire", "Normandy", "Brittany"
+            ]},
+            { name: "Brazil", code: "BR", states: ["São Paulo", "Rio de Janeiro", "Minas Gerais", "Bahia", "Paraná", "Rio Grande do Sul"]},
+            { name: "South Africa", code: "ZA", states: ["Gauteng", "Western Cape", "KwaZulu-Natal", "Eastern Cape", "Free State"]},
+            { name: "Saudi Arabia", code: "SA", states: ["Riyadh", "Makkah", "Eastern Province", "Madinah", "Asir", "Tabuk"]},
+            { name: "Malaysia", code: "MY", states: ["Selangor", "Kuala Lumpur", "Johor", "Penang", "Perak", "Sabah", "Sarawak"]},
+            { name: "Netherlands", code: "NL", states: ["North Holland", "South Holland", "North Brabant", "Gelderland", "Utrecht"]},
+            { name: "Switzerland", code: "CH", states: ["Zurich", "Bern", "Vaud", "Geneva", "Aargau", "St. Gallen", "Lucerne"]},
+            { name: "New Zealand", code: "NZ", states: ["Auckland", "Canterbury", "Wellington", "Waikato", "Bay of Plenty"]},
+            { name: "Ireland", code: "IE", states: ["Dublin", "Cork", "Galway", "Limerick", "Waterford"]},
+            { name: "Sweden", code: "SE", states: ["Stockholm", "Västra Götaland", "Skåne", "Östergötland", "Uppsala"]},
+            { name: "Norway", code: "NO", states: ["Oslo", "Viken", "Vestland", "Rogaland", "Trøndelag"]},
+            { name: "Denmark", code: "DK", states: ["Capital Region", "Central Denmark", "Region of Southern Denmark", "Zealand", "North Denmark"]},
+            { name: "Finland", code: "FI", states: ["Uusimaa", "Pirkanmaa", "Southwest Finland", "North Ostrobothnia", "Central Finland"]},
+            { name: "Spain", code: "ES", states: ["Madrid", "Catalonia", "Andalusia", "Valencian Community", "Galicia", "Basque Country"]},
+            { name: "Italy", code: "IT", states: ["Lombardy", "Lazio", "Campania", "Veneto", "Sicily", "Piedmont", "Emilia-Romagna"]},
+            { name: "South Korea", code: "KR", states: ["Seoul", "Gyeonggi", "Busan", "Incheon", "Daegu", "Daejeon", "Gwangju"]},
+            { name: "Indonesia", code: "ID", states: ["Jakarta", "West Java", "East Java", "Central Java", "North Sumatra", "Bali"]},
+            { name: "Philippines", code: "PH", states: ["Metro Manila", "Calabarzon", "Central Luzon", "Central Visayas", "Western Visayas"]},
+            { name: "Mexico", code: "MX", states: ["Mexico City", "Jalisco", "Nuevo León", "State of Mexico", "Puebla", "Guanajuato"]},
+            { name: "Argentina", code: "AR", states: ["Buenos Aires", "Córdoba", "Santa Fe", "Mendoza", "Tucumán"]},
+            { name: "Egypt", code: "EG", states: ["Cairo", "Giza", "Alexandria", "Dakahlia", "Sharqia", "Gharbia"]},
+            { name: "Nigeria", code: "NG", states: ["Lagos", "Kano", "Kaduna", "Rivers", "Oyo", "Abuja (FCT)"]},
+            { name: "Kenya", code: "KE", states: ["Nairobi", "Mombasa", "Kiambu", "Nakuru", "Machakos", "Kisumu"]},
+            { name: "Poland", code: "PL", states: ["Masovian", "Silesian", "Greater Poland", "Lesser Poland", "Lower Silesian"]},
+            { name: "Austria", code: "AT", states: ["Vienna", "Lower Austria", "Upper Austria", "Styria", "Tyrol", "Salzburg"]},
+            { name: "Belgium", code: "BE", states: ["Flanders", "Wallonia", "Brussels-Capital"]},
+            { name: "Portugal", code: "PT", states: ["Lisbon", "Porto", "Setúbal", "Braga", "Aveiro", "Faro"]},
+            { name: "Turkey", code: "TR", states: ["Istanbul", "Ankara", "Izmir", "Bursa", "Antalya", "Adana"]},
+            { name: "Vietnam", code: "VN", states: ["Ho Chi Minh City", "Hanoi", "Da Nang", "Hai Phong", "Can Tho"]},
+            { name: "Thailand", code: "TH", states: ["Bangkok", "Nonthaburi", "Chiang Mai", "Chonburi", "Nakhon Ratchasima"]},
+            { name: "Other Country", code: "OTHER", states: [] }
+        ];
 
+        // DOM Element References
+        const form = document.getElementById('institutionSetupForm');
+        const reviewBtn = document.getElementById('reviewBtn');
+        const btnText = document.getElementById('btnText');
+        
+        // Modal references
+        const summaryModal = document.getElementById('summaryModal');
+        const editSetupBtn = document.getElementById('editSetupBtn');
+        const confirmContinueBtn = document.getElementById('confirmContinueBtn');
+
+        // Form Fields
+        const institutionNameInput = document.getElementById('institutionName');
+        const institutionTypeSelect = document.getElementById('institutionType');
+        const countryTrigger = document.getElementById('countryTrigger');
+        const countrySelectedText = document.getElementById('countrySelectedText');
+        const countryDropdownPanel = document.getElementById('countryDropdownPanel');
+        const countrySearchInput = document.getElementById('countrySearchInput');
+        const countryOptionsList = document.getElementById('countryOptionsList');
+        const countryHiddenInput = document.getElementById('countryHiddenInput');
+        const stateInput = document.getElementById('stateInput');
+        const stateDatalist = document.getElementById('stateDatalist');
+        const cityInput = document.getElementById('cityInput');
+        const campusInput = document.getElementById('campusInput');
+        const departmentInput = document.getElementById('departmentInput');
+        const examTypeSelect = document.getElementById('examTypeSelect');
+        const websiteInput = document.getElementById('websiteInput');
+        const contactEmailInput = document.getElementById('contactEmailInput');
+        const examRoomInput = document.getElementById('examRoomInput');
+
+        // Error Containers
         const errors = {
             institutionName: document.getElementById('institutionNameError'),
             institutionType: document.getElementById('institutionTypeError'),
@@ -803,162 +1414,308 @@ html, body {
             city: document.getElementById('cityError'),
             campus: document.getElementById('campusError'),
             department: document.getElementById('departmentError'),
-            examType: document.getElementById('examTypeError')
+            examType: document.getElementById('examTypeError'),
+            website: document.getElementById('websiteError'),
+            contactEmail: document.getElementById('contactEmailError')
         };
 
-        // Check if setup is already completed
-        const setupCompleted = sessionStorage.getItem('proctorai_setup_completed') || 
-                               localStorage.getItem('proctorai_setup_completed');
-        
-        // If setup is completed and we're editing, load existing data
-        if (setupCompleted === 'true') {
-            const institutionDataStr = sessionStorage.getItem('proctorai_institution_data') || 
-                                       localStorage.getItem('proctorai_institution_data');
-            
-            if (institutionDataStr) {
-                try {
-                    const data = JSON.parse(institutionDataStr);
-                    fields.institutionName.value = data.institutionName || '';
-                    fields.institutionType.value = data.institutionType || '';
-                    fields.country.value = data.country || '';
-                    fields.state.value = data.state || '';
-                    fields.city.value = data.city || '';
-                    fields.campus.value = data.campus || '';
-                    fields.department.value = data.department || '';
-                    fields.examType.value = data.examType || '';
-                    fields.website.value = data.website || '';
-                    fields.contactEmail.value = data.contactEmail || '';
-                    fields.examRoom.value = data.examRoom || '';
-                    
-                    // Update header text for edit mode
-                    document.querySelector('.setup-title').textContent = 'Edit Institution Details';
-                    document.querySelector('.setup-subtitle').textContent = 'Update your institution information.';
-                    document.querySelector('.btn-text').textContent = 'Save Changes';
-                    document.querySelector('.progress-indicator span:last-child').textContent = 'Edit Setup';
-                } catch (e) {
-                    console.warn('Could not load existing data', e);
-                }
+        // Summary Fields
+        const sumInstName = document.getElementById('sumInstName');
+        const sumInstType = document.getElementById('sumInstType');
+        const sumLocation = document.getElementById('sumLocation');
+        const sumCampus = document.getElementById('sumCampus');
+        const sumDepartment = document.getElementById('sumDepartment');
+        const sumExamType = document.getElementById('sumExamType');
+        const sumRoom = document.getElementById('sumRoom');
+        const sumContact = document.getElementById('sumContact');
+
+        // Check if currently editing from dashboard
+        const urlParams = new URLSearchParams(window.location.search);
+        const isEditMode = urlParams.get('edit') === '1' || sessionStorage.getItem('proctorai_edit_setup') === 'true';
+
+        // Populate Country List
+        function populateCountries(filter = '') {
+            countryOptionsList.innerHTML = '';
+            const query = filter.toLowerCase().trim();
+            const filtered = COUNTRIES.filter(c => c.name.toLowerCase().includes(query));
+
+            if (filtered.length === 0) {
+                countryOptionsList.innerHTML = '<div class="dropdown-empty-msg">No countries found</div>';
+                return;
             }
-        }
 
-        // Validation Functions
-        function showError(fieldName) {
-            fields[fieldName].classList.add('error');
-            errors[fieldName].classList.add('show');
-        }
-
-        function hideError(fieldName) {
-            fields[fieldName].classList.remove('error');
-            errors[fieldName].classList.remove('show');
-        }
-
-        function validateField(fieldName) {
-            const field = fields[fieldName];
-            const value = field.value.trim();
-            
-            if (!value) {
-                showError(fieldName);
-                return false;
-            }
-            
-            hideError(fieldName);
-            return true;
-        }
-
-        function validateAllFields() {
-            let isValid = true;
-            
-            // Required fields
-            const requiredFields = ['institutionName', 'institutionType', 'country', 'state', 'city', 'campus', 'department', 'examType'];
-            
-            requiredFields.forEach(fieldName => {
-                if (!validateField(fieldName)) {
-                    isValid = false;
-                }
+            filtered.forEach(c => {
+                const opt = document.createElement('div');
+                opt.className = `dropdown-option ${countryHiddenInput.value === c.name ? 'selected' : ''}`;
+                opt.textContent = c.name;
+                opt.setAttribute('role', 'option');
+                opt.addEventListener('click', () => selectCountry(c));
+                countryOptionsList.appendChild(opt);
             });
-            
-            return isValid;
         }
 
-        // Real-time validation on blur
-        Object.keys(fields).forEach(fieldName => {
-            if (errors[fieldName]) {
-                fields[fieldName].addEventListener('blur', () => {
-                    if (fields[fieldName].value.trim()) {
-                        validateField(fieldName);
-                    }
+        function selectCountry(countryObj) {
+            countryHiddenInput.value = countryObj.name;
+            countrySelectedText.textContent = countryObj.name;
+            countrySelectedText.classList.remove('placeholder');
+            countryTrigger.classList.remove('active', 'is-invalid');
+            countryDropdownPanel.classList.remove('open');
+            countryTrigger.setAttribute('aria-expanded', 'false');
+            hideError('country');
+
+            // Populate corresponding states into datalist
+            stateDatalist.innerHTML = '';
+            if (countryObj.states && countryObj.states.length > 0) {
+                countryObj.states.forEach(st => {
+                    const opt = document.createElement('option');
+                    opt.value = st;
+                    stateDatalist.appendChild(opt);
                 });
-                
-                fields[fieldName].addEventListener('input', () => {
-                    if (errors[fieldName].classList.contains('show')) {
-                        hideError(fieldName);
-                    }
-                });
+                stateInput.placeholder = `Select or type ${countryObj.name} state/region`;
+            } else {
+                stateInput.placeholder = 'Enter state / province / region';
+            }
+        }
+
+        // Country Searchable Dropdown Interactions
+        countryTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = countryDropdownPanel.classList.contains('open');
+            if (isOpen) {
+                countryDropdownPanel.classList.remove('open');
+                countryTrigger.classList.remove('active');
+                countryTrigger.setAttribute('aria-expanded', 'false');
+            } else {
+                countryDropdownPanel.classList.add('open');
+                countryTrigger.classList.add('active');
+                countryTrigger.setAttribute('aria-expanded', 'true');
+                countrySearchInput.value = '';
+                populateCountries('');
+                setTimeout(() => countrySearchInput.focus(), 50);
             }
         });
 
-        // Form Submission
-        form.addEventListener('submit', async (e) => {
+        countrySearchInput.addEventListener('input', (e) => {
+            populateCountries(e.target.value);
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('countrySelectWrap').contains(e.target)) {
+                countryDropdownPanel.classList.remove('open');
+                countryTrigger.classList.remove('active');
+                countryTrigger.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Initialize Country Dropdown List
+        populateCountries();
+
+        // Validation helpers
+        function showError(fieldKey) {
+            if (errors[fieldKey]) errors[fieldKey].classList.add('visible');
+            const targetEl = document.getElementById(fieldKey) || 
+                             document.getElementById(fieldKey + 'Input') || 
+                             document.getElementById(fieldKey + 'Select') || 
+                             (fieldKey === 'country' ? countryTrigger : null);
+            if (targetEl) targetEl.classList.add('is-invalid');
+        }
+
+        function hideError(fieldKey) {
+            if (errors[fieldKey]) errors[fieldKey].classList.remove('visible');
+            const targetEl = document.getElementById(fieldKey) || 
+                             document.getElementById(fieldKey + 'Input') || 
+                             document.getElementById(fieldKey + 'Select') || 
+                             (fieldKey === 'country' ? countryTrigger : null);
+            if (targetEl) targetEl.classList.remove('is-invalid');
+        }
+
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const URL_REGEX = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/i;
+
+        function validateField(key) {
+            let val = '';
+            if (key === 'country') val = countryHiddenInput.value.trim();
+            else if (key === 'institutionName') val = institutionNameInput.value.trim();
+            else if (key === 'institutionType') val = institutionTypeSelect.value.trim();
+            else if (key === 'state') val = stateInput.value.trim();
+            else if (key === 'city') val = cityInput.value.trim();
+            else if (key === 'campus') val = campusInput.value.trim();
+            else if (key === 'department') val = departmentInput.value.trim();
+            else if (key === 'examType') val = examTypeSelect.value.trim();
+            else if (key === 'website') {
+                val = websiteInput.value.trim();
+                if (val && !URL_REGEX.test(val)) {
+                    showError('website');
+                    return false;
+                }
+                hideError('website');
+                return true;
+            }
+            else if (key === 'contactEmail') {
+                val = contactEmailInput.value.trim();
+                if (val && !EMAIL_REGEX.test(val)) {
+                    showError('contactEmail');
+                    return false;
+                }
+                hideError('contactEmail');
+                return true;
+            }
+
+            if (!val) {
+                showError(key);
+                return false;
+            }
+            hideError(key);
+            return true;
+        }
+
+        // Live validation on blur
+        institutionNameInput.addEventListener('blur', () => validateField('institutionName'));
+        institutionTypeSelect.addEventListener('change', () => validateField('institutionType'));
+        stateInput.addEventListener('blur', () => validateField('state'));
+        cityInput.addEventListener('blur', () => validateField('city'));
+        campusInput.addEventListener('blur', () => validateField('campus'));
+        departmentInput.addEventListener('blur', () => validateField('department'));
+        examTypeSelect.addEventListener('change', () => validateField('examType'));
+        websiteInput.addEventListener('blur', () => validateField('website'));
+        contactEmailInput.addEventListener('blur', () => validateField('contactEmail'));
+
+        // Load existing saved configuration (if editing or previously entered)
+        (function loadExistingData() {
+            const raw = sessionStorage.getItem('proctorai_institution_data') || localStorage.getItem('proctorai_institution_data');
+            if (raw) {
+                try {
+                    const data = JSON.parse(raw);
+                    if (data.institutionName) institutionNameInput.value = data.institutionName;
+                    if (data.institutionType) institutionTypeSelect.value = data.institutionType;
+                    if (data.country) {
+                        const matched = COUNTRIES.find(c => c.name.toLowerCase() === data.country.toLowerCase()) || { name: data.country, states: [] };
+                        selectCountry(matched);
+                    }
+                    if (data.state) stateInput.value = data.state;
+                    if (data.city) cityInput.value = data.city;
+                    if (data.campus) campusInput.value = data.campus;
+                    if (data.department) departmentInput.value = data.department;
+                    if (data.examType) examTypeSelect.value = data.examType;
+                    if (data.website) websiteInput.value = data.website;
+                    if (data.contactEmail) contactEmailInput.value = data.contactEmail;
+                    if (data.examRoom) examRoomInput.value = data.examRoom;
+
+                    if (isEditMode) {
+                        document.getElementById('pageTitle').textContent = 'EDIT INSTITUTION DETAILS';
+                        document.getElementById('pageSubtitle').textContent = 'Update your examination environment configuration';
+                        btnText.textContent = 'Review & Update';
+                    }
+                } catch (err) {
+                    console.warn('Could not parse stored setup data', err);
+                }
+            }
+        })();
+
+        // Form Submission -> Review in Confirmation Summary
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
-            
-            // Validate all fields
-            if (!validateAllFields()) {
-                // Scroll to first error
-                const firstError = document.querySelector('.form-input.error, .form-select.error');
-                if (firstError) {
-                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    firstError.focus();
+
+            const requiredKeys = ['institutionName', 'institutionType', 'country', 'state', 'city', 'campus', 'department', 'examType'];
+            let hasError = false;
+
+            requiredKeys.forEach(k => {
+                if (!validateField(k)) hasError = true;
+            });
+
+            if (websiteInput.value.trim() && !validateField('website')) hasError = true;
+            if (contactEmailInput.value.trim() && !validateField('contactEmail')) hasError = true;
+
+            if (hasError) {
+                const firstInvalid = document.querySelector('.is-invalid');
+                if (firstInvalid) {
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstInvalid.focus();
                 }
                 return;
             }
 
-            // Collect setup data
+            // Populate Summary Modal with exact user-entered values
+            const instName = institutionNameInput.value.trim();
+            const instType = institutionTypeSelect.value.trim();
+            const country = countryHiddenInput.value.trim();
+            const state = stateInput.value.trim();
+            const city = cityInput.value.trim();
+            const campus = campusInput.value.trim();
+            const department = departmentInput.value.trim();
+            const examType = examTypeSelect.value.trim();
+            const website = websiteInput.value.trim();
+            const email = contactEmailInput.value.trim();
+            const room = examRoomInput.value.trim();
+
+            sumInstName.textContent = instName;
+            sumInstType.textContent = instType;
+            sumLocation.textContent = `${city}, ${state}, ${country}`;
+            sumCampus.textContent = campus;
+            sumDepartment.textContent = department;
+            sumExamType.textContent = examType;
+            sumRoom.textContent = room || 'N/A';
+
+            const contactItems = [];
+            if (email) contactItems.push(email);
+            if (website) contactItems.push(website);
+            sumContact.textContent = contactItems.length > 0 ? contactItems.join(' · ') : 'N/A';
+
+            // Show Confirmation Modal
+            summaryModal.classList.add('open');
+            lucide.createIcons();
+        });
+
+        // Modal Action 1: Edit Setup (Return to form)
+        editSetupBtn.addEventListener('click', () => {
+            summaryModal.classList.remove('open');
+        });
+
+        // Modal Action 2: Confirm & Continue
+        confirmContinueBtn.addEventListener('click', () => {
+            confirmContinueBtn.disabled = true;
+            confirmContinueBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:14px;height:14px;"></i> <span>Saving Configuration...</span>';
+            lucide.createIcons();
+
             const setupData = {
-                institutionName: fields.institutionName.value.trim(),
-                institutionType: fields.institutionType.value,
-                country: fields.country.value.trim(),
-                state: fields.state.value.trim(),
-                city: fields.city.value.trim(),
-                campus: fields.campus.value.trim(),
-                department: fields.department.value.trim(),
-                examType: fields.examType.value,
-                website: fields.website.value.trim() || null,
-                contactEmail: fields.contactEmail.value.trim() || null,
-                examRoom: fields.examRoom.value.trim() || null,
-                setupDate: new Date().toISOString()
+                institutionName: institutionNameInput.value.trim(),
+                institutionType: institutionTypeSelect.value.trim(),
+                country: countryHiddenInput.value.trim(),
+                state: stateInput.value.trim(),
+                city: cityInput.value.trim(),
+                campus: campusInput.value.trim(),
+                department: departmentInput.value.trim(),
+                examType: examTypeSelect.value.trim(),
+                website: websiteInput.value.trim() || null,
+                contactEmail: contactEmailInput.value.trim() || null,
+                examRoom: examRoomInput.value.trim() || null,
+                configuredAt: new Date().toISOString()
             };
 
-            // Show loading state
-            submitBtn.disabled = true;
-            submitBtn.classList.add('loading');
-
-            // Simulate brief processing (for smooth UX)
-            await new Promise(resolve => setTimeout(resolve, 600));
-
-            // Store setup data
+            // Store cleanly in non-sensitive session storage & local storage
             try {
                 sessionStorage.setItem('proctorai_setup_completed', 'true');
                 sessionStorage.setItem('proctorai_institution_data', JSON.stringify(setupData));
                 localStorage.setItem('proctorai_setup_completed', 'true');
                 localStorage.setItem('proctorai_institution_data', JSON.stringify(setupData));
+                sessionStorage.removeItem('proctorai_edit_setup');
             } catch (err) {
                 console.warn('Storage unavailable', err);
             }
 
-            // Smooth transition to login
+            // Smooth transition
             document.body.style.opacity = '0';
-            document.body.style.transition = 'opacity 0.3s ease';
-            
-            setTimeout(() => {
-                // If this was an edit, go back to monitoring, otherwise go to login
-                const isEdit = sessionStorage.getItem('proctorai_demo_auth') === 'true';
-                window.location.href = isEdit ? 'monitoring.html' : 'login.html';
-            }, 300);
-        });
+            document.body.style.transition = 'opacity 0.25s ease';
 
-        // Smooth entrance animation
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
+            setTimeout(() => {
+                const demoAuth = sessionStorage.getItem('proctorai_demo_auth') || localStorage.getItem('proctorai_demo_auth');
+                if (isEditMode && demoAuth === 'true') {
+                    window.location.href = 'monitoring.html';
+                } else {
+                    window.location.href = 'login.html';
+                }
+            }, 250);
         });
     </script>
 </body>

@@ -1876,7 +1876,7 @@ body::after {
             <div class="h-brand-text">
                 <div class="h-brand-title-row">
                     <span class="h-brand-name">ProctorAI</span>
-                    <span class="h-brand-badge">SOC v2.4</span>
+                    <span class="h-brand-badge" style="background:rgba(56,189,248,0.1);color:var(--accent);border:1px solid rgba(56,189,248,0.25);">DEMO ENVIRONMENT</span>
                 </div>
                 <span class="h-brand-sub">Security Operations Center</span>
             </div>
@@ -1910,10 +1910,10 @@ body::after {
             <div class="h-divider"></div>
             
             <div class="sup-profile">
-                <div class="sup-avatar" style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#0284c7);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;" id="supAvatarInitial">S</div>
+                <div class="sup-avatar" style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1e3a8a,#0284c7);display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:800;color:#fff;" id="supAvatarInitial">P</div>
                 <div class="sup-meta">
-                    <span class="sup-name" id="supNameDisplay">Supervisor</span>
-                    <span class="sup-role" id="supInstDisplay" title="Click to edit institution" style="cursor: pointer; transition: color 0.2s;" onclick="window.location.href='setup_institution.html'">Apex Institute</span>
+                    <span class="sup-name" id="supNameDisplay">Proctor</span>
+                    <span class="sup-role" id="supInstDisplay" title="Click to edit institution setup" style="cursor: pointer; transition: color 0.2s;" onclick="window.location.href='setup_institution.html?edit=1'">Configured Institution</span>
                 </div>
             </div>
 
@@ -2247,6 +2247,21 @@ body::after {
      JAVASCRIPT SOC CONTROLLER LOGIC
      ═════════════════════════════════════════════════════════════════ -->
 <script>
+// ── GATEKEEPER: SETUP & DEMO AUTH VERIFICATION ────────────────
+(function enforceAuthGate() {
+    const setupCompleted = sessionStorage.getItem('proctorai_setup_completed') || localStorage.getItem('proctorai_setup_completed');
+    const demoAuth = sessionStorage.getItem('proctorai_demo_auth') || localStorage.getItem('proctorai_demo_auth');
+
+    if (setupCompleted !== 'true') {
+        window.location.replace('setup_institution.html');
+        return;
+    }
+    if (demoAuth !== 'true') {
+        window.location.replace('login.html');
+        return;
+    }
+})();
+
 const BASE = '';
 
 // ── DOM ELEMENTS ─────────────────────────────
@@ -2885,12 +2900,20 @@ async function checkAuthContext() {
         // Get institution data from setup
         const institutionDataStr = sessionStorage.getItem('proctorai_institution_data') || 
                                    localStorage.getItem('proctorai_institution_data');
-        let institutionName = 'Examination Operations';
+        let institutionName = 'N/A';
+        let locationText = '';
+        let departmentText = '';
         
         if (institutionDataStr) {
             try {
                 const institutionData = JSON.parse(institutionDataStr);
-                institutionName = institutionData.institutionName || institutionName;
+                institutionName = institutionData.institutionName || 'N/A';
+                const locParts = [];
+                if (institutionData.city) locParts.push(institutionData.city);
+                if (institutionData.state) locParts.push(institutionData.state);
+                if (institutionData.country) locParts.push(institutionData.country);
+                locationText = locParts.join(', ');
+                departmentText = institutionData.department || '';
             } catch (e) {
                 console.warn('Could not parse institution data', e);
             }
@@ -2901,6 +2924,9 @@ async function checkAuthContext() {
         }
         if (document.getElementById('supInstDisplay')) {
             document.getElementById('supInstDisplay').textContent = institutionName;
+            if (locationText || departmentText) {
+                document.getElementById('supInstDisplay').title = `${institutionName}${departmentText ? ' · ' + departmentText : ''}${locationText ? ' · ' + locationText : ''} (Click to edit setup)`;
+            }
         }
         if (document.getElementById('supAvatarInitial')) {
             document.getElementById('supAvatarInitial').textContent = displayName.charAt(0).toUpperCase();
@@ -2917,7 +2943,7 @@ async function checkAuthContext() {
             }
             if (document.getElementById('supInstDisplay')) {
                 const roleName = (data.user.role === 'SUPERVISOR' || data.user.role === 'TEACHER') ? 'Proctor' : data.user.role;
-                document.getElementById('supInstDisplay').textContent = `${roleName} · ${data.user.institution_name || 'Examination Operations'}`;
+                document.getElementById('supInstDisplay').textContent = `${roleName} · ${data.user.institution_name || 'N/A'}`;
             }
             if (document.getElementById('supAvatarInitial')) {
                 document.getElementById('supAvatarInitial').textContent = (data.user.name || 'P').charAt(0).toUpperCase();
