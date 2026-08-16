@@ -1898,11 +1898,11 @@ body::after {
 
         <!-- Right: Supervisor Actions & Controls -->
         <div class="h-right">
-            <button class="btn-ctrl btn-start" id="startSessionBtn" style="display:none;">
+            <button class="btn-ctrl btn-start" id="startSessionBtn" style="display:inline-flex;">
                 <i data-lucide="play" style="width:11px;height:11px;"></i>
                 Start Session
             </button>
-            <button class="btn-ctrl btn-end" id="endSessionBtn">
+            <button class="btn-ctrl btn-end" id="endSessionBtn" style="display:none;">
                 <i data-lucide="square" style="width:11px;height:11px;fill:currentColor;"></i>
                 End Session
             </button>
@@ -2481,14 +2481,15 @@ let sessionElapsed = 0;
 let lastGazeStates = {};
 
 function formatSessionTime(totalSeconds) {
-    const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
-    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
-    const s = String(totalSeconds % 60).padStart(2, '0');
+    const sInt = Math.max(0, Math.floor(totalSeconds));
+    const h = String(Math.floor(sInt / 3600)).padStart(2, '0');
+    const m = String(Math.floor((sInt % 3600) / 60)).padStart(2, '0');
+    const s = String(sInt % 60).padStart(2, '0');
     return `${h}:${m}:${s}`;
 }
 
 function startSessionTimer() {
-    if (sessionTimerInt) return;
+    if (sessionTimerInt) return; // Prevent multiple intervals
     sessionTimerInt = setInterval(() => {
         if (sessionActive) {
             sessionElapsed++;
@@ -2498,8 +2499,10 @@ function startSessionTimer() {
 }
 
 function stopSessionTimer() {
-    clearInterval(sessionTimerInt);
-    sessionTimerInt = null;
+    if (sessionTimerInt) {
+        clearInterval(sessionTimerInt);
+        sessionTimerInt = null;
+    }
 }
 
 // ── SESSION STATUS POLLER ────────────────────
@@ -2512,7 +2515,7 @@ async function checkSessionStatus() {
         sessionActive = Boolean(data.active);
         
         if (typeof data.elapsed_seconds === 'number') {
-            // Sync with server if drifted or if state changed
+            // Sync with server if state changed or drifted significantly
             if (!wasActive || Math.abs(sessionElapsed - data.elapsed_seconds) > 2) {
                 sessionElapsed = data.elapsed_seconds;
             }
@@ -2532,15 +2535,19 @@ async function checkSessionStatus() {
             $endSessionBtn.style.display   = 'none';
             if (!$globalBanner.classList.contains('threat')) {
                 $globalBanner.className = 'session-pill paused';
-                $globalText.textContent = 'SESSION PAUSED';
+                $globalText.textContent = 'SESSION STANDBY';
             }
             $timerDisplay.textContent = formatSessionTime(sessionElapsed);
             stopSessionTimer();
         }
     } catch {
-        if (!backendOnline) {
-            $globalBanner.className = 'session-pill paused';
-            $globalText.textContent = 'BACKEND OFFLINE';
+        if (!sessionActive) {
+            $startSessionBtn.style.display = 'inline-flex';
+            $endSessionBtn.style.display   = 'none';
+            if (!$globalBanner.classList.contains('threat') && !backendOnline) {
+                $globalBanner.className = 'session-pill paused';
+                $globalText.textContent = 'BACKEND OFFLINE';
+            }
         }
     }
 }
@@ -2864,36 +2871,54 @@ async function fetchLiveStatus() {
 
 // ── SESSION CONTROLS ─────────────────────────
 $startSessionBtn.addEventListener('click', async () => {
+    sessionActive = true;
+    startSessionTimer();
+    $startSessionBtn.style.display = 'none';
+    $endSessionBtn.style.display   = 'inline-flex';
+    if (!$globalBanner.classList.contains('threat')) {
+        $globalBanner.className = 'session-pill active';
+        $globalText.textContent = 'SESSION ACTIVE';
+    }
+    $timerDisplay.textContent = formatSessionTime(sessionElapsed);
+    addAlert('Examination session initiated.', 'success');
+    logActivity('Examination session started by supervisor');
+
     try {
         const res = await fetch(`${BASE}/api/session/start`, { method: 'POST', credentials: 'include' });
         if (res.ok) {
-            addAlert('Examination session initiated.', 'success');
-            logActivity('Examination session started by supervisor');
             checkSessionStatus();
         }
     } catch {
-        addAlert('Failed to start session — server unreachable.', 'danger');
+        // Offline / preview standalone mode
     }
 });
 
 $endSessionBtn.addEventListener('click', async () => {
     if (!confirm('End this examination session and generate the integrity report?')) return;
+    sessionActive = false;
+    stopSessionTimer();
+    sessionElapsed = 0;
+    $timerDisplay.textContent = '00:00:00';
+    $startSessionBtn.style.display = 'inline-flex';
+    $endSessionBtn.style.display   = 'none';
+    if (!$globalBanner.classList.contains('threat')) {
+        $globalBanner.className = 'session-pill paused';
+        $globalText.textContent = 'SESSION STANDBY';
+    }
+    addAlert('Session terminated. Generating integrity report...', 'info');
+    logActivity('Session concluded — integrity audit generated');
+
     try {
         const res  = await fetch(`${BASE}/api/session/end`, { method: 'POST', credentials: 'include' });
-        const data = await res.json();
         if (res.ok) {
-            addAlert('Session terminated. Generating integrity report...', 'info');
-            logActivity('Session concluded — integrity audit generated');
-            sessionElapsed = 0;
-            $timerDisplay.textContent = '00:00:00';
-            stopSessionTimer();
+            const data = await res.json();
             checkSessionStatus();
             if (data.report_url) {
                 window.open(`${BASE}${data.report_url}`, '_blank');
             }
         }
     } catch {
-        addAlert('Failed to end session — backend offline.', 'danger');
+        // Offline / preview mode
     }
 });
 

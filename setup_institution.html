@@ -1710,10 +1710,14 @@ html, body {
 
             setTimeout(() => {
                 const demoAuth = sessionStorage.getItem('proctorai_demo_auth') || localStorage.getItem('proctorai_demo_auth');
+                const setupUrlParams = new URLSearchParams(window.location.search);
+                const redirectTarget = setupUrlParams.get('redirect');
+                
                 if (isEditMode && demoAuth === 'true') {
-                    window.location.href = 'monitoring.html';
+                    window.location.href = redirectTarget || 'monitoring.html';
                 } else {
-                    window.location.href = 'login.html';
+                    const loginUrl = redirectTarget ? `login.html?redirect=${encodeURIComponent(redirectTarget)}` : 'login.html';
+                    window.location.href = loginUrl;
                 }
             }, 250);
         });

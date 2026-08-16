@@ -1575,6 +1575,12 @@ def register():
         print(f"Error registering student: {e}")
         return jsonify({"error": "Database error during biometric enrollment"}), 500
 
+# ---------------- EXAMINATION SESSION STATE ----------------
+SESSION_ACTIVE = False
+session_start_time = None
+session_paused_time = None
+accumulated_elapsed_seconds = 0
+
 @app.route('/api/session/status', methods=['GET'])
 def get_session_status():
     elapsed = accumulated_elapsed_seconds

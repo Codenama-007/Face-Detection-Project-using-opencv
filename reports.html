@@ -235,11 +235,11 @@
             const demoAuth = sessionStorage.getItem('proctorai_demo_auth') || localStorage.getItem('proctorai_demo_auth');
 
             if (setupCompleted !== 'true') {
-                window.location.replace('setup_institution.html');
+                window.location.replace('setup_institution.html?redirect=reports.html');
                 return;
             }
             if (demoAuth !== 'true') {
-                window.location.replace('login.html');
+                window.location.replace('login.html?redirect=reports.html');
                 return;
             }
         })();

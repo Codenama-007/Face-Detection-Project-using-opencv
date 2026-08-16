@@ -1014,7 +1014,10 @@ html, body {
                                    localStorage.getItem('proctorai_setup_completed');
             
             if (setupCompleted !== 'true') {
-                window.location.replace('setup_institution.html');
+                const searchParams = new URLSearchParams(window.location.search);
+                const redirectVal = searchParams.get('redirect');
+                const target = redirectVal ? `setup_institution.html?redirect=${encodeURIComponent(redirectVal)}` : 'setup_institution.html';
+                window.location.replace(target);
                 return;
             }
         })();
@@ -1135,12 +1138,17 @@ html, body {
 
             showBanner(`Access granted for ${email}. Initializing ProctorAI console...`, 'success');
 
-            // Smooth transition into existing ProctorAI monitoring dashboard
+            // Smooth transition into requested destination (or default monitoring dashboard)
             document.body.style.opacity = '0';
             document.body.style.transition = 'opacity 0.25s ease';
 
+            const currentParams = new URLSearchParams(window.location.search);
+            const requestedRedirect = currentParams.get('redirect');
+            const validDestinations = ['monitoring.html', 'reports.html', 'enrollment.html', 'replay.html', 'student_dashboard.html', 'admin.html'];
+            const destinationPage = (requestedRedirect && validDestinations.includes(requestedRedirect)) ? requestedRedirect : 'monitoring.html';
+
             setTimeout(() => {
-                window.location.href = 'monitoring.html';
+                window.location.href = destinationPage;
             }, 300);
         });
     </script>
