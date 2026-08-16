@@ -32,6 +32,19 @@ from mediapipe.tasks.python.core.base_options import BaseOptions
 _LANDMARKER_MODEL = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "models", "face_landmarker.task")
 
+if not os.path.exists(_LANDMARKER_MODEL):
+    try:
+        import urllib.request
+        os.makedirs(os.path.dirname(_LANDMARKER_MODEL), exist_ok=True)
+        print("[AI] Downloading MediaPipe face_landmarker.task...")
+        urllib.request.urlretrieve(
+            "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+            _LANDMARKER_MODEL
+        )
+        print("[AI] MediaPipe face_landmarker.task downloaded successfully.")
+    except Exception as e:
+        print(f"[AI] Error downloading face_landmarker.task: {e}")
+
 # ---------------------------------------------------------------------------
 # Tunables (all thresholds in one place)
 # ---------------------------------------------------------------------------

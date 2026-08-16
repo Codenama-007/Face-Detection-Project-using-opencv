@@ -32,13 +32,13 @@ def _find_model(filename):
     for root, _dirs, files in os.walk(os.path.join(BASE, "models")):
         if filename in files:
             return os.path.join(root, filename)
-    raise FileNotFoundError(
-        f"{filename} not found under models/. For buffalo_l models, download "
-        f"https://github.com/deepinsight/insightface/releases/download/v0.7/"
-        f"buffalo_l.zip and extract it into models/buffalo_l/")
+    return None
 
 
 ARCFACE_PATH = _find_model("w600k_r50.onnx")
+SCRFD_PATH = _find_model("det_10g.onnx") or _find_model("scrfd_2.5g_kps.onnx")
+YUNET_PATH = _find_model("face_detection_yunet_2023mar.onnx")
+SFACE_PATH = _find_model("face_recognition_sface_2021dec.onnx")
 
 # ONNX Runtime defaults to one intra-op thread per core. These sessions share
 # a process with PyTorch (DeepSort) and MediaPipe, which do the same, so the
@@ -214,27 +214,53 @@ def _nms(dets, thresh=0.4):
 
 
 class SCRFDDetector:
-    """SCRFD-10G face detector (from the buffalo_l pack).
-
-    Markedly better than YuNet on small and poorly-lit faces, and it returns
-    the 5 landmarks ArcFace alignment needs.
-    """
+    """Face detector with dual engine support: SCRFD-10G ONNX if present, with seamless
+    OpenCV YuNet ONNX fallback."""
 
     STRIDES = (8, 16, 32)
     NUM_ANCHORS = 2
 
     def __init__(self, model_path=None, input_size=640):
         if model_path is None:
-            model_path = _find_model("det_10g.onnx")
-        self.sess = ort.InferenceSession(model_path,
-                                         sess_options=_session_options(),
-                                         providers=_providers())
-        self.input_name = self.sess.get_inputs()[0].name
+            model_path = SCRFD_PATH
+            
         self.input_size = input_size
+        if model_path and os.path.exists(model_path):
+            self.use_onnx = True
+            self.sess = ort.InferenceSession(model_path,
+                                             sess_options=_session_options(),
+                                             providers=_providers())
+            self.input_name = self.sess.get_inputs()[0].name
+            self.provider = f"SCRFD ({self.sess.get_providers()[0]})"
+        else:
+            self.use_onnx = False
+            yn_path = YUNET_PATH or os.path.join(BASE, "models", "face_detection_yunet_2023mar.onnx")
+            self.yunet = cv2.FaceDetectorYN.create(yn_path, "", (input_size, input_size), 0.35, 0.4, 5000)
+            self.provider = "OpenCV-YuNet"
 
     def detect(self, img, thresh=0.35, nms_thresh=0.4):
         """Returns a list of dicts: {bbox:(x,y,w,h), kps:(5,2), score}."""
         h0, w0 = img.shape[:2]
+        if not self.use_onnx:
+            self.yunet.setInputSize((w0, h0))
+            self.yunet.setScoreThreshold(thresh)
+            self.yunet.setNMSThreshold(nms_thresh)
+            _, faces = self.yunet.detect(img)
+            results = []
+            if faces is not None:
+                for f in faces:
+                    x, y, w, h = float(f[0]), float(f[1]), float(f[2]), float(f[3])
+                    kps = np.array([
+                        [f[4], f[5]],
+                        [f[6], f[7]],
+                        [f[8], f[9]],
+                        [f[10], f[11]],
+                        [f[12], f[13]]
+                    ], dtype=np.float32)
+                    sc = float(f[14])
+                    results.append({"bbox": (x, y, w, h), "kps": kps, "score": sc})
+            return results
+
         S = self.input_size
         scale = min(S / w0, S / h0)
         nw, nh = int(round(w0 * scale)), int(round(h0 * scale))
@@ -295,20 +321,28 @@ class SCRFDDetector:
 
 
 class ArcFaceEmbedder:
-    def __init__(self):
-        self.sess = ort.InferenceSession(ARCFACE_PATH,
-                                         sess_options=_session_options(),
-                                         providers=_providers())
-        self.input_name = self.sess.get_inputs()[0].name
-        self.provider = self.sess.get_providers()[0]
+    """Face feature embedder with dual engine support: ArcFace R50 ONNX if present,
+    with seamless OpenCV SFace ONNX fallback."""
+
+    def __init__(self, model_path=None):
+        if model_path is None:
+            model_path = ARCFACE_PATH
+
+        if model_path and os.path.exists(model_path):
+            self.use_onnx = True
+            self.sess = ort.InferenceSession(model_path,
+                                             sess_options=_session_options(),
+                                             providers=_providers())
+            self.input_name = self.sess.get_inputs()[0].name
+            self.provider = f"ArcFace ({self.sess.get_providers()[0]})"
+        else:
+            self.use_onnx = False
+            sf_path = SFACE_PATH or os.path.join(BASE, "models", "face_recognition_sface_2021dec.onnx")
+            self.sface = cv2.FaceRecognizerSF.create(sf_path, "")
+            self.provider = "OpenCV-SFace"
 
     def _forward(self, chips):
-        """chips: list of 112x112 BGR crops -> (N, 512) unit-norm embeddings.
-
-        Run one at a time: this export declares a fixed batch of 1, and
-        feeding a larger batch works but emits a shape-mismatch warning per
-        call.
-        """
+        """chips: list of 112x112 BGR crops -> (N, 512) unit-norm embeddings."""
         out = []
         for c in chips:
             blob = cv2.cvtColor(c, cv2.COLOR_BGR2RGB)[None]
@@ -319,7 +353,33 @@ class ArcFaceEmbedder:
         return emb / np.maximum(norms, 1e-9)
 
     def embed(self, img, landmarks5, use_flip_tta=True):
-        """Aligned + flip-augmented embedding for one face. Returns (512,)."""
+        """Aligned + flip-augmented embedding for one face."""
+        if not self.use_onnx:
+            if landmarks5 is None:
+                return None
+            kps = np.asarray(landmarks5, dtype=np.float32).reshape(5, 2)
+            min_x, min_y = np.min(kps, axis=0)
+            max_x, max_y = np.max(kps, axis=0)
+            w = max(1.0, max_x - min_x) * 1.5
+            h = max(1.0, max_y - min_y) * 1.8
+            x = max(0.0, (min_x + max_x) / 2.0 - w / 2.0)
+            y = max(0.0, (min_y + max_y) / 2.0 - h / 2.0)
+            face_arr = np.array([x, y, w, h,
+                                 kps[0][0], kps[0][1],
+                                 kps[1][0], kps[1][1],
+                                 kps[2][0], kps[2][1],
+                                 kps[3][0], kps[3][1],
+                                 kps[4][0], kps[4][1],
+                                 0.95], dtype=np.float32)
+            aligned = self.sface.alignCrop(img, face_arr)
+            if aligned is None or aligned.size == 0:
+                return None
+            feat = self.sface.feature(aligned)
+            if feat is None or len(feat) == 0:
+                return None
+            v = feat[0].astype(np.float32)
+            return v / max(float(np.linalg.norm(v)), 1e-9)
+
         chip = align_face(img, landmarks5)
         if chip is None:
             return None

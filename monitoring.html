@@ -2262,7 +2262,19 @@ body::after {
     }
 })();
 
-const BASE = '';
+let BASE = '';
+if (window.location.port && window.location.port !== '5001' && window.location.protocol.startsWith('http')) {
+    BASE = `${window.location.protocol}//${window.location.hostname}:5001`;
+}
+
+function setEnginesState(active) {
+    const el = document.getElementById('enginesSummaryText');
+    if (el) {
+        el.textContent = active 
+            ? 'Neural Vision, ArcFace/SFace, YOLO Phone & DeepSort Active' 
+            : 'AI Vision Engines Offline';
+    }
+}
 
 // ── DOM ELEMENTS ─────────────────────────────
 const $stuGrid         = document.getElementById('studentsGrid');
@@ -3006,10 +3018,15 @@ function init() {
         lucide.createIcons();
     }
 
+    if ($feedImg) {
+        $feedImg.src = `${BASE}/video_feed`;
+    }
+
     checkAuthContext();
     setEnginesState(false);
     updateExamScore([]);
     checkSessionStatus();
+    fetchLiveStatus();
 
     setInterval(fetchLiveStatus, 1000);
     setInterval(checkSessionStatus, 3000);
