@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProctorAI — Demo Access Portal</title>
-    <meta name="description" content="ProctorAI Demo Access Portal — AI-Powered Examination Security & Live Monitoring Operations.">
+    <title>ProctorAI — Multi-Tenant Authentication Portal</title>
+    <meta name="description" content="ProctorAI Enterprise Authentication Portal — Multi-Institution & Role-Based Proctoring Access.">
     
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,8 +16,8 @@
 
     <style>
 /* ═════════════════════════════════════════════════════════════════════
-   PROCTORAI — HACKATHON DEMO ACCESS GATE
-   MONOCHROMATIC & DEEP GRAPHITE WITH STEEL BLUE ACCENTS
+   PROCTORAI — ENTERPRISE MULTI-TENANT AUTHENTICATION
+   DEEP GRAPHITE & STEEL CYAN ENTERPRISE THEME
    ═════════════════════════════════════════════════════════════════════ */
 *, *::before, *::after {
     box-sizing: border-box;
@@ -107,7 +107,7 @@ html, body {
     z-index: 1;
     min-height: 100vh;
     display: grid;
-    grid-template-columns: 1.15fr 1fr;
+    grid-template-columns: 1.1fr 1fr;
     max-width: 1360px;
     margin: 0 auto;
     padding: 3rem 3.5rem;
@@ -200,13 +200,13 @@ html, body {
     margin-bottom: 2rem;
 }
 
-/* ── ABSTRACT TECHNICAL SCHEMATIC (DECORATIVE) ── */
+/* Technical Schematic Canvas */
 .ai-reticle-canvas {
     position: relative;
     width: 100%;
-    height: 150px;
-    background: rgba(11, 15, 23, 0.6);
-    border: 1px solid var(--border-subtle);
+    height: 140px;
+    background: #080d15;
+    border: 1px solid var(--border-mid);
     border-radius: 12px;
     margin-bottom: 2rem;
     overflow: hidden;
@@ -219,14 +219,13 @@ html, body {
     position: absolute;
     width: 10px;
     height: 10px;
-    border-color: rgba(56, 189, 248, 0.4);
-    pointer-events: none;
+    border-color: var(--accent-blue);
+    border-style: solid;
 }
-
-.rc-tl { top: 8px; left: 8px; border-top: 2px solid; border-left: 2px solid; }
-.rc-tr { top: 8px; right: 8px; border-top: 2px solid; border-right: 2px solid; }
-.rc-bl { bottom: 8px; left: 8px; border-bottom: 2px solid; border-left: 2px solid; }
-.rc-br { bottom: 8px; right: 8px; border-bottom: 2px solid; border-right: 2px solid; }
+.rc-tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+.rc-tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+.rc-bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+.rc-br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
 
 .laser-scan-line {
     position: absolute;
@@ -236,29 +235,23 @@ html, body {
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
     box-shadow: 0 0 10px var(--accent-blue);
-    animation: scanAnim 3.5s ease-in-out infinite alternate;
+    animation: scanVertical 3s ease-in-out infinite;
 }
 
-@keyframes scanAnim {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(148px); }
+@keyframes scanVertical {
+    0%, 100% { top: 0%; opacity: 0.2; }
+    50% { top: 96%; opacity: 0.9; }
 }
 
 .optical-center-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: 1px dashed rgba(56, 189, 248, 0.3);
+    width: 48px;
+    height: 48px;
+    border: 1px dashed rgba(56, 189, 248, 0.4);
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--accent-blue);
-    animation: rotateBox 16s linear infinite;
-}
-
-@keyframes rotateBox {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
 }
 
 .ai-spec-tag {
@@ -266,7 +259,7 @@ html, body {
     bottom: 8px;
     left: 12px;
     font-family: var(--mono);
-    font-size: 0.62rem;
+    font-size: 0.65rem;
     color: var(--t3);
     letter-spacing: 0.08em;
 }
@@ -276,27 +269,27 @@ html, body {
     bottom: 8px;
     right: 12px;
     font-family: var(--mono);
-    font-size: 0.62rem;
-    color: var(--success);
+    font-size: 0.65rem;
     font-weight: 700;
-    letter-spacing: 0.06em;
+    color: var(--success);
+    letter-spacing: 0.08em;
 }
 
-/* Capability Highlight Pills */
+/* Capability Pills Grid */
 .caps-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.85rem;
+    gap: 0.75rem;
 }
 
 .cap-item {
-    background: rgba(14, 19, 29, 0.7);
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-subtle);
     border-radius: 10px;
     padding: 0.75rem 0.85rem;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.65rem;
 }
 
 .cap-icon {
@@ -314,22 +307,29 @@ html, body {
 .cap-text {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .cap-title {
     font-size: 0.76rem;
     font-weight: 700;
     color: var(--t1);
-    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .cap-sub {
     font-size: 0.65rem;
     color: var(--t3);
+    font-family: var(--mono);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   RIGHT COLUMN: DEMO ACCESS GATE CARD
+   RIGHT COLUMN: ROLE-BASED AUTHENTICATION CARD
    ═════════════════════════════════════════════════════════════════════ */
 .auth-col {
     display: flex;
@@ -338,81 +338,15 @@ html, body {
     width: 100%;
 }
 
-/* ── TOP PROGRESS BAR ── */
-.progress-stepper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.65rem;
-    margin-bottom: 1.5rem;
-    background: rgba(14, 19, 29, 0.7);
-    border: 1px solid var(--border-subtle);
-    padding: 0.5rem 1.15rem;
-    border-radius: 99px;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    width: fit-content;
-}
-
-.step-item {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    font-weight: 700;
-    color: var(--t3);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
-.step-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--border-subtle);
-    color: var(--t3);
-    font-size: 0.6rem;
-    font-weight: 800;
-}
-
-.step-item.completed {
-    color: var(--success);
-}
-
-.step-item.completed .step-num {
-    background: var(--success);
-    color: #06080c;
-}
-
-.step-item.active {
-    color: var(--accent-blue);
-}
-
-.step-item.active .step-num {
-    background: var(--accent-blue);
-    color: #06080c;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-}
-
-.step-divider {
-    color: var(--t4);
-    font-size: 0.65rem;
-}
-
-/* ── AUTH CARD ── */
 .auth-card {
     position: relative;
     width: 100%;
-    max-width: 480px;
+    max-width: 500px;
     background: var(--bg-card);
     border: 1px solid var(--bg-card-border);
     border-top: 1px solid var(--border-mid);
     border-radius: 18px;
-    padding: 2.5rem;
+    padding: 2.25rem 2.5rem;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
 }
 
@@ -430,100 +364,68 @@ html, body {
     color: var(--accent-blue);
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .card-title {
-    font-size: 1.6rem;
+    font-size: 1.55rem;
     font-weight: 800;
     color: #ffffff;
     letter-spacing: -0.02em;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
 }
 
 .card-subtitle {
-    font-size: 0.86rem;
+    font-size: 0.84rem;
     color: var(--t2);
-    line-height: 1.5;
-    margin-bottom: 1.75rem;
-}
-
-/* ── INSTITUTION CONTEXT PILL ── */
-.inst-context-pill {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    padding: 0.65rem 0.85rem;
+    line-height: 1.45;
     margin-bottom: 1.5rem;
 }
 
-.inst-pill-left {
+/* ── ROLE SELECTOR TABS ── */
+.role-tabs-wrap {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    overflow: hidden;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-mid);
+    border-radius: 10px;
+    padding: 0.25rem;
+    margin-bottom: 1.5rem;
+    gap: 0.25rem;
 }
 
-.inst-pill-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 6px;
-    background: rgba(56, 189, 248, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent-blue);
-    flex-shrink: 0;
-}
-
-.inst-pill-info {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.inst-pill-name {
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: var(--t1);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.inst-pill-loc {
-    font-size: 0.65rem;
-    color: var(--t3);
-    font-family: var(--mono);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.inst-edit-link {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--accent-blue);
-    text-decoration: none;
+.role-tab-btn {
+    flex: 1;
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
-    flex-shrink: 0;
-    padding: 0.2rem 0.45rem;
-    border-radius: 6px;
-    transition: background 0.2s ease;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--t2);
+    font-size: 0.82rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.inst-edit-link:hover {
-    background: rgba(56, 189, 248, 0.1);
+.role-tab-btn:hover {
+    color: var(--t1);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.role-tab-btn.active {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
 }
 
 /* ── FORM CONTROLS ── */
 .form-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.15rem;
 }
 
 .form-label {
@@ -531,7 +433,7 @@ html, body {
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--t2);
-    margin-bottom: 0.45rem;
+    margin-bottom: 0.4rem;
 }
 
 .input-container {
@@ -540,17 +442,26 @@ html, body {
     align-items: center;
 }
 
-.form-input {
+.form-input, .form-select {
     width: 100%;
-    padding: 0.85rem 1rem 0.85rem 2.5rem;
+    padding: 0.82rem 1rem 0.82rem 2.45rem;
     border-radius: 10px;
     border: 1px solid var(--border-mid);
     background: var(--bg-input);
     color: var(--t1);
     font-family: var(--font);
-    font-size: 0.88rem;
+    font-size: 0.86rem;
     outline: none;
     transition: all 0.2s ease;
+}
+
+.form-select {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%2394a3b8' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
 }
 
 .form-input.has-toggle {
@@ -559,29 +470,29 @@ html, body {
 
 .input-icon-leading {
     position: absolute;
-    left: 0.95rem;
+    left: 0.9rem;
     color: var(--t3);
     pointer-events: none;
     transition: color 0.2s;
 }
 
-.form-input:hover {
+.form-input:hover, .form-select:hover {
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-.form-input:focus {
+.form-input:focus, .form-select:focus {
     border-color: var(--accent-blue);
     background: var(--bg-input-focus);
     box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
 }
 
-.form-input:focus ~ .input-icon-leading {
+.form-input:focus ~ .input-icon-leading, .form-select:focus ~ .input-icon-leading {
     color: var(--accent-blue);
 }
 
 .form-input::placeholder {
     color: var(--t3);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
 }
 
 /* Password Toggle Button */
@@ -610,10 +521,10 @@ html, body {
     background: #0284c7;
     color: #ffffff;
     border: 1px solid rgba(56, 189, 248, 0.4);
-    padding: 0.95rem 1.4rem;
+    padding: 0.9rem 1.4rem;
     border-radius: 10px;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-family: var(--font);
     letter-spacing: 0.02em;
     cursor: pointer;
@@ -622,7 +533,7 @@ html, body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
     box-shadow: 0 4px 16px rgba(2, 132, 199, 0.25);
 }
 
@@ -685,25 +596,31 @@ html, body {
     color: #a7f3d0;
 }
 
-/* ── HONEST DEMO NOTICE ── */
-.demo-security-notice {
+/* ── INSTITUTION SETUP SHORTCUT LINK ── */
+.setup-inst-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-top: 1.25rem;
-    padding: 0.75rem 0.85rem;
+    padding: 0.65rem 0.85rem;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-subtle);
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     color: var(--t3);
-    line-height: 1.45;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.45rem;
 }
 
-.demo-security-notice i {
-    flex-shrink: 0;
-    margin-top: 1px;
-    color: var(--t3);
+.setup-inst-prompt a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.setup-inst-prompt a:hover {
+    text-decoration: underline;
 }
 
 /* ── CARD FOOTER ── */
@@ -711,8 +628,8 @@ html, body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1.5rem;
-    padding-top: 1.15rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--border-subtle);
 }
 
@@ -722,7 +639,7 @@ html, body {
     gap: 0.35rem;
     color: var(--t3);
     text-decoration: none;
-    font-size: 0.76rem;
+    font-size: 0.74rem;
     font-weight: 600;
     transition: color 0.2s;
 }
@@ -781,7 +698,7 @@ html, body {
         padding: 1.5rem 1rem;
     }
     .auth-card {
-        padding: 2rem 1.4rem;
+        padding: 1.75rem 1.25rem;
         border-radius: 16px;
     }
     .caps-grid {
@@ -814,15 +731,15 @@ html, body {
                     </div>
                     <div class="status-live-tag">
                         <div class="pulse-dot"></div>
-                        <span>Demo Operations Active</span>
+                        <span>Multi-Tenant Operations Active</span>
                     </div>
                 </div>
 
                 <!-- Brand Typography -->
                 <h1 class="hero-heading">PROCTORAI</h1>
-                <div class="hero-subhead">AI-Powered Examination Security</div>
+                <div class="hero-subhead">AI-Powered Multi-Tenant Examination Defense</div>
                 <p class="hero-lead">
-                    Enterprise Examination Operations Platform. Continuous biometric verification, behavioral gaze estimation, and multi-tenant proctor command infrastructure.
+                    Enterprise Examination Security Infrastructure. Multi-institution isolation, real-time biometric verification, neural gaze telemetry, and role-authorized command operations.
                 </p>
 
                 <!-- Technical Schematic Box -->
@@ -837,7 +754,7 @@ html, body {
                         <i data-lucide="scan-face" style="width:20px;height:20px;"></i>
                     </div>
 
-                    <span class="ai-spec-tag">NEURAL BIOMETRIC PIPELINE</span>
+                    <span class="ai-spec-tag">ISOLATED TENANT PIPELINE</span>
                     <span class="ai-lock-tag">SYSTEM READY</span>
                 </div>
 
@@ -845,31 +762,31 @@ html, body {
                 <div class="caps-grid">
                     <div class="cap-item">
                         <div class="cap-icon">
-                            <i data-lucide="eye" style="width:14px;height:14px;"></i>
+                            <i data-lucide="building-2" style="width:14px;height:14px;"></i>
                         </div>
                         <div class="cap-text">
-                            <span class="cap-title">Gaze Vector</span>
-                            <span class="cap-sub">Pose Estimation</span>
+                            <span class="cap-title">Multi-Institution</span>
+                            <span class="cap-sub">Strict Isolation</span>
                         </div>
                     </div>
 
                     <div class="cap-item">
                         <div class="cap-icon">
-                            <i data-lucide="smartphone" style="width:14px;height:14px;"></i>
+                            <i data-lucide="shield-alert" style="width:14px;height:14px;"></i>
                         </div>
                         <div class="cap-text">
-                            <span class="cap-title">Object Shield</span>
-                            <span class="cap-sub">Phone Detection</span>
+                            <span class="cap-title">Role-Based RBAC</span>
+                            <span class="cap-sub">Admin / Faculty</span>
                         </div>
                     </div>
 
                     <div class="cap-item">
                         <div class="cap-icon">
-                            <i data-lucide="building" style="width:14px;height:14px;"></i>
+                            <i data-lucide="user-check" style="width:14px;height:14px;"></i>
                         </div>
                         <div class="cap-text">
-                            <span class="cap-title">Multi-Tenant</span>
-                            <span class="cap-sub">Data Isolation</span>
+                            <span class="cap-title">Face Biometrics</span>
+                            <span class="cap-sub">ArcFace Multi-Tpl</span>
                         </div>
                     </div>
                 </div>
@@ -877,86 +794,75 @@ html, body {
 
             <!-- Footer Meta -->
             <div style="font-size:0.72rem;color:var(--t3);margin-top:2rem;">
-                ProctorAI Platform Architecture &copy; 2026 &middot; Hackathon Demonstration Environment
+                ProctorAI Enterprise Platform &copy; 2026 &middot; Institutional Security Architecture
             </div>
         </section>
 
 
-        <!-- ═ RIGHT COLUMN: DEMO ACCESS GATE CARD ═ -->
+        <!-- ═ RIGHT COLUMN: AUTHENTICATION CARD ═ -->
         <section class="auth-col">
             
-            <!-- Progress Stepper (01 SETUP -> 02 DEMO ACCESS -> 03 PROCTORAI) -->
-            <nav class="progress-stepper" aria-label="Authentication Steps">
-                <a href="setup_institution.html?edit=1" class="step-item completed" style="text-decoration:none;">
-                    <span class="step-num"><i data-lucide="check" style="width:10px;height:10px;"></i></span>
-                    <span>Setup</span>
-                </a>
-                <span class="step-divider">&bull;</span>
-                <div class="step-item active">
-                    <span class="step-num">02</span>
-                    <span>Demo Access</span>
-                </div>
-                <span class="step-divider">&bull;</span>
-                <div class="step-item">
-                    <span class="step-num">03</span>
-                    <span>ProctorAI</span>
-                </div>
-            </nav>
-
             <div class="auth-card" id="authCard">
                 
                 <!-- Card Header Top Badge -->
-                <div class="card-header-badge">
-                    <i data-lucide="sparkles" style="width:11px;height:11px;"></i>
-                    <span>Hackathon Demo Access</span>
+                <div class="card-header-badge" id="cardRoleBadge">
+                    <i data-lucide="shield" style="width:11px;height:11px;"></i>
+                    <span id="roleBadgeText">FACULTY PROCTOR ACCESS</span>
                 </div>
 
-                <h2 class="card-title">Welcome to ProctorAI</h2>
-                <p class="card-subtitle">Enter your email and any password to access the live examination operations console.</p>
+                <h2 class="card-title" id="authCardTitle">Sign In to ProctorAI</h2>
+                <p class="card-subtitle" id="authCardSubtitle">Select your authorized role to access institutional examination monitoring.</p>
 
-                <!-- Active Institution Context Pill -->
-                <div class="inst-context-pill" id="instContextPill">
-                    <div class="inst-pill-left">
-                        <div class="inst-pill-icon">
-                            <i data-lucide="building-2" style="width:13px;height:13px;"></i>
-                        </div>
-                        <div class="inst-pill-info">
-                            <span class="inst-pill-name" id="pillInstName">Configured Institution</span>
-                            <span class="inst-pill-loc" id="pillInstLoc">Location</span>
+                <!-- Role Selection Tabs -->
+                <div class="role-tabs-wrap" role="tablist">
+                    <button type="button" class="role-tab-btn active" id="tabFaculty" role="tab" aria-selected="true">
+                        <i data-lucide="user-check" style="width:14px;height:14px;"></i>
+                        <span>Faculty Login</span>
+                    </button>
+                    <button type="button" class="role-tab-btn" id="tabAdmin" role="tab" aria-selected="false">
+                        <i data-lucide="shield" style="width:14px;height:14px;"></i>
+                        <span>Admin Login</span>
+                    </button>
+                </div>
+
+                <!-- Unified Authentication Form -->
+                <form id="authLoginForm" novalidate>
+
+                    <!-- Institution Selector (Visible in Faculty mode) -->
+                    <div class="form-group" id="institutionGroup">
+                        <label class="form-label" for="institutionSelect">Select Institution</label>
+                        <div class="input-container">
+                            <select id="institutionSelect" class="form-select" required>
+                                <option value="" disabled selected>Loading available institutions...</option>
+                            </select>
+                            <i data-lucide="building-2" class="input-icon-leading" style="width:15px;height:15px;"></i>
                         </div>
                     </div>
-                    <a href="setup_institution.html?edit=1" class="inst-edit-link" title="Edit Institution Setup">
-                        <i data-lucide="edit-2" style="width:11px;height:11px;"></i>
-                        <span>Edit</span>
-                    </a>
-                </div>
 
-                <!-- Demo Entry Form -->
-                <form id="demoLoginForm" novalidate>
-                    <!-- Email Input Field -->
+                    <!-- Email / Username Input Field -->
                     <div class="form-group">
-                        <label class="form-label" for="userEmail">Email / Gmail Address</label>
+                        <label class="form-label" for="usernameInput" id="usernameLabel">Faculty Email / Username</label>
                         <div class="input-container">
                             <input 
-                                type="email" 
-                                id="userEmail" 
+                                type="text" 
+                                id="usernameInput" 
                                 class="form-input" 
-                                placeholder="name@domain.com" 
+                                placeholder="proctor@institution.edu" 
                                 required 
-                                autocomplete="email"
+                                autocomplete="username"
                                 spellcheck="false"
                             >
-                            <i data-lucide="mail" class="input-icon-leading" style="width:15px;height:15px;"></i>
+                            <i data-lucide="mail" id="userLeadingIcon" class="input-icon-leading" style="width:15px;height:15px;"></i>
                         </div>
                     </div>
 
                     <!-- Password Input Field with Show/Hide Toggle -->
                     <div class="form-group">
-                        <label class="form-label" for="userPassword">Password</label>
+                        <label class="form-label" for="passwordInput">Password</label>
                         <div class="input-container">
                             <input 
                                 type="password" 
-                                id="userPassword" 
+                                id="passwordInput" 
                                 class="form-input has-toggle" 
                                 placeholder="••••••••••••" 
                                 required 
@@ -975,19 +881,22 @@ html, body {
                     </div>
 
                     <!-- Submit Button -->
-                    <button type="submit" class="btn-submit" id="enterBtn">
-                        <i data-lucide="arrow-right" style="width:15px;height:15px;"></i>
-                        <span>Enter ProctorAI</span>
+                    <button type="submit" class="btn-submit" id="authSubmitBtn">
+                        <i data-lucide="log-in" style="width:15px;height:15px;"></i>
+                        <span id="btnSubmitText">Authenticate &amp; Enter SOC</span>
                     </button>
                 </form>
 
                 <!-- Status & Error Alert Notification Container -->
                 <div id="statusBanner" class="status-banner"></div>
 
-                <!-- Honest Security Notice -->
-                <div class="demo-security-notice">
-                    <i data-lucide="info" style="width:13px;height:13px;"></i>
-                    <span><strong>Demo Access Gate:</strong> Accepts any valid email &amp; non-empty password for hackathon evaluation. No passwords or credentials are stored or sent over network.</span>
+                <!-- Institution Setup Shortcut -->
+                <div class="setup-inst-prompt">
+                    <span>New institution or exam center?</span>
+                    <a href="setup_institution.html">
+                        <span>Setup Institution</span>
+                        <i data-lucide="arrow-right" style="width:11px;height:11px;"></i>
+                    </a>
                 </div>
 
                 <!-- Footer Navigation -->
@@ -996,7 +905,7 @@ html, body {
                         <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
                         <span>Platform Overview</span>
                     </a>
-                    <span class="footer-shield-tag">DEMO GATE &bull; ACCESS PASS</span>
+                    <span class="footer-shield-tag">ENTERPRISE RBAC &bull; SECURE</span>
                 </div>
 
             </div>
@@ -1005,59 +914,125 @@ html, body {
     </main>
 
     <script>
-        // ═══════════════════════════════════════════════════════════════════
-        // STEP 1 GATE: CHECK IF INSTITUTION SETUP IS COMPLETED
-        // If not, redirect to setup_institution.html first
-        // ═══════════════════════════════════════════════════════════════════
-        (function checkSetupCompleted() {
-            const setupCompleted = sessionStorage.getItem('proctorai_setup_completed') || 
-                                   localStorage.getItem('proctorai_setup_completed');
-            
-            if (setupCompleted !== 'true') {
-                const searchParams = new URLSearchParams(window.location.search);
-                const redirectVal = searchParams.get('redirect');
-                const target = redirectVal ? `setup_institution.html?redirect=${encodeURIComponent(redirectVal)}` : 'setup_institution.html';
-                window.location.replace(target);
-                return;
-            }
-        })();
-
         // Initialize Lucide Icons
         lucide.createIcons();
 
-        // DOM Element Selectors
-        const form = document.getElementById('demoLoginForm');
-        const emailInput = document.getElementById('userEmail');
-        const passwordInput = document.getElementById('userPassword');
-        const enterBtn = document.getElementById('enterBtn');
+        // State & DOM Elements
+        let currentRole = 'FACULTY'; // 'FACULTY' | 'ADMIN'
+        let availableInstitutions = [];
+
+        const tabFaculty = document.getElementById('tabFaculty');
+        const tabAdmin = document.getElementById('tabAdmin');
+        const institutionGroup = document.getElementById('institutionGroup');
+        const institutionSelect = document.getElementById('institutionSelect');
+        const usernameLabel = document.getElementById('usernameLabel');
+        const usernameInput = document.getElementById('usernameInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const roleBadgeText = document.getElementById('roleBadgeText');
+        const btnSubmitText = document.getElementById('btnSubmitText');
+        const authSubmitBtn = document.getElementById('authSubmitBtn');
         const statusBanner = document.getElementById('statusBanner');
         const pwdToggleBtn = document.getElementById('pwdToggleBtn');
         const pwdEyeIcon = document.getElementById('pwdEyeIcon');
-        const pillInstName = document.getElementById('pillInstName');
-        const pillInstLoc = document.getElementById('pillInstLoc');
+        const authForm = document.getElementById('authLoginForm');
 
-        // Display user's real setup institution data in the context pill
-        (function renderInstitutionContext() {
-            const raw = sessionStorage.getItem('proctorai_institution_data') || localStorage.getItem('proctorai_institution_data');
-            if (raw) {
-                try {
-                    const data = JSON.parse(raw);
-                    if (data.institutionName) pillInstName.textContent = data.institutionName;
-                    const locParts = [];
-                    if (data.city) locParts.push(data.city);
-                    if (data.state) locParts.push(data.state);
-                    if (data.country) locParts.push(data.country);
-                    if (locParts.length > 0) pillInstLoc.textContent = locParts.join(', ');
-                } catch (e) {
-                    console.warn('Could not parse institution setup data', e);
+        // ── LOAD REAL INSTITUTIONS FROM BACKEND ──
+        async function loadInstitutions() {
+            try {
+                const res = await fetch('/api/institutions');
+                if (res.ok) {
+                    const list = await res.json();
+                    availableInstitutions = list;
+                }
+            } catch (err) {
+                console.warn('Could not fetch institutions list:', err);
+            }
+
+            // Fallback to local setup data if empty
+            if (!availableInstitutions || availableInstitutions.length === 0) {
+                const raw = sessionStorage.getItem('proctorai_institution_data') || localStorage.getItem('proctorai_institution_data');
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        availableInstitutions = [{
+                            institution_id: parsed.institution_id || "INST-001",
+                            institution_name: parsed.institutionName || "Configured Institution",
+                            institution_type: parsed.institutionType || "University",
+                            city: parsed.city || "",
+                            country: parsed.country || ""
+                        }];
+                    } catch (e) {}
                 }
             }
-        })();
 
-        // Check for URL parameters (e.g. logged_out)
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('logged_out')) {
-            showBanner('Signed out successfully. Enter email to resume.', 'success');
+            // If still empty, add default
+            if (!availableInstitutions || availableInstitutions.length === 0) {
+                availableInstitutions = [{
+                    institution_id: "INST-001",
+                    institution_name: "Apex Institute of Technology",
+                    institution_type: "University",
+                    city: "San Francisco",
+                    country: "United States"
+                }];
+            }
+
+            renderInstitutionOptions();
+        }
+
+        function renderInstitutionOptions() {
+            institutionSelect.innerHTML = '';
+            
+            // Check stored institution preference
+            const stored = sessionStorage.getItem('proctorai_institution_data') || localStorage.getItem('proctorai_institution_data');
+            let preferredId = null;
+            if (stored) {
+                try { preferredId = JSON.parse(stored).institution_id; } catch(e){}
+            }
+
+            availableInstitutions.forEach((inst, idx) => {
+                const opt = document.createElement('option');
+                opt.value = inst.institution_id;
+                const loc = inst.city ? ` (${inst.city}, ${inst.country})` : '';
+                opt.textContent = `${inst.institution_name}${loc}`;
+                if (preferredId === inst.institution_id || (!preferredId && idx === 0)) {
+                    opt.selected = true;
+                }
+                institutionSelect.appendChild(opt);
+            });
+        }
+
+        // ── TAB SWITCHING ──
+        tabFaculty.addEventListener('click', () => setRole('FACULTY'));
+        tabAdmin.addEventListener('click', () => setRole('ADMIN'));
+
+        function setRole(role) {
+            currentRole = role;
+            hideBanner();
+
+            if (role === 'FACULTY') {
+                tabFaculty.classList.add('active');
+                tabFaculty.setAttribute('aria-selected', 'true');
+                tabAdmin.classList.remove('active');
+                tabAdmin.setAttribute('aria-selected', 'false');
+
+                institutionGroup.style.display = 'block';
+                usernameLabel.textContent = 'Faculty Email / Username';
+                usernameInput.placeholder = 'faculty@institution.edu';
+                roleBadgeText.textContent = 'FACULTY PROCTOR ACCESS';
+                btnSubmitText.textContent = 'Authenticate & Enter SOC';
+            } else {
+                tabAdmin.classList.add('active');
+                tabAdmin.setAttribute('aria-selected', 'true');
+                tabFaculty.classList.remove('active');
+                tabFaculty.setAttribute('aria-selected', 'false');
+
+                institutionGroup.style.display = 'none';
+                usernameLabel.textContent = 'Administrator Username / Email';
+                usernameInput.placeholder = 'admin';
+                roleBadgeText.textContent = 'PLATFORM / INSTITUTION ADMIN';
+                btnSubmitText.textContent = 'Authenticate & Enter Command';
+            }
+            lucide.createIcons();
         }
 
         // ── PASSWORD VISIBILITY TOGGLE ──
@@ -1084,73 +1059,85 @@ html, body {
             statusBanner.style.display = 'none';
         }
 
-        // Email regex pattern for validation
-        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        // ── FORM SUBMISSION & CLIENT-SIDE DEMO VALIDATION ──
-        form.addEventListener('submit', (e) => {
+        // ── FORM SUBMISSION & BACKEND AUTHENTICATION ──
+        authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             hideBanner();
 
-            const email = emailInput.value.trim();
+            const username = usernameInput.value.trim();
             const password = passwordInput.value;
+            const institutionId = currentRole === 'FACULTY' ? institutionSelect.value : null;
 
-            // 1. Validate Email
-            if (!email) {
-                showBanner('Please enter an email address.', 'error');
-                emailInput.focus();
+            if (!username) {
+                showBanner('Please enter your username or email.', 'error');
+                usernameInput.focus();
                 return;
             }
 
-            if (!EMAIL_REGEX.test(email)) {
-                showBanner('Please enter a valid email address (e.g. proctor@domain.com).', 'error');
-                emailInput.focus();
-                return;
-            }
-
-            // 2. Validate Password
             if (!password) {
-                showBanner('Password is required.', 'error');
+                showBanner('Please enter your password.', 'error');
                 passwordInput.focus();
                 return;
             }
 
-            if (password.length < 3) {
-                showBanner('Password must be at least 3 characters.', 'error');
-                passwordInput.focus();
-                return;
-            }
-
-            // 3. Successful Demo Authentication
-            enterBtn.disabled = true;
-            enterBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Entering ProctorAI...</span>';
+            authSubmitBtn.disabled = true;
+            authSubmitBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Authenticating Clearance...</span>';
             lucide.createIcons();
 
-            // Store temporary session state (NEVER store passwords or secrets)
             try {
-                sessionStorage.setItem('proctorai_demo_auth', 'true');
-                sessionStorage.setItem('proctorai_demo_email', email);
-                localStorage.setItem('proctorai_demo_auth', 'true');
-                localStorage.setItem('proctorai_demo_email', email);
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        role: currentRole,
+                        institution_id: institutionId
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showBanner(`Authentication successful. Redirecting to ${data.role === 'ADMIN' ? 'Admin Portal' : 'Proctoring Console'}...`, 'success');
+                    
+                    // Store non-sensitive session metadata
+                    try {
+                        sessionStorage.setItem('proctorai_auth_user', JSON.stringify(data.user || {}));
+                        sessionStorage.setItem('proctorai_role', data.role);
+                        sessionStorage.setItem('proctorai_inst_id', data.user ? data.user.institution_id : institutionId);
+                        localStorage.setItem('proctorai_demo_auth', 'true');
+                    } catch(err){}
+
+                    document.body.style.opacity = '0';
+                    document.body.style.transition = 'opacity 0.25s ease';
+
+                    setTimeout(() => {
+                        const currentParams = new URLSearchParams(window.location.search);
+                        const redirectTarget = currentParams.get('redirect');
+                        if (redirectTarget && (redirectTarget.endsWith('.html') || redirectTarget.startsWith('/'))) {
+                            window.location.href = redirectTarget;
+                        } else {
+                            window.location.href = data.redirect || (data.role === 'ADMIN' ? 'admin.html' : 'monitoring.html');
+                        }
+                    }, 250);
+                } else {
+                    authSubmitBtn.disabled = false;
+                    authSubmitBtn.innerHTML = `<i data-lucide="log-in" style="width:15px;height:15px;"></i> <span>${btnSubmitText.textContent}</span>`;
+                    lucide.createIcons();
+                    showBanner(data.error || 'Invalid credentials or unauthorized institution clearance.', 'error');
+                }
             } catch (err) {
-                console.warn('Session storage unavailable', err);
+                console.error('Authentication request error:', err);
+                authSubmitBtn.disabled = false;
+                authSubmitBtn.innerHTML = `<i data-lucide="log-in" style="width:15px;height:15px;"></i> <span>${btnSubmitText.textContent}</span>`;
+                lucide.createIcons();
+                showBanner('Network error connecting to security server. Please retry.', 'error');
             }
-
-            showBanner(`Access granted for ${email}. Initializing ProctorAI console...`, 'success');
-
-            // Smooth transition into requested destination (or default monitoring dashboard)
-            document.body.style.opacity = '0';
-            document.body.style.transition = 'opacity 0.25s ease';
-
-            const currentParams = new URLSearchParams(window.location.search);
-            const requestedRedirect = currentParams.get('redirect');
-            const validDestinations = ['monitoring.html', 'reports.html', 'enrollment.html', 'replay.html', 'student_dashboard.html', 'admin.html'];
-            const destinationPage = (requestedRedirect && validDestinations.includes(requestedRedirect)) ? requestedRedirect : 'monitoring.html';
-
-            setTimeout(() => {
-                window.location.href = destinationPage;
-            }, 300);
         });
+
+        // Initialize on page load
+        loadInstitutions();
     </script>
 </body>
 </html>

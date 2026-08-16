@@ -397,12 +397,12 @@ def cosine(a, b):
 
 class Gallery:
     """Multi-template gallery. Each student holds several embeddings; the
-    match score is the best over that student's templates."""
+    match score is the best over that student's templates. Scoped per institution."""
 
     def __init__(self):
-        self.people = {}    # sid -> {"name": str, "templates": (N,512) array}
+        self.people = {}    # sid -> {"name": str, "templates": (N,512) array, "institution_id": str}
 
-    def set_person(self, sid, name, templates):
+    def set_person(self, sid, name, templates, institution_id=None):
         arr = np.asarray(templates, dtype=np.float32)
         if arr.ndim == 1:
             arr = arr[None, :]
@@ -410,7 +410,11 @@ class Gallery:
         arr = arr / np.maximum(norms, 1e-9)
         if len(arr) > MAX_TEMPLATES:            # keep the most diverse subset
             arr = self._prune(arr, MAX_TEMPLATES)
-        self.people[sid] = {"name": name, "templates": arr}
+        self.people[sid] = {
+            "name": name,
+            "templates": arr,
+            "institution_id": institution_id or "INST-001"
+        }
 
     @staticmethod
     def _prune(arr, k):
@@ -425,14 +429,17 @@ class Gallery:
             chosen.append(nxt)
         return arr[chosen]
 
-    def identify(self, emb):
+    def identify(self, emb, institution_id=None):
         """Returns (sid, name, score, margin) or (None, None, best, margin)
-        when the match is rejected."""
+        when the match is rejected. When institution_id is provided, only matches
+        against enrolled students belonging to that specific institution."""
         if emb is None or not self.people:
             return None, None, 0.0, 0.0
         emb = np.asarray(emb, dtype=np.float32)
         scores = []
         for sid, p in self.people.items():
+            if institution_id and p.get("institution_id") and p.get("institution_id") != institution_id:
+                continue
             tpls = p["templates"]
             if tpls.shape[1] != emb.shape[0]:
                 continue

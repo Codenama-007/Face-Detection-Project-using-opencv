@@ -1673,9 +1673,9 @@ html, body {
         });
 
         // Modal Action 2: Confirm & Continue
-        confirmContinueBtn.addEventListener('click', () => {
+        confirmContinueBtn.addEventListener('click', async () => {
             confirmContinueBtn.disabled = true;
-            confirmContinueBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:14px;height:14px;"></i> <span>Saving Configuration...</span>';
+            confirmContinueBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:14px;height:14px;"></i> <span>Saving Configuration to Secure DB...</span>';
             lucide.createIcons();
 
             const setupData = {
@@ -1692,6 +1692,22 @@ html, body {
                 examRoom: examRoomInput.value.trim() || null,
                 configuredAt: new Date().toISOString()
             };
+
+            try {
+                const res = await fetch('/api/institutions/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(setupData)
+                });
+                if (res.ok) {
+                    const resJson = await res.json();
+                    if (resJson.institution_id) {
+                        setupData.institution_id = resJson.institution_id;
+                    }
+                }
+            } catch (err) {
+                console.warn('Backend setup API call failed (offline fallback active):', err);
+            }
 
             // Store cleanly in non-sensitive session storage & local storage
             try {
