@@ -197,7 +197,7 @@ def require_auth():
     path = request.path
 
     # Public static files, scripts, fonts, images, landing
-    if path in ['/', '/index.html', '/login.html', '/supervisor_login.html', '/setup.html']:
+    if path in ['/', '/index.html', '/login.html', '/supervisor_login.html', '/setup.html', '/setup_institution.html']:
         return
     if path.startswith('/static/') or path.startswith('/models/') or path.endswith(('.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.ttf')):
         return

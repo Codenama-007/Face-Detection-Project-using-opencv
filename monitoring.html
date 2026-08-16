@@ -2506,13 +2506,19 @@ function stopSessionTimer() {
 async function checkSessionStatus() {
     try {
         const res  = await fetch(`${BASE}/api/session/status`, { credentials: 'include' });
+        if (!res.ok) throw new Error('Session status failed');
         const data = await res.json();
-        sessionActive = data.active;
+        const wasActive = sessionActive;
+        sessionActive = Boolean(data.active);
+        
         if (typeof data.elapsed_seconds === 'number') {
-            sessionElapsed = data.elapsed_seconds;
+            // Sync with server if drifted or if state changed
+            if (!wasActive || Math.abs(sessionElapsed - data.elapsed_seconds) > 2) {
+                sessionElapsed = data.elapsed_seconds;
+            }
         }
 
-        if (data.active) {
+        if (sessionActive) {
             $startSessionBtn.style.display = 'none';
             $endSessionBtn.style.display   = 'inline-flex';
             $timerDisplay.textContent     = formatSessionTime(sessionElapsed);
@@ -2524,13 +2530,18 @@ async function checkSessionStatus() {
         } else {
             $startSessionBtn.style.display = 'inline-flex';
             $endSessionBtn.style.display   = 'none';
-            $globalBanner.className = 'session-pill paused';
-            $globalText.textContent = 'SESSION PAUSED';
+            if (!$globalBanner.classList.contains('threat')) {
+                $globalBanner.className = 'session-pill paused';
+                $globalText.textContent = 'SESSION PAUSED';
+            }
             $timerDisplay.textContent = formatSessionTime(sessionElapsed);
             stopSessionTimer();
         }
     } catch {
-        $globalText.textContent = 'BACKEND OFFLINE';
+        if (!backendOnline) {
+            $globalBanner.className = 'session-pill paused';
+            $globalText.textContent = 'BACKEND OFFLINE';
+        }
     }
 }
 
@@ -2835,13 +2846,10 @@ async function fetchLiveStatus() {
         });
 
         // Update feed title if CCTV stream
-        fetch(`${BASE}/api/status`, { credentials: 'include' })
-            .then(r => r.json())
-            .then(s => {
-                const ft = document.getElementById('feedTitle');
-                if (ft) ft.textContent = s.video_source === 'cctv' ? 'CCTV Live Feed' : 'Webcam Live Feed';
-            })
-            .catch(() => {});
+        const ft = document.getElementById('feedTitle');
+        if (ft && data.video_source) {
+            ft.textContent = data.video_source === 'cctv' ? 'CCTV Live Feed' : 'Webcam Live Feed';
+        }
     } catch (err) {
         if (backendOnline) {
             backendOnline = false;
