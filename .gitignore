@@ -82,7 +82,10 @@ models/face_landmarker.task
 config.json
 # Captured face image used by the recognition benchmarks
 bench_probe.jpg
-# Generated session reports
+# Generated session reports. Served from reports/ via the auth-checked
+# /reports/<file> route; static/ is kept listed because older builds wrote
+# there and Flask would serve that path publicly.
+reports/
 static/reports/
 # Local SQLite databases
 *.db

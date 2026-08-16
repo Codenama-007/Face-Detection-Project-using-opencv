@@ -1637,11 +1637,15 @@ def end_session():
     session_paused_time = None
     accumulated_elapsed_seconds = 0
 
-    # Generate HTML Report
-    import os
-    os.makedirs('static/reports', exist_ok=True)
+    # Generate HTML Report.
+    # Must be written to REPORTS_DIR, the directory /reports/<file> serves from.
+    # Writing to static/reports/ instead broke this two ways: the download link
+    # 404'd because nothing was ever placed where the route looks, and anything
+    # under static/ is served by Flask's public static handler, which would
+    # have bypassed the auth and cross-institution checks on that route.
+    os.makedirs(REPORTS_DIR, exist_ok=True)
     report_filename = f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
-    report_path = os.path.join('static/reports', report_filename)
+    report_path = os.path.join(REPORTS_DIR, report_filename)
 
     generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
