@@ -1961,11 +1961,11 @@ body::after {
                 <div class="panel-hd">
                     <div class="cctv-hd-left">
                         <div class="cctv-status-dot" id="cctvStatusDot"></div>
-                        <span class="panel-title">CCTV Live Vision</span>
+                        <span class="panel-title">CCTV LIVE FEED</span>
                         <span class="cctv-cam-tag">CAM-01</span>
                     </div>
                     <div class="cctv-hd-right">
-                        <span class="cctv-specs">1080P · 30 FPS · YOLOV8 + SFACE</span>
+                        <span class="cctv-specs">1080P · 30 FPS · ARCFACE + YOLO11s</span>
                         <div class="ai-engine-pill">
                             <div class="ai-pulse-dot"></div>
                             <span>AI ACTIVE</span>
@@ -2029,13 +2029,10 @@ body::after {
                             <i data-lucide="camera-off" class="fo-icon-center" style="width:32px;height:32px;"></i>
                         </div>
                         <div class="fo-text-wrap">
-                            <div class="fo-title">Monitoring Standby</div>
+                            <div class="fo-title">CAMERA OFFLINE</div>
+                            <div style="font-size:0.75rem;font-family:var(--mono);color:var(--cyan);font-weight:700;letter-spacing:0.06em;margin:0.25rem 0;">SYSTEM READY</div>
                             <div class="fo-body">
-                                Start the Python AI Vision server to stream camera and enable threat detection.
-                            </div>
-                            <div class="fo-cmd-box">
-                                <i data-lucide="terminal" style="width:12px;height:12px;"></i>
-                                <span>python server.py</span>
+                                Waiting for live examination feed...
                             </div>
                         </div>
                     </div>
@@ -2051,7 +2048,7 @@ body::after {
                 <div class="panel-hd">
                     <div class="panel-title-wrap">
                         <i data-lucide="activity" class="panel-title-icon"></i>
-                        <span class="panel-title">Security Matrix</span>
+                        <span class="panel-title">Security Overview</span>
                     </div>
                     <div id="roomStatusBadge" style="font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--t3);background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);padding:0.15rem 0.55rem;border-radius:99px;transition:all 0.3s;font-family:var(--mono);">STANDBY</div>
                 </div>
@@ -2059,34 +2056,34 @@ body::after {
                 <div class="overview-grid">
                     <div class="ov-metric">
                         <div class="ov-metric-top">
-                            <span class="ov-label">Active</span>
+                            <span class="ov-label">ACTIVE</span>
                             <i data-lucide="users" class="ov-icon"></i>
                         </div>
-                        <span class="ov-value" id="ovActive">0</span>
+                        <span class="ov-value" id="ovActive" style="color:#F5F7FA;">0</span>
                         <span class="ov-sub">Monitored</span>
                     </div>
                     <div class="ov-metric">
                         <div class="ov-metric-top">
-                            <span class="ov-label">Verified</span>
+                            <span class="ov-label">VERIFIED</span>
                             <i data-lucide="shield-check" class="ov-icon" style="color:var(--success);"></i>
                         </div>
-                        <span class="ov-value green" id="ovVerified">0</span>
+                        <span class="ov-value green" id="ovVerified" style="color:var(--success);">0</span>
                         <span class="ov-sub">Safe Trust</span>
                     </div>
                     <div class="ov-metric">
                         <div class="ov-metric-top">
-                            <span class="ov-label">Review</span>
+                            <span class="ov-label">UNDER REVIEW</span>
                             <i data-lucide="alert-circle" class="ov-icon" style="color:var(--warning);"></i>
                         </div>
-                        <span class="ov-value amber" id="ovReview">0</span>
+                        <span class="ov-value amber" id="ovReview" style="color:var(--warning);">0</span>
                         <span class="ov-sub">Suspicious</span>
                     </div>
                     <div class="ov-metric">
                         <div class="ov-metric-top">
-                            <span class="ov-label">High Risk</span>
+                            <span class="ov-label">HIGH RISK</span>
                             <i data-lucide="shield-alert" class="ov-icon" style="color:var(--danger);"></i>
                         </div>
-                        <span class="ov-value red" id="ovHighRisk">0</span>
+                        <span class="ov-value red" id="ovHighRisk" style="color:var(--danger);">0</span>
                         <span class="ov-sub">Critical</span>
                     </div>
                 </div>
@@ -2095,7 +2092,7 @@ body::after {
                 <div class="score-gauges-wrap" id="examScorePanel">
                     <!-- Trust Score Circular Meter -->
                     <div class="gauge-card">
-                        <span class="gauge-title">Trust Index</span>
+                        <span class="gauge-title">TRUST SCORE</span>
                         <div class="gauge-svg-wrap">
                             <svg class="gauge-svg" viewBox="0 0 74 74">
                                 <circle class="gauge-bg-circle" cx="37" cy="37" r="32"></circle>
@@ -2105,12 +2102,12 @@ body::after {
                                 <span class="gauge-val" id="avgTrustVal" style="color:var(--success);">--</span>
                             </div>
                         </div>
-                        <span class="gauge-status" id="trustStatusTag" style="color:var(--success);background:var(--success-dim);">STANDBY</span>
+                        <span class="gauge-status" id="trustStatusTag" style="color:var(--success);background:var(--success-dim);">STABLE</span>
                     </div>
 
-                    <!-- Risk Index Circular Meter -->
+                    <!-- Risk Score Circular Meter -->
                     <div class="gauge-card">
-                        <span class="gauge-title">Risk Index</span>
+                        <span class="gauge-title">RISK SCORE</span>
                         <div class="gauge-svg-wrap">
                             <svg class="gauge-svg" viewBox="0 0 74 74">
                                 <circle class="gauge-bg-circle" cx="37" cy="37" r="32"></circle>
@@ -2120,14 +2117,14 @@ body::after {
                                 <span class="gauge-val" id="avgRiskVal" style="color:var(--cyan);">--</span>
                             </div>
                         </div>
-                        <span class="gauge-status" id="scoreStatusPill" style="color:var(--cyan);background:var(--accent-dim);">NOMINAL</span>
+                        <span class="gauge-status" id="scoreStatusPill" style="color:var(--cyan);background:var(--accent-dim);">LOW RISK</span>
                     </div>
                 </div>
 
                 <!-- AI Security Engines Rows -->
                 <div class="engines-section">
                     <div class="engines-hd">
-                        <span class="engines-title">AI Defense Systems</span>
+                        <span class="engines-title">AI Security Engines</span>
                         <span class="engines-all-online" id="enginesSummaryText">STANDBY</span>
                     </div>
                     <div class="engine-row">
@@ -2409,7 +2406,7 @@ function updateExamScore(students) {
     if (avgTrust >= 75) {
         $avgTrustVal.style.color = 'var(--success)';
         $trustProgCircle.style.stroke = 'var(--success)';
-        $trustStatusTag.textContent = 'VERIFIED';
+        $trustStatusTag.textContent = 'STABLE';
         $trustStatusTag.style.color = 'var(--success)';
         $trustStatusTag.style.background = 'var(--success-dim)';
     } else if (avgTrust >= 40) {
