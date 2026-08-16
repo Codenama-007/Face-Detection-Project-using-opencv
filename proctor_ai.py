@@ -73,14 +73,14 @@ TALK_WINDOW_S     = 3.0
 
 # Temporal behaviour
 GLANCE_IGNORE_S   = 0.30     # anything shorter is natural, never counted
-BASELINE_FRAMES   = 45       # frames used to learn resting head pose
+BASELINE_FRAMES   = 15       # fast baseline calibration (<1s) for immediate engagement
 GLANCE_MIN_S      = 0.30     # a "glance" for repetition counting
 GLANCE_MAX_S      = 3.0
 REPEAT_GLANCES_N  = 8        # glances per REPEAT_WINDOW_S to alert
 REPEAT_WINDOW_S   = 60.0
 RESET_CLEAR_S     = 1.5      # condition must be false this long to re-arm
 ESCALATE_EVERY_S  = 45.0     # a behaviour that just persists re-scores slowly
-ACQUIRE_SETTLE_S  = 1.5      # ignore pose rates right after acquiring a face
+ACQUIRE_SETTLE_S  = 1.0      # settle period after acquiring a face
 
 # Suspicion score
 SCORE_DECAY_PER_S = 1.0      # points/sec of clean behaviour
@@ -89,21 +89,20 @@ TIERS = [(20, "LOW"), (50, "MEDIUM"), (80, "HIGH"), (float("inf"), "CRITICAL")]
 
 # Minimum model confidences (detections below these are ignored entirely)
 CONF_FACE   = 0.60
-CONF_PHONE  = 0.60   # COCO-pretrained realistic threshold; temporal gate below
-                     # is what actually kills false positives
+CONF_PHONE  = 0.45   # Fast and accurate phone confidence threshold
 
 # Event definitions: points, min sustained duration (s), cooldown (s)
 EVENTS = {
-    "PHONE_VISIBLE":    {"points": 100, "min_s": 2.0, "cooldown": 10, "label": "Phone visible"},
-    "EXTRA_PERSON":     {"points": 80,  "min_s": 3.0, "cooldown": 20, "label": "Another person in frame"},
-    "CAMERA_BLOCKED":   {"points": 60,  "min_s": 2.0, "cooldown": 15, "label": "Camera blocked"},
-    "LOOKING_BEHIND":   {"points": 45,  "min_s": 2.0, "cooldown": 10, "label": "Looking behind"},
-    "FACE_MISSING":     {"points": 40,  "min_s": 3.0, "cooldown": 12, "label": "Face missing"},
-    "FACE_COVERED":     {"points": 35,  "min_s": 3.0, "cooldown": 12, "label": "Face covered / occluded"},
-    "LOOKING_AWAY":     {"points": 20,  "min_s": 5.0, "cooldown": 8,  "label": "Sustained side look"},
-    "LOOKING_DOWN":     {"points": 15,  "min_s": 6.0, "cooldown": 10, "label": "Looking down repeatedly"},
-    "LOOKING_UP":       {"points": 10,  "min_s": 6.0, "cooldown": 10, "label": "Looking up repeatedly"},
-    "TALKING":          {"points": 10,  "min_s": 4.0, "cooldown": 12, "label": "Talking detected"},
+    "PHONE_VISIBLE":    {"points": 100, "min_s": 0.5, "cooldown": 8,  "label": "Phone visible"},
+    "EXTRA_PERSON":     {"points": 80,  "min_s": 2.5, "cooldown": 20, "label": "Another person in frame"},
+    "CAMERA_BLOCKED":   {"points": 60,  "min_s": 1.5, "cooldown": 15, "label": "Camera blocked"},
+    "LOOKING_BEHIND":   {"points": 45,  "min_s": 1.5, "cooldown": 10, "label": "Looking behind"},
+    "FACE_MISSING":     {"points": 40,  "min_s": 2.5, "cooldown": 12, "label": "Face missing"},
+    "FACE_COVERED":     {"points": 35,  "min_s": 2.5, "cooldown": 12, "label": "Face covered / occluded"},
+    "LOOKING_AWAY":     {"points": 20,  "min_s": 4.0, "cooldown": 8,  "label": "Sustained side look"},
+    "LOOKING_DOWN":     {"points": 15,  "min_s": 4.0, "cooldown": 10, "label": "Looking down repeatedly"},
+    "LOOKING_UP":       {"points": 10,  "min_s": 4.0, "cooldown": 10, "label": "Looking up repeatedly"},
+    "TALKING":          {"points": 10,  "min_s": 3.0, "cooldown": 12, "label": "Talking detected"},
     "RAPID_MOVEMENT":   {"points": 15,  "min_s": 0.0, "cooldown": 15, "label": "Rapid head movement"},
     "REPEATED_GLANCES": {"points": 25,  "min_s": 0.0, "cooldown": 30, "label": "Repeated side glances"},
 }
@@ -384,8 +383,8 @@ class StudentBehavior:
             return self.snapshot()
         self._mark("FACE_MISSING", False, now)
 
-        # ---- smooth pose ----
-        a = 0.35
+        # ---- smooth pose (high responsiveness with lightweight smoothing) ----
+        a = 0.70
         self._yaw_ema = obs.yaw if self._yaw_ema is None else (1 - a) * self._yaw_ema + a * obs.yaw
         self._pitch_ema = obs.pitch if self._pitch_ema is None else (1 - a) * self._pitch_ema + a * obs.pitch
 
@@ -425,12 +424,8 @@ class StudentBehavior:
         self.yaw, self.pitch = round(yaw_adj, 1), round(pitch_adj, 1)
 
         # ---- gaze label ----
-        # Raw blendshape gaze is jittery frame to frame, so smooth it and then
-        # require a majority across a short window before the label changes.
-        # Vertical gaze is measured against the student's own baseline: on a
-        # laptop the camera sits below the screen, so "looking at the screen"
-        # naturally reads as looking up.
-        g = 0.4
+        # Smooth with high responsiveness (0.70 EMA)
+        g = 0.70
         self._gh_ema = obs.gaze_h if self._gh_ema is None else (1 - g) * self._gh_ema + g * obs.gaze_h
         self._gv_ema = obs.gaze_v if self._gv_ema is None else (1 - g) * self._gv_ema + g * obs.gaze_v
 

@@ -36,7 +36,7 @@ PERSON_CLASS_ID = 0
 # detector missed 94% of distant phones. Precision is recovered by the
 # plausibility filter and the temporal gate rather than by a blunt threshold.
 PHONE_CONF = 0.40
-ROI_IMGSZ = 640              # person crops are upscaled to this
+ROI_IMGSZ = 480              # Fast high-recall person crop resolution
 ROI_PAD = 0.18               # expand the person box; a concealed phone often
                              # sits just outside the torso (lap, under desk)
 

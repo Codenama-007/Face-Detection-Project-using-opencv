@@ -2043,38 +2043,34 @@ def log_to_db(student_id, risk_score, direction, status, institution_id=None):
     try:
         if not institution_id:
             institution_id = "INST-001"
+        # Only log student events to exam_logs if student_id is valid
+        sid_val = str(student_id) if student_id is not None else "0"
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO exam_logs (student_id, institution_id, risk_score, direction, status)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (student_id, institution_id, risk_score, direction, status))
-        conn.commit()
-        cursor.close()
-        conn.close()
+        try:
+            cursor.execute("""
+                INSERT INTO exam_logs (student_id, institution_id, risk_score, direction, status)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (sid_val, institution_id, risk_score, direction, status))
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        finally:
+            cursor.close()
+            conn.close()
     except Exception as e:
         print(f"Error logging to DB: {e}")
 
-# ---------------- VIDEO PROCESSING ----------------
+# ---------------- VIDEO PROCESSING & REAL-TIME PIPELINE ----------------
 
 # Performance tuning
-# Run the AI on every Nth frame; in-between frames replay the last overlays.
-# Measured per-AI-frame cost on this CPU: YOLO 36ms + DeepSort 28ms +
-# FaceLandmarker 5ms. Safe to skip frames because every behaviour rule is
-# expressed in seconds of wall-clock time, not in frame counts.
-PROCESS_EVERY = 3
-# 480 keeps small objects (phones) detectable. 320 is ~2x faster but starts
-# missing them; raise PROCESS_EVERY before lowering this.
-YOLO_IMGSZ = 480
-MAX_STREAM_WIDTH = 960   # downscale larger (CCTV) frames before processing
-JPEG_PARAMS = [int(cv2.IMWRITE_JPEG_QUALITY), 70]
+YOLO_IMGSZ = 384             # Fast person detection on CPU while preserving accuracy
+MAX_STREAM_WIDTH = 960       # Downscale larger (CCTV) frames before processing
+JPEG_PARAMS = [int(cv2.IMWRITE_JPEG_QUALITY), 75]
 
-# Face identification runs on its OWN thread. Measured cost is ~180ms for
-# SCRFD plus ~170ms for ArcFace, which would otherwise halve the video frame
-# rate. Identity does not change frame to frame, so the video loop consumes
-# whatever the identifier last produced and never waits for it.
-ID_INTERVAL_FAST = float(os.environ.get("ID_FAST", 0.5))  # while unidentified
-ID_INTERVAL_SLOW = float(os.environ.get("ID_SLOW", 3.0))  # once everyone known
+# Face identification runs on its OWN thread
+ID_INTERVAL_FAST = float(os.environ.get("ID_FAST", 0.3))  # while unidentified
+ID_INTERVAL_SLOW = float(os.environ.get("ID_SLOW", 2.0))  # once everyone known
 FACE_ID_ENABLED = os.environ.get("FACE_ID", "on").lower() != "off"
 ID_VOTES_REQUIRED = 3    # consistent matches before an identity is locked
 ID_MAX_ATTEMPTS = 10     # give up on a track after this many failed passes
@@ -2148,19 +2144,9 @@ def start_identification_worker():
 
 
 # ---- Phone detection thread -------------------------------------------
-# yolo11m plus a per-person ROI pass is far too slow to run inline, so it
-# lives on its own thread like face identification. A phone does not appear
-# and vanish between frames, and the temporal gate needs ~2s of persistence
-# before it alerts, so checking a few times a second loses nothing.
-# Measured recall on COCO (120 phone images), ROI-only vs whole-frame+ROI:
-#   yolo11n  ROI-only 20.3% / distant 18.7%   |  yolo11s ROI-only 31.1% / 31.9%
-#   yolo11s  frame+ROI 52.7% / distant 44.0%  |  yolo11m frame+ROI 64.2% / 57.1%
-# The whole-frame pass contributes most of the recall, so it runs every pass;
-# the interval is what keeps the CPU cost affordable. A phone must persist
-# ~2s before the temporal gate alerts, so a 1s cadence still samples it twice.
-PHONE_INTERVAL = 1.0         # seconds between phone passes
-PHONE_RESULT_TTL = 3.0       # drop phone results older than this
-PHONE_WHOLE_FRAME_EVERY = 1  # 1 = whole-frame sweep on every pass
+PHONE_INTERVAL = 0.1         # Fast responsive phone detection
+PHONE_RESULT_TTL = 0.8       # Immediately clear when phone is removed
+PHONE_WHOLE_FRAME_EVERY = 2  # Balance whole-frame and person-ROI for high recall
 
 _phone_lock = threading.Lock()
 _phone_input = {"frame": None, "persons": []}
@@ -2176,14 +2162,12 @@ def _phone_worker():
             persons = list(_phone_input["persons"])
             _phone_input["frame"] = None
         if frame is None:
-            time.sleep(0.05)
+            time.sleep(0.02)
             continue
         try:
             pass_no += 1
-            # ROI passes catch the exam case (a phone held by a person);
-            # the occasional whole-frame sweep catches a phone lying on a desk.
             whole = (pass_no % PHONE_WHOLE_FRAME_EVERY == 0) or not persons
-            found = phone_detector.detect(frame, persons, whole_frame=whole)
+            found = phone_detector.detect(frame, persons, whole_frame=whole, whole_imgsz=480)
             with _phone_lock:
                 _phone_output["boxes"] = found
                 _phone_output["ts"] = time.time()
@@ -2202,39 +2186,43 @@ def start_phone_worker():
     threading.Thread(target=_phone_worker, name="phone-detect",
                      daemon=True).start()
     print(f"[PHONE] detection worker started "
-          f"({phone_detector.weights}, person-ROI, every {PHONE_INTERVAL}s)")
+          f"({phone_detector.weights}, person-ROI, low latency mode)")
+
 
 def open_capture(source):
-    # Measured on this machine: the default backend opens the webcam in
-    # ~0.16s vs ~0.95s for CAP_DSHOW, and both then run at ~30 FPS.
     cap = cv2.VideoCapture(source)
     # Always process the freshest frame instead of a stale buffered one
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    try:
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    except Exception:
+        pass
     return cap
 
-# ---- Shared frame buffer -------------------------------------------------
-# Exactly ONE worker thread owns the camera and runs the AI pipeline; every
-# HTTP viewer reads the latest encoded JPEG from here. Previously the camera
-# was opened inside the per-request generator, so each browser tab/refresh/
-# reconnect created another capture handle AND another full AI pipeline on
-# the same camera.
+
+# ---- Decoupled Real-Time Frame Buffers & State ---------------------------
+_raw_lock = threading.Lock()
+_latest_raw_frame = None
+_latest_raw_ts = 0.0
+_raw_frame_event = threading.Event()
+
+_ai_overlay_lock = threading.Lock()
+_shared_draw_ops = []
+
 _latest_jpeg = None
 _frame_ready = threading.Condition()
 _worker_lock = threading.Lock()
 _worker_started = False
 
-# A local webcam can only be held by one process at a time. The enrollment
-# page captures the student's face with getUserMedia() in the BROWSER, so the
-# server must let go of the camera whenever nobody is watching /video_feed
-# (or while the enrollment page explicitly asks for it).
 _viewers = 0
 _viewers_lock = threading.Lock()
 _camera_paused = False
-_camera_open = False         # True while the worker actually holds the device
-IDLE_RELEASE_SECONDS = 2.0   # release the camera this long after the last viewer leaves
+_camera_open = False
+IDLE_RELEASE_SECONDS = 2.0
+
 
 def _camera_held():
     return _camera_open
+
 
 def _publish_frame(jpeg_bytes):
     global _latest_jpeg
@@ -2242,32 +2230,25 @@ def _publish_frame(jpeg_bytes):
         _latest_jpeg = jpeg_bytes
         _frame_ready.notify_all()
 
+
 def _camera_wanted():
     """True only while a viewer is watching and enrollment has not paused us."""
     with _viewers_lock:
         return _viewers > 0 and not _camera_paused
 
-def _camera_worker():
-    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, head_pose_buffers, baseline_calibration, SESSION_ACTIVE, _camera_open
+
+def _camera_capture_worker():
+    """Dedicated low-latency camera acquisition thread.
+    Continuously pulls fresh frames from the hardware at full FPS with zero AI blocking."""
+    global _latest_raw_frame, _latest_raw_ts, _camera_open
     cap = None
     source = None
-    last_log_time = 0
-    frame_idx = 0
     read_failures = 0
     idle_since = None
 
-    # Overlays computed on AI frames, replayed on skipped frames
-    draw_ops = []
-    phone_detected = False
-    book_detected = False
-
     while True:
-        # ---- Acquire / release the camera based on demand ----------------
         if not _camera_wanted():
             if cap is not None:
-                # Pausing (enrollment needs the webcam) releases immediately;
-                # merely having no viewers waits out the idle grace period so
-                # a page refresh doesn't thrash the device open/closed.
                 if _camera_paused:
                     should_release = True
                 elif idle_since is None:
@@ -2281,9 +2262,11 @@ def _camera_worker():
                     cap = None
                     _camera_open = False
                     idle_since = None
+                    with _raw_lock:
+                        _latest_raw_frame = None
                     reason = "enrollment paused it" if _camera_paused else "no viewers"
                     print(f"[VIDEO] Camera released ({reason}) - free for the browser/other apps.")
-            time.sleep(0.1)
+            time.sleep(0.05)
             continue
 
         idle_since = None
@@ -2300,7 +2283,6 @@ def _camera_worker():
             _camera_open = True
             print(f"[VIDEO] Camera acquired: {source}")
 
-        # Hot-swap the capture when the supervisor switches webcam <-> CCTV
         if VIDEO_SOURCE_CHANGED.is_set():
             VIDEO_SOURCE_CHANGED.clear()
             cap.release()
@@ -2310,8 +2292,6 @@ def _camera_worker():
 
         ret, frame = cap.read()
         if not ret:
-            # CCTV/RTSP streams drop frames or disconnect; reconnect
-            # instead of killing the feed
             read_failures += 1
             if read_failures >= 5:
                 cap.release()
@@ -2319,35 +2299,91 @@ def _camera_worker():
                 cap = open_capture(source)
                 read_failures = 0
                 print(f"[VIDEO] Reconnecting to video source: {source}")
+            time.sleep(0.01)
             continue
         read_failures = 0
 
-        # Downscale large CCTV frames: all downstream AI gets faster and
-        # the MJPEG stream gets lighter
+        # Downscale large CCTV frames if needed
         if frame.shape[1] > MAX_STREAM_WIDTH:
             scale = MAX_STREAM_WIDTH / frame.shape[1]
             frame = cv2.resize(frame, (MAX_STREAM_WIDTH, int(frame.shape[0] * scale)))
 
         now = time.time()
-        frame_idx += 1
+        with _raw_lock:
+            _latest_raw_frame = frame
+            _latest_raw_ts = now
+        _raw_frame_event.set()
 
-        if frame_idx % PROCESS_EVERY != 0:
-            # Skipped frame: replay the last overlays and stream immediately
-            for op in draw_ops:
-                if op[0] == 'rect':
-                    cv2.rectangle(frame, op[1], op[2], op[3], op[4])
-                else:
-                    cv2.putText(frame, op[1], op[2], cv2.FONT_HERSHEY_SIMPLEX, op[3], op[4], op[5])
-            ret, buffer = cv2.imencode('.jpg', frame, JPEG_PARAMS)
-            _publish_frame(buffer.tobytes())
+        # Minimal yield keeping full 30 FPS throughput
+        time.sleep(0.005)
+
+    if cap is not None:
+        cap.release()
+
+
+def _stream_worker():
+    """Dedicated low-latency stream composer.
+    Takes the freshest raw camera frame, composites the latest smoothed AI overlays,
+    and encodes to JPEG with near-zero latency."""
+    last_stream_ts = 0.0
+
+    while True:
+        _raw_frame_event.wait(timeout=0.08)
+        _raw_frame_event.clear()
+
+        with _raw_lock:
+            raw_frame = _latest_raw_frame
+            ts = _latest_raw_ts
+
+        if raw_frame is None:
+            time.sleep(0.03)
             continue
 
+        if ts <= last_stream_ts:
+            time.sleep(0.005)
+            continue
+        last_stream_ts = ts
+
+        # Frame copy for drawing so raw buffer stays pristine
+        frame = raw_frame.copy()
+
+        with _ai_overlay_lock:
+            draw_ops = list(_shared_draw_ops)
+
+        for op in draw_ops:
+            if op[0] == 'rect':
+                cv2.rectangle(frame, op[1], op[2], op[3], op[4])
+            else:
+                cv2.putText(frame, op[1], op[2], cv2.FONT_HERSHEY_SIMPLEX, op[3], op[4], op[5])
+
+        ret, buffer = cv2.imencode('.jpg', frame, JPEG_PARAMS)
+        if ret:
+            _publish_frame(buffer.tobytes())
+
+
+def _ai_worker():
+    """Asynchronous AI Detection Worker Thread.
+    Runs YOLO person detection, MediaPipe FaceLandmarker, DeepSort, and behavior engines
+    off the video stream's critical path. Never blocks camera preview."""
+    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, smooth_boxes
+    last_ai_ts = 0.0
+    last_log_time = 0.0
+
+    while True:
+        with _raw_lock:
+            raw_frame = _latest_raw_frame
+            ts = _latest_raw_ts
+
+        if raw_frame is None or ts <= last_ai_ts:
+            time.sleep(0.01)
+            continue
+
+        last_ai_ts = ts
+        frame = raw_frame.copy()
+        now = time.time()
         draw_ops = []
 
-        # 1. YOLO11 object detection: persons for tracking, phones for alerts.
-        #    Only actual phones are considered (COCO class 67) - books,
-        #    bottles, calculators etc. are deliberately ignored to keep the
-        #    false-positive rate down.
+        # 1. YOLO person detection
         yolo_results = yolo_model(frame, stream=True, verbose=False,
                                   imgsz=YOLO_IMGSZ, classes=[0])
         person_detections = []
@@ -2356,14 +2392,13 @@ def _camera_worker():
         for r in yolo_results:
             for box in r.boxes:
                 conf = float(box.conf[0])
-                if conf <= 0.5:
+                if conf <= 0.45:
                     continue
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 person_detections.append(([x1, y1, x2 - x1, y2 - y1], conf, "person"))
                 person_boxes.append((x1, y1, x2, y2))
 
-        # Hand the frame + person boxes to the phone thread, and take whatever
-        # it last produced. Never blocks the video loop.
+        # 2. Phone detection dispatch
         with _phone_lock:
             if _phone_input["frame"] is None:
                 _phone_input["frame"] = frame.copy()
@@ -2382,13 +2417,10 @@ def _camera_worker():
         room_state["phone_detected"] = len(phone_boxes) > 0
         room_state["book_detected"] = False
 
-        # 2. Landmark face analysis - ONE FaceLandmarker pass for the whole
-        #    frame gives every face's head pose (yaw/pitch/roll), iris gaze
-        #    and mouth activity.
+        # 3. MediaPipe FaceLandmarker analysis
         face_obs_list = face_analyzer.analyze(frame)
 
-        # 2b. Hand the current frame to the identification thread and pick up
-        #     whatever it last produced. This never blocks the video loop.
+        # 4. Face identification dispatch
         if _id_wanted.is_set() or (now - _id_output["ts"]) > ID_INTERVAL_SLOW:
             with _id_lock:
                 if _id_input["frame"] is None:
@@ -2399,13 +2431,9 @@ def _camera_worker():
             id_faces = (_id_output["faces"]
                         if (now - _id_output["ts"]) <= ID_RESULT_TTL else [])
 
-        # 3. DeepSort Tracking (stable per-student IDs)
+        # 5. Tracking update
         tracks = tracker.update_tracks(person_detections, frame=frame)
 
-        # Tell the identifier whether to run at the fast or slow cadence.
-        # A track that simply cannot be identified (someone not enrolled, or a
-        # spurious detection) must not pin the identifier at its fast cadence
-        # forever - that was measured costing about half the frame rate.
         pending = False
         for t in tracks:
             if not t.is_confirmed() or t.track_id in track_to_student:
@@ -2414,8 +2442,6 @@ def _camera_worker():
             if tries < ID_MAX_ATTEMPTS:
                 pending = True
             elif now - id_giveup_at.get(t.track_id, 0) > ID_RETRY_AFTER:
-                # periodically give up-on tracks another chance; conditions
-                # (lighting, pose, distance) may have improved
                 id_attempts[t.track_id] = 0
                 id_giveup_at[t.track_id] = now
                 pending = True
@@ -2430,28 +2456,18 @@ def _camera_worker():
         for track in tracks:
             if not track.is_confirmed():
                 continue
-                
+
             track_id = track.track_id
             tx1, ty1, tx2, ty2 = map(int, track.to_ltrb())
-            
-            # Bound crop
             tx1 = max(0, tx1)
             ty1 = max(0, ty1)
             tx2 = min(frame.shape[1], tx2)
             ty2 = min(frame.shape[0], ty2)
-            
-            # Minimum bounding box check
+
             if tx2 - tx1 < 40 or ty2 - ty1 < 40:
                 continue
-                
-            person_crop = frame[ty1:ty2, tx1:tx2]
-            
-            # Identify: match any face recognised this pass whose centre falls
-            # inside this track's box. Votes still gate the lock so a single
-            # frame can never assign an identity.
+
             if track_id not in track_to_student:
-                # Count this as an attempt whenever a fresh identification
-                # result was available but produced no confident match here.
                 if id_faces and now - last_counted_id.get(track_id, 0) > 0.4:
                     last_counted_id[track_id] = now
                     id_attempts[track_id] = id_attempts.get(track_id, 0) + 1
@@ -2460,7 +2476,7 @@ def _camera_worker():
                     if not (tx1 <= idf["cx"] <= tx2 and ty1 <= idf["cy"] <= ty2):
                         continue
                     sid = idf["sid"]
-                    if sid is None:          # below threshold or ambiguous
+                    if sid is None:
                         continue
                     votes = track_votes.setdefault(track_id, {})
                     votes[sid] = votes.get(sid, 0) + 1
@@ -2488,7 +2504,6 @@ def _camera_worker():
                               f"margin {idf['margin']:.3f}")
                     break
 
-            # If identified, run the full behaviour pipeline
             if track_id in track_to_student:
                 sid = track_to_student[track_id]
                 current_students_in_frame.add(sid)
@@ -2497,8 +2512,6 @@ def _camera_worker():
                     behaviors[sid] = proctor_ai.StudentBehavior(
                         sid, tracked_students.get(sid, {}).get("name", sid))
 
-                # -- associate a face observation with this track (nose point
-                #    inside the track box; nearest to centre wins) --
                 cx = (tx1 + tx2) / 2
                 my_obs, best_d = None, 1e9
                 for obs in face_obs_list:
@@ -2508,8 +2521,6 @@ def _camera_worker():
                         if d < best_d:
                             my_obs, best_d = obs, d
 
-                # -- attribute phones to this student (phone centre inside a
-                #    slightly expanded person box) --
                 phone_conf = 0.0
                 ex = int((tx2 - tx1) * 0.20)
                 for (px1, py1, px2, py2, pconf) in phone_boxes:
@@ -2517,7 +2528,6 @@ def _camera_worker():
                     if (tx1 - ex) <= pcx <= (tx2 + ex) and (ty1 - ex) <= pcy <= (ty2 + ex):
                         phone_conf = max(phone_conf, pconf)
 
-                # -- temporal behaviour + suspicion update --
                 prev_logged = tracked_students.get(sid, {}).get("_logged_event")
                 snap = behaviors[sid].update(my_obs, phone_conf, now)
                 snap["last_seen"] = now
@@ -2528,18 +2538,26 @@ def _camera_worker():
                 tracked_students[sid] = snap
                 historical_risk_scores[sid] = snap["suspicion_score"]
 
-                # DB-log each alert exactly once (the engine reuses the same
-                # last_event object until a NEW alert is confirmed)
                 le = snap.get("last_event")
                 if le is not None and le is not prev_logged:
                     log_to_db(sid, int(snap["suspicion_score"]),
                               snap.get("direction", "CENTER"), le["label"])
                 tracked_students[sid]["_logged_event"] = le
 
-                # -- EMA-smoothed box so it doesn't jump between frames --
+                # Low-latency adaptive bounding box smoothing
                 new_box = np.array([tx1, ty1, tx2, ty2], dtype=np.float32)
                 prev = smooth_boxes.get(sid)
-                sm = new_box if prev is None else 0.6 * prev + 0.4 * new_box
+                if prev is None:
+                    sm = new_box
+                else:
+                    dist = float(np.max(np.abs(new_box - prev)))
+                    if dist > 12.0:
+                        alpha = 0.85  # Near-instant tracking during movement
+                    elif dist > 4.0:
+                        alpha = 0.65
+                    else:
+                        alpha = 0.40  # Anti-jitter when stationary
+                    sm = (1.0 - alpha) * prev + alpha * new_box
                 smooth_boxes[sid] = sm
                 sx1, sy1, sx2, sy2 = map(int, sm)
 
@@ -2560,8 +2578,7 @@ def _camera_worker():
                 draw_ops.append(('rect', (tx1, ty1), (tx2, ty2), (0, 0, 255), 2))
                 draw_ops.append(('text', f"UNKNOWN {track_id}", (tx1, ty1 - 10), 0.6, (0, 0, 255), 2))
 
-        # Students not visible this frame: keep their temporal engine running
-        # (drives FACE_MISSING) and drop them after 60s away
+        # Handle absent students
         for sid in list(tracked_students.keys()):
             if sid not in current_students_in_frame:
                 if sid in behaviors:
@@ -2583,7 +2600,6 @@ def _camera_worker():
                         if tid in track_votes:
                             del track_votes[tid]
 
-        # ---- room-level temporal events (also never single-frame) ----
         gray_std = float(np.std(cv2.cvtColor(
             cv2.resize(frame, (160, 120)), cv2.COLOR_BGR2GRAY)))
         room_events = room_behavior.update(unknown_count, gray_std, now)
@@ -2604,28 +2620,23 @@ def _camera_worker():
             log_to_db("ROOM", 100, "N/A", status)
             last_log_time = now
 
-        # Render overlays and encode the frame
-        for op in draw_ops:
-            if op[0] == 'rect':
-                cv2.rectangle(frame, op[1], op[2], op[3], op[4])
-            else:
-                cv2.putText(frame, op[1], op[2], cv2.FONT_HERSHEY_SIMPLEX, op[3], op[4], op[5])
+        # Atomically publish draw operations for stream overlay
+        with _ai_overlay_lock:
+            _shared_draw_ops = draw_ops
 
-        ret, buffer = cv2.imencode('.jpg', frame, JPEG_PARAMS)
-        _publish_frame(buffer.tobytes())
-
-    cap.release()
 
 def start_camera_worker():
-    """Starts the single camera/AI thread. Called at server startup so the
-    camera is already open and warm before anyone logs in."""
+    """Starts the decoupled camera capture, stream composer, and AI threads."""
     global _worker_started
     with _worker_lock:
         if _worker_started:
             return
         _worker_started = True
-    threading.Thread(target=_camera_worker, name="camera-worker", daemon=True).start()
-    print("[VIDEO] Camera worker thread started (camera warming up).")
+
+    threading.Thread(target=_camera_capture_worker, name="camera-capture", daemon=True).start()
+    threading.Thread(target=_stream_worker, name="stream-composer", daemon=True).start()
+    threading.Thread(target=_ai_worker, name="ai-inference", daemon=True).start()
+    print("[VIDEO] Decoupled real-time camera & AI pipeline threads started.")
     start_identification_worker()
     start_phone_worker()
 

@@ -430,9 +430,15 @@ class Gallery:
         when the match is rejected."""
         if emb is None or not self.people:
             return None, None, 0.0, 0.0
+        emb = np.asarray(emb, dtype=np.float32)
         scores = []
         for sid, p in self.people.items():
-            scores.append((float(np.max(p["templates"] @ emb)), sid, p["name"]))
+            tpls = p["templates"]
+            if tpls.shape[1] != emb.shape[0]:
+                continue
+            scores.append((float(np.max(tpls @ emb)), sid, p["name"]))
+        if not scores:
+            return None, None, 0.0, 0.0
         scores.sort(reverse=True)
         best_score, best_sid, best_name = scores[0]
         runner_up = scores[1][0] if len(scores) > 1 else -1.0
