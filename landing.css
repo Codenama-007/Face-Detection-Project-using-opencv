@@ -511,3 +511,545 @@ a { text-decoration: none; color: inherit; }
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ═════════════════════════════════════════════════════════════════════
+   HERO — MOCKUP BAR LABEL & HUD INDICATORS
+   ═════════════════════════════════════════════════════════════════════ */
+
+.mockup-bar-label {
+    margin-left: 0.75rem;
+    font-size: 0.62rem;
+    font-family: var(--mono);
+    color: rgba(255,255,255,0.28);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    align-self: center;
+}
+
+.hud-indicators {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    z-index: 10;
+}
+
+.hud-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 99px;
+    font-size: 0.6rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(7, 9, 13, 0.65);
+    color: rgba(255,255,255,0.65);
+}
+
+.hud-live {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+}
+
+.hud-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 6px #ef4444;
+    animation: livePulse 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.3); }
+}
+
+.hud-camera { color: #93c5fd; border-color: rgba(147,197,253,0.25); background: rgba(59,130,246,0.12); }
+.hud-ai { color: #a5f3fc; border-color: rgba(34,211,238,0.25); background: rgba(34,211,238,0.1); }
+.hud-face { color: #86efac; border-color: rgba(34,197,94,0.25); background: rgba(34,197,94,0.1); }
+
+/* ═════════════════════════════════════════════════════════════════════
+   FEATURES — CAPABILITY LABEL PILL
+   ═════════════════════════════════════════════════════════════════════ */
+
+.feat-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.28rem 0.85rem;
+    border-radius: 99px;
+    font-size: 0.68rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(34, 211, 238, 0.08);
+    border: 1px solid rgba(34, 211, 238, 0.22);
+    margin-bottom: 1.5rem;
+}
+
+.hiw-label {
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.08);
+    border-color: rgba(74, 222, 128, 0.22);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   FEATURES — ASYMMETRIC TWO-COLUMN INTRO
+   ═════════════════════════════════════════════════════════════════════ */
+
+.features-intro {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 4rem;
+    align-items: center;
+    margin-bottom: 3.5rem;
+}
+
+.features-intro-left {
+    display: flex;
+    flex-direction: column;
+}
+
+.feat-title {
+    text-align: left;
+    margin-bottom: 1.25rem;
+}
+
+.feat-subtitle {
+    text-align: left;
+    margin: 0;
+    max-width: 480px;
+}
+
+/* Featured Highlight Card */
+.feat-highlight-card {
+    padding: 2.25rem;
+    position: relative;
+    border: 1px solid rgba(34, 211, 238, 0.18);
+    border-top: 1px solid rgba(34, 211, 238, 0.35);
+    background: rgba(17, 22, 29, 0.82);
+    overflow: hidden;
+}
+
+.feat-highlight-card::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -20%;
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, rgba(34, 211, 238, 0.1), transparent 65%);
+    filter: blur(40px);
+    pointer-events: none;
+}
+
+.fhc-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.fhc-num {
+    font-size: 3rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: rgba(34, 211, 238, 0.2);
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+.fhc-badge {
+    font-size: 0.6rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    color: var(--accent);
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid rgba(34, 211, 238, 0.25);
+}
+
+.fhc-icon-wrap {
+    margin-bottom: 1.25rem;
+}
+
+.fhc-icon {
+    width: 44px;
+    height: 44px;
+    color: var(--accent);
+    stroke-width: 1.5;
+}
+
+.fhc-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+    color: #F5F7FA;
+}
+
+.fhc-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.65;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   FEATURES — CAPABILITIES GRID (02–08)
+   ═════════════════════════════════════════════════════════════════════ */
+
+.capabilities-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+}
+
+.cap-module {
+    padding: 1.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    background: rgba(17, 22, 29, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s, box-shadow 0.22s;
+    position: relative;
+    overflow: hidden;
+}
+
+.cap-module:hover {
+    transform: translateY(-2px);
+    border-color: rgba(34, 211, 238, 0.25);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 16px rgba(34, 211, 238, 0.06);
+}
+
+.cap-module-wide {
+    grid-column: span 1;
+}
+
+.cap-module-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.cap-num {
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: rgba(34, 211, 238, 0.18);
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.cap-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: rgba(34, 211, 238, 0.08);
+    border: 1px solid rgba(34, 211, 238, 0.18);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.cap-module:hover .cap-icon {
+    background: rgba(34, 211, 238, 0.14);
+    border-color: rgba(34, 211, 238, 0.35);
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.2);
+}
+
+.cap-icon i { width: 16px; height: 16px; }
+
+.cap-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #F5F7FA;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+}
+
+.cap-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   HOW IT WORKS — VERTICAL PROCESS TIMELINE
+   ═════════════════════════════════════════════════════════════════════ */
+
+.how-it-works {
+    background: rgba(255, 255, 255, 0.008);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hiw-header {
+    margin-bottom: 4rem;
+}
+
+.hiw-timeline {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Vertical connector track positioned behind steps */
+.hiw-connector-track {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 24px;
+    bottom: 24px;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    z-index: 0;
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.hiw-connector-line {
+    width: 100%;
+    height: 0%;
+    background: linear-gradient(180deg, rgba(34, 211, 238, 0.6) 0%, rgba(74, 222, 128, 0.4) 100%);
+    border-radius: 99px;
+    transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Individual Step Row */
+.hiw-step {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1rem 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Opacity reveal effect */
+.hiw-step-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hiw-step-reveal.hiw-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Step Number (large mono) */
+.hiw-step-num {
+    font-size: 2.5rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: rgba(255, 255, 255, 0.08);
+    letter-spacing: -0.04em;
+    line-height: 1;
+    text-align: right;
+    padding-right: 0.5rem;
+}
+
+.hiw-num-right {
+    text-align: left;
+    padding-right: 0;
+    padding-left: 0.5rem;
+}
+
+/* Node (center circle icon) */
+.hiw-step-node-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.hiw-node-ring {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(14, 20, 32, 0.95);
+    border: 2px solid rgba(34, 211, 238, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 6px rgba(34, 211, 238, 0.05), 0 6px 24px rgba(0, 0, 0, 0.4);
+    transition: border-color 0.3s, box-shadow 0.3s;
+    flex-shrink: 0;
+}
+
+.hiw-step-reveal.hiw-visible .hiw-node-ring {
+    border-color: rgba(34, 211, 238, 0.65);
+    box-shadow: 0 0 0 8px rgba(34, 211, 238, 0.08), 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(34, 211, 238, 0.2);
+}
+
+.hiw-node-final {
+    border-color: rgba(74, 222, 128, 0.5);
+}
+
+.hiw-step-reveal.hiw-visible .hiw-node-final {
+    border-color: rgba(74, 222, 128, 0.8);
+    box-shadow: 0 0 0 8px rgba(74, 222, 128, 0.08), 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(74, 222, 128, 0.2);
+}
+
+.hiw-node-icon {
+    color: var(--accent);
+}
+
+.hiw-node-icon i {
+    width: 20px;
+    height: 20px;
+}
+
+.hiw-node-final .hiw-node-icon {
+    color: #4ade80;
+}
+
+/* Step Card */
+.hiw-step-left,
+.hiw-step-right {
+    display: flex;
+}
+
+.hiw-content-left {
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.hiw-content-right {
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.hiw-step-card {
+    padding: 1.5rem 1.75rem;
+    max-width: 340px;
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(17, 22, 29, 0.80);
+    transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.hiw-step-reveal.hiw-visible .hiw-step-card {
+    border-color: rgba(34, 211, 238, 0.14);
+}
+
+.hiw-card-tag {
+    font-size: 0.6rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.75;
+    margin-bottom: 0.65rem;
+}
+
+.hiw-step-card h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #F5F7FA;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+}
+
+.hiw-step-card p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   RESPONSIVE — FEATURES + HIW
+   ═════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1100px) {
+    .features-intro {
+        gap: 2.5rem;
+    }
+    .capabilities-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .features-intro {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    .feat-title, .feat-subtitle {
+        text-align: center;
+    }
+    .features-intro-left {
+        align-items: center;
+        text-align: center;
+    }
+    .hiw-step-num {
+        font-size: 1.8rem;
+    }
+    .hiw-step {
+        grid-template-columns: 40px 52px 1fr;
+        gap: 1rem;
+    }
+    .hiw-step-alt {
+        grid-template-columns: 1fr 52px 40px;
+    }
+    .hiw-step-alt .hiw-content-right {
+        order: -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .capabilities-grid {
+        grid-template-columns: 1fr;
+    }
+    .hiw-timeline {
+        padding: 0 0.5rem;
+    }
+    .hiw-step {
+        grid-template-columns: 36px 44px 1fr;
+        gap: 0.75rem;
+    }
+    .hiw-step-alt {
+        grid-template-columns: 1fr 44px 36px;
+    }
+    .hiw-node-ring {
+        width: 44px;
+        height: 44px;
+    }
+    .hiw-step-num {
+        font-size: 1.4rem;
+    }
+    .hiw-step-card {
+        max-width: 100%;
+        padding: 1.25rem 1.25rem;
+    }
+    .hiw-connector-track {
+        display: none;
+    }
+    .feat-highlight-card { padding: 1.5rem; }
+    .fhc-num { font-size: 2rem; }
+    .cap-module { padding: 1.25rem; }
+}

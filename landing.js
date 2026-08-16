@@ -244,6 +244,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { root: null, threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
     revealElements.forEach(el => revealObserver.observe(el));
 
+    // ─── How It Works Timeline Animation ────────────────────────────
+    function initHowItWorksTimeline() {
+        const steps = document.querySelectorAll('.hiw-step-reveal');
+        const connector = document.getElementById('hiwConnector');
+        let visibleCount = 0;
+
+        if (!steps.length) return;
+
+        const stepObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const step = entry.target;
+                    const stepIndex = parseInt(step.getAttribute('data-step') || '0', 10);
+                    
+                    // Staggered delay based on step index
+                    setTimeout(() => {
+                        step.classList.add('hiw-visible');
+                        visibleCount++;
+                        // Animate connector line to fill progressively
+                        if (connector) {
+                            const pct = Math.round((visibleCount / steps.length) * 100);
+                            connector.style.height = Math.min(pct, 100) + '%';
+                        }
+                    }, stepIndex * 120);
+
+                    stepObserver.unobserve(step);
+                }
+            });
+        }, { threshold: 0.25, rootMargin: '0px 0px -60px 0px' });
+
+        steps.forEach(step => stepObserver.observe(step));
+    }
+
+    initHowItWorksTimeline();
+
     // Stats count up animation
     const animateStat = (el) => {
         if (el.dataset.animated) return;
