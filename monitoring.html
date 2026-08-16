@@ -2003,35 +2003,35 @@ body::after {
                 <div class="overview-grid">
                     <div class="ov-metric">
                         <div class="ov-metric-top">
-                            <span class="ov-label">ACTIVE</span>
+                            <span class="ov-label">SUBJECTS</span>
                             <i data-lucide="users" class="ov-icon"></i>
                         </div>
                         <span class="ov-value" id="ovActive" style="color:#F5F7FA;">0</span>
-                        <span class="ov-sub">Monitored</span>
+                        <span class="ov-sub">In Camera Zone</span>
                     </div>
                     <div class="ov-metric">
                         <div class="ov-metric-top">
-                            <span class="ov-label">VERIFIED</span>
-                            <i data-lucide="shield-check" class="ov-icon" style="color:var(--success);"></i>
+                            <span class="ov-label">ZONE STATUS</span>
+                            <i data-lucide="shield" class="ov-icon" style="color:var(--success);"></i>
                         </div>
-                        <span class="ov-value green" id="ovVerified" style="color:var(--success);">0</span>
-                        <span class="ov-sub">Safe Trust</span>
+                        <span class="ov-value green" id="ovVerified" style="color:var(--success);font-size:0.92rem;">STANDBY</span>
+                        <span class="ov-sub">Room Security</span>
                     </div>
                     <div class="ov-metric">
                         <div class="ov-metric-top">
-                            <span class="ov-label">UNDER REVIEW</span>
-                            <i data-lucide="alert-circle" class="ov-icon" style="color:var(--warning);"></i>
+                            <span class="ov-label">ANOMALIES</span>
+                            <i data-lucide="alert-triangle" class="ov-icon" style="color:var(--warning);"></i>
                         </div>
                         <span class="ov-value amber" id="ovReview" style="color:var(--warning);">0</span>
-                        <span class="ov-sub">Suspicious</span>
+                        <span class="ov-sub">Active Alerts</span>
                     </div>
                     <div class="ov-metric">
                         <div class="ov-metric-top">
-                            <span class="ov-label">HIGH RISK</span>
-                            <i data-lucide="shield-alert" class="ov-icon" style="color:var(--danger);"></i>
+                            <span class="ov-label">THREAT LEVEL</span>
+                            <i data-lucide="shield-alert" class="ov-icon" style="color:var(--cyan);"></i>
                         </div>
-                        <span class="ov-value red" id="ovHighRisk" style="color:var(--danger);">0</span>
-                        <span class="ov-sub">Critical</span>
+                        <span class="ov-value" id="ovHighRisk" style="color:var(--cyan);font-size:0.92rem;">LOW</span>
+                        <span class="ov-sub">Heuristic Index</span>
                     </div>
                 </div>
 
@@ -2546,34 +2546,48 @@ async function checkSessionStatus() {
 
 // ── OVERVIEW METRICS & BADGES ────────────────
 function updateOverview(students) {
-    const total  = students.length;
-    const safe   = students.filter(s => s.risk_score <= 25).length;
-    const review = students.filter(s => s.risk_score > 25 && s.risk_score <= 75).length;
-    const high   = students.filter(s => s.risk_score > 75).length;
+    const total  = students ? students.length : 0;
+    const hasHighRisk = students && students.some(s => (s.risk_score || 0) > 75);
+    const hasWarning  = students && students.some(s => (s.risk_score || 0) > 25);
+    const activeThreatCount = (prevAlerts ? prevAlerts.length : 0) + (students ? students.filter(s => (s.risk_score || 0) > 25).length : 0);
 
-    $ovActive.textContent   = total;
-    $ovVerified.textContent = safe;
-    $ovReview.textContent   = review;
-    $ovHighRisk.textContent = high;
-    $stuCount.textContent   = total;
+    $ovActive.textContent = total;
 
-    if (high > 0) {
+    if (hasHighRisk) {
+        $ovVerified.textContent = 'BREACH';
+        $ovVerified.style.color = 'var(--danger)';
+        $ovHighRisk.textContent = 'CRITICAL';
+        $ovHighRisk.style.color = 'var(--danger)';
         setRoomBadge('HIGH RISK', 'var(--danger)', 'var(--danger-dim)', 'var(--danger-bd)');
         $threatMatrixTag.textContent = 'DEFENSE: HIGH ALERT';
         $threatMatrixTag.style.color = 'var(--danger)';
-    } else if (review > 0) {
+    } else if (hasWarning) {
+        $ovVerified.textContent = 'ELEVATED';
+        $ovVerified.style.color = 'var(--warning)';
+        $ovHighRisk.textContent = 'MEDIUM';
+        $ovHighRisk.style.color = 'var(--warning)';
         setRoomBadge('ATTENTION', 'var(--warning)', 'var(--warning-dim)', 'var(--warning-bd)');
         $threatMatrixTag.textContent = 'DEFENSE: ELEVATED';
         $threatMatrixTag.style.color = 'var(--warning)';
     } else if (total > 0) {
+        $ovVerified.textContent = 'NOMINAL';
+        $ovVerified.style.color = 'var(--success)';
+        $ovHighRisk.textContent = 'LOW';
+        $ovHighRisk.style.color = 'var(--cyan)';
         setRoomBadge('SECURE', 'var(--success)', 'var(--success-dim)', 'var(--success-bd)');
         $threatMatrixTag.textContent = 'DEFENSE: SECURE';
         $threatMatrixTag.style.color = 'var(--success)';
     } else {
+        $ovVerified.textContent = 'STANDBY';
+        $ovVerified.style.color = 'var(--t3)';
+        $ovHighRisk.textContent = 'ZERO';
+        $ovHighRisk.style.color = 'var(--t3)';
         setRoomBadge('STANDBY', 'var(--t3)', 'rgba(255,255,255,0.04)', 'var(--border-subtle)');
         $threatMatrixTag.textContent = 'DEFENSE: STANDBY';
         $threatMatrixTag.style.color = 'var(--t3)';
     }
+
+    $ovReview.textContent = activeThreatCount;
 
     updateExamScore(students);
 }
@@ -2656,8 +2670,7 @@ function updateStudentsGrid(students) {
 
         if (student.id && !displayedStudents.has(student.id)) {
             displayedStudents.add(student.id);
-            addAlert(`Biometric Verified: ${student.name || 'Candidate'} (${student.id})`, 'success');
-            logActivity(`Biometric verified: ${student.name || 'Candidate'} (${student.id})`);
+            logActivity(`Subject detected in camera zone: ${student.name || 'Candidate'}`);
         }
     });
 }
@@ -2884,9 +2897,11 @@ $endSessionBtn.addEventListener('click', async () => {
         // Offline / preview mode
     }
 
-    // Populate Post-Exam Results Modal with real metrics
-    const candName = sessionStats.candidateName || (sessionStats.verified ? 'Verified Candidate' : 'Nalin Tuscano');
-    const candId = sessionStats.candidateId ? (String(sessionStats.candidateId).startsWith('ID:') ? sessionStats.candidateId : `ID: ${sessionStats.candidateId}`) : 'ID: 1009';
+    // Populate Post-Exam Results Modal with real session metrics
+    const hasCandidate = Boolean(sessionStats.candidateName);
+    const candName = hasCandidate ? sessionStats.candidateName : 'No verification results available';
+    const candId = hasCandidate ? (String(sessionStats.candidateId).startsWith('ID:') ? sessionStats.candidateId : `ID: ${sessionStats.candidateId}`) : 'ID: N/A';
+    const candVerification = hasCandidate ? 'VERIFIED MATCH' : 'UNVERIFIED';
     
     document.getElementById('pemCandidateName').textContent  = candName;
     document.getElementById('pemCandidateId').textContent    = candId;
@@ -2896,7 +2911,7 @@ $endSessionBtn.addEventListener('click', async () => {
     document.getElementById('pemTotalAlerts').textContent    = `${alertCount}`;
     document.getElementById('pemCriticalAlerts').textContent = `${sessionStats.criticalAlerts}`;
     document.getElementById('pemGazeEvents').textContent     = `${sessionStats.gazeEvents}`;
-    document.getElementById('pemVerification').textContent   = sessionStats.verified ? 'VERIFIED' : 'VERIFIED';
+    document.getElementById('pemVerification').textContent   = candVerification;
     
     const pemBadge = document.getElementById('pemFinalStatus');
     if (pemBadge) {

@@ -983,32 +983,32 @@ p.subtitle {
                     <div class="timeline-progress-track">
                         <div class="timeline-progress-fill" id="batchProgressFill"></div>
                     </div>
-                    <div class="stage-step active" id="step-batch-identity">
+                    <div class="stage-step active" id="step-batch-select">
                         <div class="stage-dot">01</div>
                         <div class="stage-meta">
                             <span class="stage-num">01</span>
-                            <span class="stage-label">Identity</span>
-                        </div>
-                    </div>
-                    <div class="stage-step waiting" id="step-batch-select">
-                        <div class="stage-dot">02</div>
-                        <div class="stage-meta">
-                            <span class="stage-num">02</span>
-                            <span class="stage-label">Select Files</span>
+                            <span class="stage-label">Select</span>
                         </div>
                     </div>
                     <div class="stage-step waiting" id="step-batch-validate">
-                        <div class="stage-dot">03</div>
+                        <div class="stage-dot">02</div>
                         <div class="stage-meta">
-                            <span class="stage-num">03</span>
+                            <span class="stage-num">02</span>
                             <span class="stage-label">Validate</span>
                         </div>
                     </div>
-                    <div class="stage-step waiting" id="step-batch-extract">
+                    <div class="stage-step waiting" id="step-batch-review">
+                        <div class="stage-dot">03</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">03</span>
+                            <span class="stage-label">Review</span>
+                        </div>
+                    </div>
+                    <div class="stage-step waiting" id="step-batch-process">
                         <div class="stage-dot">04</div>
                         <div class="stage-meta">
                             <span class="stage-num">04</span>
-                            <span class="stage-label">Extract</span>
+                            <span class="stage-label">Process</span>
                         </div>
                     </div>
                     <div class="stage-step waiting" id="step-batch-enroll">
@@ -1018,11 +1018,11 @@ p.subtitle {
                             <span class="stage-label">Enroll</span>
                         </div>
                     </div>
-                    <div class="stage-step waiting" id="step-batch-ready">
+                    <div class="stage-step waiting" id="step-batch-complete">
                         <div class="stage-dot">06</div>
                         <div class="stage-meta">
                             <span class="stage-num">06</span>
-                            <span class="stage-label">Ready</span>
+                            <span class="stage-label">Complete</span>
                         </div>
                     </div>
                 </div>
@@ -1239,12 +1239,12 @@ p.subtitle {
         };
 
         const batchSteps = {
-            identity: document.getElementById('step-batch-identity'),
             select: document.getElementById('step-batch-select'),
             validate: document.getElementById('step-batch-validate'),
-            extract: document.getElementById('step-batch-extract'),
+            review: document.getElementById('step-batch-review'),
+            process: document.getElementById('step-batch-process'),
             enroll: document.getElementById('step-batch-enroll'),
-            ready: document.getElementById('step-batch-ready')
+            complete: document.getElementById('step-batch-complete')
         };
 
         function setStepVisual(stepEl, numStr, state) {
@@ -1266,7 +1266,7 @@ p.subtitle {
 
             const name = studentName.value.trim();
             const id = studentId.value.trim();
-            camState.identity = Boolean(name && id);
+            camState.identity = Boolean(name && id && name.length >= 2 && id.length >= 1);
 
             let progress = 0;
             let statusText = '';
@@ -1280,7 +1280,7 @@ p.subtitle {
                 setStepVisual(camSteps.enroll, '05', 'waiting');
                 setStepVisual(camSteps.ready, '06', 'waiting');
                 progress = 0;
-                statusText = 'Enter student full name & identification ID';
+                statusText = '01 IDENTITY — Enter student full name & identification ID';
             } else {
                 setStepVisual(camSteps.identity, '01', 'complete');
                 progress = 20;
@@ -1292,14 +1292,14 @@ p.subtitle {
                     setStepVisual(camSteps.align, '04', 'waiting');
                     setStepVisual(camSteps.enroll, '05', 'waiting');
                     setStepVisual(camSteps.ready, '06', 'waiting');
-                    statusText = 'Camera connection failed: ' + camState.cameraError;
+                    statusText = '02 CAMERA — Connection failed: ' + camState.cameraError;
                 } else if (!camState.cameraConnected) {
                     setStepVisual(camSteps.camera, '02', 'active');
                     setStepVisual(camSteps.facescan, '03', 'waiting');
                     setStepVisual(camSteps.align, '04', 'waiting');
                     setStepVisual(camSteps.enroll, '05', 'waiting');
                     setStepVisual(camSteps.ready, '06', 'waiting');
-                    statusText = 'Waiting for camera connection...';
+                    statusText = '02 CAMERA — Initializing camera feed...';
                 } else {
                     setStepVisual(camSteps.camera, '02', 'complete');
                     progress = 40;
@@ -1310,7 +1310,7 @@ p.subtitle {
                         setStepVisual(camSteps.align, '04', 'waiting');
                         setStepVisual(camSteps.enroll, '05', 'waiting');
                         setStepVisual(camSteps.ready, '06', 'waiting');
-                        statusText = 'Scanning for face in camera frame...';
+                        statusText = '03 SCAN — Scanning for face in camera frame...';
                     } else {
                         setStepVisual(camSteps.facescan, '03', 'complete');
                         progress = 60;
@@ -1320,34 +1320,34 @@ p.subtitle {
                             setStepVisual(camSteps.align, '04', 'active');
                             setStepVisual(camSteps.enroll, '05', 'waiting');
                             setStepVisual(camSteps.ready, '06', 'waiting');
-                            statusText = 'Align your face centered inside the frame...';
+                            statusText = '04 ALIGN — Position your face centered inside the frame reticle';
                         } else if (!camState.enrolling && !camState.enrollSuccess && !camState.enrollError) {
                             setStepVisual(camSteps.align, '04', 'complete');
                             setStepVisual(camSteps.enroll, '05', 'active');
                             setStepVisual(camSteps.ready, '06', 'waiting');
                             progress = 80;
-                            statusText = 'Face aligned · Click "Register Biometric Face ID"';
+                            statusText = '05 ENROLL — Face aligned · Click "Register Biometric Face ID"';
                         } else if (camState.enrolling) {
                             // 5. ENROLL (Processing)
                             setStepVisual(camSteps.align, '04', 'complete');
                             setStepVisual(camSteps.enroll, '05', 'active');
                             setStepVisual(camSteps.ready, '06', 'waiting');
                             progress = 80;
-                            statusText = camState.enrollMessage || 'Extracting facial landmarks & registering template...';
+                            statusText = '05 ENROLL — ' + (camState.enrollMessage || 'Extracting facial landmarks & registering template...');
                         } else if (camState.enrollError) {
                             // 5. ENROLL (Error)
                             setStepVisual(camSteps.align, '04', 'complete');
                             setStepVisual(camSteps.enroll, '05', 'error');
                             setStepVisual(camSteps.ready, '06', 'waiting');
                             progress = 80;
-                            statusText = camState.enrollError;
+                            statusText = '05 ENROLL — ' + camState.enrollError;
                         } else if (camState.enrollSuccess) {
                             // 6. READY (Success)
                             setStepVisual(camSteps.align, '04', 'complete');
                             setStepVisual(camSteps.enroll, '05', 'complete');
                             setStepVisual(camSteps.ready, '06', 'complete');
                             progress = 100;
-                            statusText = 'Identity biometric enrollment verified!';
+                            statusText = '06 READY — Identity biometric enrollment verified and ready!';
                         }
                     }
                 }
@@ -1364,57 +1364,70 @@ p.subtitle {
             let progress = 0;
             let statusText = '';
 
-            const hasValidFiles = selectedFilesData.length > 0;
-            const allNamed = selectedFilesData.every(x => x.studentId.trim() && x.studentName.trim());
+            const hasFiles = selectedFilesData.length > 0;
+            const allNamed = hasFiles && selectedFilesData.every(x => x.studentId.trim() && x.studentName.trim());
 
-            if (!hasValidFiles) {
-                setStepVisual(batchSteps.identity, '01', 'active');
-                setStepVisual(batchSteps.select, '02', 'waiting');
-                setStepVisual(batchSteps.validate, '03', 'waiting');
-                setStepVisual(batchSteps.extract, '04', 'waiting');
+            if (!hasFiles) {
+                setStepVisual(batchSteps.select, '01', 'active');
+                setStepVisual(batchSteps.validate, '02', 'waiting');
+                setStepVisual(batchSteps.review, '03', 'waiting');
+                setStepVisual(batchSteps.process, '04', 'waiting');
                 setStepVisual(batchSteps.enroll, '05', 'waiting');
-                setStepVisual(batchSteps.ready, '06', 'waiting');
+                setStepVisual(batchSteps.complete, '06', 'waiting');
                 progress = 0;
-                statusText = 'Select candidate photos or ID cards for batch enrollment';
+                statusText = '01 SELECT — Select candidate photos or ID cards for batch enrollment';
             } else {
-                setStepVisual(batchSteps.identity, '01', 'complete');
-                setStepVisual(batchSteps.select, '02', 'complete');
-                progress = 40;
+                setStepVisual(batchSteps.select, '01', 'complete');
+                progress = 20;
 
-                if (!allNamed) {
-                    setStepVisual(batchSteps.validate, '03', 'active');
-                    setStepVisual(batchSteps.extract, '04', 'waiting');
+                // 2. VALIDATE
+                if (!batchState.isValid) {
+                    setStepVisual(batchSteps.validate, '02', 'active');
+                    setStepVisual(batchSteps.review, '03', 'waiting');
+                    setStepVisual(batchSteps.process, '04', 'waiting');
                     setStepVisual(batchSteps.enroll, '05', 'waiting');
-                    setStepVisual(batchSteps.ready, '06', 'waiting');
-                    statusText = 'Assign Student ID and Name for all uploaded images';
-                } else if (!batchState.enrolling && !batchState.enrollSuccess && !batchState.enrollError) {
-                    setStepVisual(batchSteps.validate, '03', 'complete');
-                    setStepVisual(batchSteps.extract, '04', 'active');
-                    setStepVisual(batchSteps.enroll, '05', 'waiting');
-                    setStepVisual(batchSteps.ready, '06', 'waiting');
-                    progress = 60;
-                    statusText = `${selectedFilesData.length} photo(s) validated · Ready to enroll batch`;
-                } else if (batchState.enrolling) {
-                    setStepVisual(batchSteps.validate, '03', 'complete');
-                    setStepVisual(batchSteps.extract, '04', 'complete');
-                    setStepVisual(batchSteps.enroll, '05', 'active');
-                    setStepVisual(batchSteps.ready, '06', 'waiting');
-                    progress = 80;
-                    statusText = `Processing neural facial vectors (${batchState.processedCount}/${batchState.totalCount})...`;
-                } else if (batchState.enrollError) {
-                    setStepVisual(batchSteps.validate, '03', 'complete');
-                    setStepVisual(batchSteps.extract, '04', 'complete');
-                    setStepVisual(batchSteps.enroll, '05', 'error');
-                    setStepVisual(batchSteps.ready, '06', 'waiting');
-                    progress = 80;
-                    statusText = batchState.enrollError;
-                } else if (batchState.enrollSuccess) {
-                    setStepVisual(batchSteps.validate, '03', 'complete');
-                    setStepVisual(batchSteps.extract, '04', 'complete');
-                    setStepVisual(batchSteps.enroll, '05', 'complete');
-                    setStepVisual(batchSteps.ready, '06', 'complete');
-                    progress = 100;
-                    statusText = 'Batch identity enrollment completed successfully!';
+                    setStepVisual(batchSteps.complete, '06', 'waiting');
+                    statusText = '02 VALIDATE — Validating file formats and dimensions...';
+                } else {
+                    setStepVisual(batchSteps.validate, '02', 'complete');
+                    progress = 40;
+
+                    // 3. REVIEW
+                    if (!allNamed) {
+                        setStepVisual(batchSteps.review, '03', 'active');
+                        setStepVisual(batchSteps.process, '04', 'waiting');
+                        setStepVisual(batchSteps.enroll, '05', 'waiting');
+                        setStepVisual(batchSteps.complete, '06', 'waiting');
+                        statusText = '03 REVIEW — Assign Student ID and Name for all uploaded images';
+                    } else if (!batchState.enrolling && !batchState.enrollSuccess && !batchState.enrollError) {
+                        setStepVisual(batchSteps.review, '03', 'complete');
+                        setStepVisual(batchSteps.process, '04', 'active');
+                        setStepVisual(batchSteps.enroll, '05', 'waiting');
+                        setStepVisual(batchSteps.complete, '06', 'waiting');
+                        progress = 60;
+                        statusText = `04 PROCESS — ${selectedFilesData.length} photo(s) reviewed · Click "Enroll Batch Selected"`;
+                    } else if (batchState.enrolling) {
+                        setStepVisual(batchSteps.review, '03', 'complete');
+                        setStepVisual(batchSteps.process, '04', 'complete');
+                        setStepVisual(batchSteps.enroll, '05', 'active');
+                        setStepVisual(batchSteps.complete, '06', 'waiting');
+                        progress = 80;
+                        statusText = `05 ENROLL — Processing neural facial vectors (${batchState.processedCount}/${batchState.totalCount})...`;
+                    } else if (batchState.enrollError) {
+                        setStepVisual(batchSteps.review, '03', 'complete');
+                        setStepVisual(batchSteps.process, '04', 'complete');
+                        setStepVisual(batchSteps.enroll, '05', 'error');
+                        setStepVisual(batchSteps.complete, '06', 'waiting');
+                        progress = 80;
+                        statusText = '05 ENROLL — ' + batchState.enrollError;
+                    } else if (batchState.enrollSuccess) {
+                        setStepVisual(batchSteps.review, '03', 'complete');
+                        setStepVisual(batchSteps.process, '04', 'complete');
+                        setStepVisual(batchSteps.enroll, '05', 'complete');
+                        setStepVisual(batchSteps.complete, '06', 'complete');
+                        progress = 100;
+                        statusText = '06 COMPLETE — Batch identity enrollment completed successfully!';
+                    }
                 }
             }
 
@@ -1704,7 +1717,19 @@ p.subtitle {
         function handleFiles(files) {
             const fileListEl = document.getElementById('fileList');
             const uploadBtn = document.getElementById('uploadAllBtn');
+            if (!files || files.length === 0) return;
             
+            let validCount = 0;
+            const totalImages = Array.from(files).filter(f => f.type.startsWith('image/')).length;
+            if (totalImages === 0) {
+                showMsg('Please select valid image files (JPG/PNG).', 'error');
+                return;
+            }
+
+            batchState.isValid = false;
+            batchState.enrollSuccess = false;
+            batchState.enrollError = null;
+
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 if (!file.type.startsWith('image/')) continue;
@@ -1718,10 +1743,10 @@ p.subtitle {
                         defaultId = nameParts[0].trim();
                         defaultName = nameParts.slice(1).join('-').trim();
                     } else {
-                        defaultName = nameParts[0].trim();
+                        defaultName = file.name.split('.')[0].trim();
                     }
                     
-                    const fileId = Date.now() + i;
+                    const fileId = Date.now() + i + Math.random();
                     selectedFilesData.push({
                         id: fileId,
                         dataUrl: e.target.result,
@@ -1730,6 +1755,10 @@ p.subtitle {
                         status: 'pending'
                     });
                     
+                    validCount++;
+                    if (validCount === totalImages) {
+                        batchState.isValid = true;
+                    }
                     renderFileList();
                     updateBatchTimeline();
                 };
