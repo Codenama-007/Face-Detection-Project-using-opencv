@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biometric Identity Enrollment | ProctorAI SOC</title>
-    <meta name="description" content="Secure Biometric Identity Enrollment & Face ID Registration for ProctorAI SOC.">
+    <title>Biometric Identity Enrollment & Pre-Session Readiness | ProctorAI</title>
+    <meta name="description" content="Secure Biometric Identity Enrollment, Candidate Roster Ingestion & Session Readiness for ProctorAI SOC.">
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,8 +13,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
 /* ═════════════════════════════════════════════════════════════════════
-   PROCTORAI — SECURE BIOMETRIC IDENTITY ENROLLMENT
-   Enterprise Face Verification Onboarding & Batch Roster Ingestion
+   PROCTORAI — PRE-SESSION BIOMETRIC IDENTITY ENROLLMENT & READINESS
+   Enterprise Face Verification Onboarding & Examination Readiness
    ═════════════════════════════════════════════════════════════════════ */
 
 *, *::before, *::after {
@@ -28,7 +28,7 @@
     --bg-surface:     #080c14;
     --bg-elevated:    #0e1422;
     
-    --panel-glass:    rgba(14, 20, 34, 0.82);
+    --panel-glass:    rgba(14, 20, 34, 0.85);
     --panel-card:     rgba(18, 26, 44, 0.70);
     --panel-hover:    rgba(25, 36, 60, 0.85);
     
@@ -74,9 +74,10 @@ body {
     color: var(--t1);
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 2.5rem 1rem;
+    justify-content: flex-start;
+    padding: 1.5rem 1rem 3rem;
     position: relative;
     overflow-x: hidden;
 }
@@ -108,18 +109,25 @@ body::after {
     opacity: 0.8;
 }
 
-/* Back Button */
+/* Top Navigation Bar */
+.enroll-nav {
+    width: 100%;
+    max-width: 1200px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.5rem 1.25rem;
+    position: relative;
+    z-index: 10;
+}
+
 .back-btn {
-    position: fixed;
-    top: 1rem;
-    left: 1rem;
-    z-index: 1000;
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
     padding: 0.45rem 0.95rem;
     font-family: var(--font);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -130,8 +138,8 @@ body::after {
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border-light);
     border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
     cursor: pointer;
 }
 
@@ -147,72 +155,106 @@ body::after {
     border-color: var(--cyan);
     color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 10px 30px rgba(0, 229, 255, 0.25);
 }
 
 .back-btn:hover svg {
     transform: translateX(-3px);
 }
 
-.container {
+.nav-inst-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.9rem;
+    background: rgba(14, 20, 34, 0.85);
+    border: 1px solid var(--border-subtle);
+    border-radius: 99px;
+    font-size: 0.74rem;
+    font-family: var(--mono);
+    color: var(--cyan);
+}
+
+.nav-inst-pill i {
+    width: 13px;
+    height: 13px;
+}
+
+/* Two-Column Master Grid */
+.master-grid {
+    width: 100%;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 520px 1fr;
+    gap: 1.5rem;
     position: relative;
     z-index: 1;
+}
+
+@media (max-width: 1060px) {
+    .master-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Base Panel Container */
+.panel-container {
     background: var(--panel-glass);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     border: 1px solid var(--border-subtle);
     border-top: 1px solid var(--border-light);
-    border-radius: 20px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 229, 255, 0.05);
-    padding: 2.25rem;
-    width: 100%;
-    max-width: 540px;
-    text-align: center;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 30px rgba(0, 229, 255, 0.04);
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Top Icon & Titles */
+/* Left Panel: Registration Details */
+.panel-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+
 .enroll-shield-icon {
-    width: 54px;
-    height: 54px;
-    border-radius: 14px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     background: rgba(0, 229, 255, 0.1);
     border: 1px solid rgba(0, 229, 255, 0.3);
     color: var(--cyan);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0.85rem;
-    box-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
+    margin-bottom: 0.65rem;
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
 }
 
 .enroll-shield-icon svg {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
 }
 
 h2 {
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     background: linear-gradient(135deg, #ffffff 0%, #a5f3fc 60%, #38bdf8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.2rem;
 }
 
 p.subtitle {
     color: var(--t2);
-    margin-bottom: 1.25rem;
-    font-size: 0.82rem;
-    line-height: 1.5;
+    font-size: 0.78rem;
+    line-height: 1.45;
 }
 
-/* ═════════════════════════════════════════════════════════════════════
-   ENROLLMENT TIMELINE SYSTEM (LIVE CAMERA & BATCH UPLOAD)
-   ═════════════════════════════════════════════════════════════════════ */
+/* Timeline System */
 .timeline-wrapper {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     position: relative;
 }
 
@@ -222,17 +264,16 @@ p.subtitle {
     justify-content: space-between;
     background: rgba(6, 9, 14, 0.75);
     border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: 0.85rem 0.9rem;
+    border-radius: 10px;
+    padding: 0.75rem 0.8rem;
     position: relative;
     box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
     overflow: hidden;
 }
 
-/* Background Progress Track & Smooth Fill */
 .timeline-progress-track {
     position: absolute;
-    top: 20px;
+    top: 18px;
     left: 8%;
     right: 8%;
     height: 2px;
@@ -249,7 +290,7 @@ p.subtitle {
     width: 0%;
     background: linear-gradient(90deg, #10b981 0%, #00e5ff 100%);
     border-radius: 2px;
-    transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: width 0.4s ease;
     box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
 }
 
@@ -257,28 +298,28 @@ p.subtitle {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     position: relative;
     z-index: 1;
     flex: 1;
     user-select: none;
-    pointer-events: none; /* Disallow arbitrary click progression */
+    pointer-events: none;
 }
 
 .stage-dot {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: #080c14;
     border: 2px solid var(--t4);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.60rem;
+    font-size: 0.58rem;
     font-family: var(--mono);
     font-weight: 800;
     color: var(--t4);
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.3s ease;
 }
 
 .stage-step.waiting .stage-dot {
@@ -291,13 +332,13 @@ p.subtitle {
     background: rgba(0, 229, 255, 0.15);
     border-color: var(--cyan);
     color: var(--cyan);
-    box-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.45);
     animation: stagePulse 2s infinite ease-in-out;
 }
 
 @keyframes stagePulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 229, 255, 0.35); }
-    50%      { transform: scale(1.12); box-shadow: 0 0 18px rgba(0, 229, 255, 0.65); }
+    0%, 100% { transform: scale(1); box-shadow: 0 0 8px rgba(0, 229, 255, 0.35); }
+    50%      { transform: scale(1.12); box-shadow: 0 0 16px rgba(0, 229, 255, 0.65); }
 }
 
 .stage-step.complete .stage-dot {
@@ -311,7 +352,7 @@ p.subtitle {
     background: var(--danger);
     border-color: var(--danger);
     color: #ffffff;
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
 }
 
 .stage-meta {
@@ -322,93 +363,44 @@ p.subtitle {
 }
 
 .stage-num {
-    font-size: 0.50rem;
+    font-size: 0.48rem;
     font-weight: 700;
     font-family: var(--mono);
     color: var(--t4);
     letter-spacing: 0.04em;
-    transition: color 0.3s ease;
 }
 
 .stage-label {
-    font-size: 0.56rem;
+    font-size: 0.54rem;
     font-weight: 800;
     font-family: var(--mono);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--t3);
     white-space: nowrap;
-    transition: color 0.3s ease;
-}
-
-.stage-step.waiting .stage-num,
-.stage-step.waiting .stage-label {
-    color: var(--t4);
-}
-
-.stage-step.active .stage-num {
-    color: var(--cyan);
 }
 
 .stage-step.active .stage-label {
     color: var(--cyan);
-    text-shadow: 0 0 8px rgba(0, 229, 255, 0.25);
-}
-
-.stage-step.complete .stage-num {
-    color: var(--success);
 }
 
 .stage-step.complete .stage-label {
     color: var(--success);
 }
 
-.stage-step.error .stage-num,
 .stage-step.error .stage-label {
     color: var(--danger);
 }
 
 .stage-status-sub {
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 600;
     color: var(--cyan);
     font-family: var(--mono);
-    margin-bottom: 1.25rem;
-    letter-spacing: 0.03em;
-    min-height: 1.3rem;
-    transition: color 0.25s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-}
-
-/* Responsive adjustments */
-@media (max-width: 520px) {
-    .stage-tracker {
-        padding: 0.75rem 0.5rem;
-    }
-    .stage-dot {
-        width: 18px;
-        height: 18px;
-        font-size: 0.52rem;
-    }
-    .stage-num {
-        display: none;
-    }
-    .stage-label {
-        font-size: 0.48rem;
-        letter-spacing: 0.02em;
-    }
-    .timeline-progress-track {
-        top: 17px;
-    }
-}
-
-@media (max-width: 380px) {
-    .stage-label {
-        font-size: 0.42rem;
-    }
+    margin-bottom: 1rem;
+    letter-spacing: 0.02em;
+    min-height: 1.2rem;
+    text-align: center;
 }
 
 /* Tabs */
@@ -416,9 +408,9 @@ p.subtitle {
     display: flex;
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid var(--border-subtle);
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 3px;
-    margin-bottom: 1.4rem;
+    margin-bottom: 1.15rem;
 }
 
 .tab-btn {
@@ -426,22 +418,22 @@ p.subtitle {
     background: transparent;
     border: none;
     color: var(--t3);
-    padding: 0.65rem;
+    padding: 0.55rem;
     cursor: pointer;
     font-weight: 700;
-    font-size: 0.76rem;
-    letter-spacing: 0.05em;
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     font-family: var(--font);
-    border-radius: 8px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 6px;
+    transition: all 0.2s ease;
 }
 
 .tab-btn.active {
     color: var(--cyan);
     background: rgba(56, 189, 248, 0.15);
     border: 1px solid rgba(0, 229, 255, 0.25);
-    box-shadow: 0 0 12px rgba(0, 229, 255, 0.15);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
 }
 
 .tab-content {
@@ -450,80 +442,11 @@ p.subtitle {
 
 .tab-content.active {
     display: block;
-    animation: tabFadeIn 0.25s ease-out;
 }
 
-@keyframes tabFadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Camera Video Preview Box */
-.video-container {
-    width: 100%;
-    height: 290px;
-    background: #020509;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 1.25rem;
-    position: relative;
-    border: 1px solid var(--border-subtle);
-    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.7);
-}
-
-.video-container::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 3px,
-        rgba(0, 229, 255, 0.02) 3px,
-        rgba(0, 229, 255, 0.02) 4px
-    );
-    pointer-events: none;
-    z-index: 2;
-}
-
-/* Reticle Corner Marks */
-.video-container::after {
-    content: '';
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 18px;
-    height: 18px;
-    border-top: 2px solid var(--cyan);
-    border-left: 2px solid var(--cyan);
-    pointer-events: none;
-    z-index: 3;
-    filter: drop-shadow(0 0 4px var(--cyan));
-}
-
-.cam-reticle-br {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    width: 18px;
-    height: 18px;
-    border-bottom: 2px solid var(--cyan);
-    border-right: 2px solid var(--cyan);
-    pointer-events: none;
-    z-index: 3;
-    filter: drop-shadow(0 0 4px var(--cyan));
-}
-
-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transform: scaleX(-1);
-}
-
-/* Inputs */
+/* Inputs & Form Elements */
 .input-group {
-    margin-bottom: 1rem;
+    margin-bottom: 0.95rem;
     text-align: left;
 }
 
@@ -531,177 +454,135 @@ video {
     display: block;
     font-size: 0.72rem;
     font-weight: 700;
-    margin-bottom: 0.35rem;
     color: var(--t2);
+    margin-bottom: 0.35rem;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
+    font-family: var(--mono);
 }
 
 .input-group input {
     width: 100%;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
+    padding: 0.75rem 0.95rem;
+    background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--border-light);
-    background: rgba(6, 9, 14, 0.75);
-    color: #fff;
+    border-radius: 8px;
+    color: var(--t1);
+    font-size: 0.85rem;
     font-family: var(--font);
-    font-size: 0.88rem;
-    outline: none;
     transition: all 0.2s ease;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .input-group input:focus {
+    outline: none;
     border-color: var(--cyan);
-    box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.20), inset 0 2px 6px rgba(0, 0, 0, 0.3);
-    background: rgba(14, 20, 34, 0.9);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+    background: rgba(0, 0, 0, 0.6);
 }
 
-.input-group input::placeholder {
-    color: var(--t3);
+/* Video Container & Reticle */
+.video-container {
+    width: 100%;
+    height: 220px;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-subtle);
+    position: relative;
 }
 
-/* Buttons */
+.video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.cam-reticle-br {
+    position: absolute;
+    inset: 15%;
+    border: 1.5px dashed rgba(0, 229, 255, 0.4);
+    border-radius: 8px;
+    pointer-events: none;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.1);
+}
+
+/* Action Buttons */
 .btn {
+    width: 100%;
+    padding: 0.8rem;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.82rem;
+    font-family: var(--font);
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    width: 100%;
-    padding: 0.85rem 1.5rem;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #1d4ed8 0%, #0284c7 60%, #00e5ff 100%);
-    color: #ffffff;
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    font-family: var(--font);
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 4px 18px rgba(37, 99, 235, 0.35);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.25);
 }
 
 .btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+    border-color: var(--cyan);
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(0, 229, 255, 0.45);
+    box-shadow: 0 6px 18px rgba(0, 229, 255, 0.3);
 }
 
 .btn:disabled {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: var(--border-subtle);
+    opacity: 0.55;
     cursor: not-allowed;
-    color: var(--t3);
-    box-shadow: none;
-    transform: none;
 }
 
-/* Messages */
-.message {
-    margin-top: 1rem;
-    font-size: 0.78rem;
-    font-weight: 600;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    display: none;
-    line-height: 1.4;
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.message.success {
-    background: var(--success-dim);
-    color: #34d399;
-    border: 1px solid var(--success-bd);
-    box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
-    display: block;
-}
-
-.message.error {
-    background: var(--danger-dim);
-    color: #f87171;
-    border: 1px solid var(--danger-bd);
-    box-shadow: 0 0 16px rgba(239, 68, 68, 0.25);
-    display: block;
-}
-
-/* Start Session Button */
-.start-session-btn {
-    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-    color: #fff;
-    border: 1px solid rgba(16, 185, 129, 0.4);
-    padding: 0.95rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 0.88rem;
-    font-family: var(--font);
-    cursor: pointer;
-    width: 100%;
-    margin-top: 1rem;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
-}
-
-.start-session-btn:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.55);
-}
-
-/* Bulk Upload Zone */
+/* Batch Upload Elements */
 .file-upload-zone {
-    border: 2px dashed rgba(56, 189, 248, 0.3);
-    background: rgba(18, 26, 42, 0.5);
-    padding: 2rem;
+    border: 1.5px dashed var(--border-light);
+    border-radius: 10px;
+    padding: 1.5rem 1rem;
     text-align: center;
-    border-radius: 12px;
-    margin-bottom: 1rem;
     cursor: pointer;
+    background: rgba(0, 0, 0, 0.2);
     transition: all 0.2s ease;
+    margin-bottom: 0.85rem;
 }
 
 .file-upload-zone:hover {
     border-color: var(--cyan);
-    background: rgba(25, 36, 58, 0.7);
-    box-shadow: 0 0 20px rgba(0, 229, 255, 0.1);
+    background: rgba(0, 229, 255, 0.03);
 }
 
 .file-list {
-    max-height: 240px;
+    max-height: 140px;
     overflow-y: auto;
-    margin-bottom: 1rem;
-    background: rgba(6, 9, 14, 0.7);
-    border: 1px solid var(--border-subtle);
-    border-radius: 8px;
-    padding: 0.5rem;
+    margin-bottom: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
 }
 
 .file-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem;
-    border-bottom: 1px solid var(--border-subtle);
-}
-
-.file-item:last-child {
-    border-bottom: none;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-subtle);
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.72rem;
 }
 
 .file-item img {
-    width: 44px;
-    height: 44px;
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
     object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid var(--border-subtle);
 }
 
 .file-item-info {
@@ -711,219 +592,590 @@ video {
 }
 
 .file-item-info input {
-    padding: 0.45rem 0.65rem;
-    border-radius: 6px;
-    border: 1px solid var(--border-light);
-    background: rgba(18, 26, 42, 0.9);
-    color: #fff;
-    font-size: 0.78rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle);
+    color: var(--t1);
+    padding: 0.25rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
     width: 50%;
 }
 
-.lucide-spin {
-    animation: spin 1s linear infinite;
+.message {
+    padding: 0.65rem 0.85rem;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    margin-top: 0.85rem;
+    display: none;
+    text-align: left;
 }
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+.message.success {
+    display: block;
+    background: var(--success-dim);
+    color: var(--success);
+    border: 1px solid var(--success-bd);
 }
 
-@media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
+.message.error {
+    display: block;
+    background: var(--danger-dim);
+    color: var(--danger);
+    border: 1px solid var(--danger-bd);
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   RIGHT PANEL: SESSION READINESS & ENROLLED CANDIDATE ROSTER
+   ═════════════════════════════════════════════════════════════════════ */
+.right-panel-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.15rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.r-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.r-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.r-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--t1);
+    letter-spacing: -0.01em;
+}
+
+.r-sub {
+    font-size: 0.68rem;
+    color: var(--t3);
+}
+
+/* Readiness Metrics Grid */
+.readiness-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+    margin-bottom: 1.25rem;
+}
+
+.ready-card {
+    background: var(--panel-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.ready-label {
+    font-size: 0.62rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--t3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ready-val {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--t1);
+    font-family: var(--mono);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ready-val.ok {
+    color: var(--success);
+}
+
+.ready-val.warn {
+    color: var(--warning);
+}
+
+.ready-sub {
+    font-size: 0.64rem;
+    color: var(--t3);
+}
+
+/* Roster Section */
+.roster-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.65rem;
+}
+
+.roster-title {
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--t2);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.roster-search {
+    padding: 0.35rem 0.65rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+    color: var(--t1);
+    font-size: 0.7rem;
+    width: 140px;
+}
+
+.roster-search:focus {
+    outline: none;
+    border-color: var(--cyan);
+}
+
+.roster-scroll {
+    flex: 1;
+    min-height: 180px;
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-bottom: 1.25rem;
+}
+
+.roster-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.75rem;
+    background: var(--panel-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.roster-item:hover {
+    background: var(--panel-hover);
+    border-color: var(--border-hover);
+}
+
+.roster-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #065f46, #10b981);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.roster-info {
+    flex: 1;
+}
+
+.roster-name {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--t1);
+}
+
+.roster-id {
+    font-size: 0.65rem;
+    font-family: var(--mono);
+    color: var(--cyan);
+}
+
+.roster-badge {
+    font-size: 0.58rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.18rem 0.5rem;
+    border-radius: 4px;
+    background: var(--success-dim);
+    color: var(--success);
+    border: 1px solid var(--success-bd);
+}
+
+.roster-empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: var(--t3);
+    font-size: 0.75rem;
+}
+
+/* Primary Call To Action */
+.start-cta-wrap {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.start-session-btn {
+    width: 100%;
+    padding: 0.95rem 1.4rem;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 10px;
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 0.92rem;
+    font-family: var(--font);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+}
+
+.start-session-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    border-color: var(--cyan);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(16, 185, 129, 0.5), 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.start-session-btn:disabled {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-subtle);
+    color: var(--t4);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.cta-subtext {
+    font-size: 0.68rem;
+    color: var(--t3);
+    text-align: center;
+    line-height: 1.4;
+}
+
+.cta-warning {
+    font-size: 0.72rem;
+    color: var(--warning);
+    background: var(--warning-dim);
+    border: 1px solid var(--warning-bd);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+    display: none;
 }
     </style>
 </head>
 <body>
-    <!-- Back to Monitoring -->
-    <a href="monitoring.html" class="back-btn" aria-label="Back to SOC Monitoring">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
-        SOC Command
-    </a>
 
-    <div class="container">
-        <div class="enroll-shield-icon">
-            <i data-lucide="scan-face"></i>
+    <!-- ══ TOP BAR ═════════════════════════════════════════════════ -->
+    <nav class="enroll-nav">
+        <a href="login.html" class="back-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Authentication Portal
+        </a>
+        <div class="nav-inst-pill" id="instContextPill">
+            <i data-lucide="building-2"></i>
+            <span id="navInstName">Apex Institute of Technology</span>
         </div>
-        <h2>Secure Identity Enrollment</h2>
-        <p class="subtitle">Biometric facial feature enrollment for ProctorAI Security Operations Center.</p>
+    </nav>
 
-        <!-- Stage Progress Tracker (Live Camera Mode) -->
-        <div id="cameraTimeline" class="timeline-wrapper">
-            <div class="stage-tracker">
-                <div class="timeline-progress-track">
-                    <div class="timeline-progress-fill" id="cameraProgressFill"></div>
+    <!-- ══ MASTER 2-COLUMN GRID ════════════════════════════════════ -->
+    <div class="master-grid">
+
+        <!-- ═ LEFT COLUMN: BIOMETRIC ENROLLMENT CONSOLE ═ -->
+        <div class="panel-container">
+            <div class="panel-header">
+                <div class="enroll-shield-icon">
+                    <i data-lucide="scan-face"></i>
                 </div>
-                <div class="stage-step active" id="step-cam-identity">
-                    <div class="stage-dot">01</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">01</span>
-                        <span class="stage-label">Identity</span>
+                <h2>Student Biometric Enrollment</h2>
+                <p class="subtitle">Register student identity and capture high-fidelity facial landmarks for ArcFace neural matching.</p>
+            </div>
+
+            <!-- Stage Progress Tracker (Live Camera Mode) -->
+            <div id="cameraTimeline" class="timeline-wrapper">
+                <div class="stage-tracker">
+                    <div class="timeline-progress-track">
+                        <div class="timeline-progress-fill" id="cameraProgressFill"></div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-cam-camera">
-                    <div class="stage-dot">02</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">02</span>
-                        <span class="stage-label">Camera</span>
+                    <div class="stage-step active" id="step-cam-identity">
+                        <div class="stage-dot">01</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">01</span>
+                            <span class="stage-label">Identity</span>
+                        </div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-cam-facescan">
-                    <div class="stage-dot">03</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">03</span>
-                        <span class="stage-label">Face Scan</span>
+                    <div class="stage-step waiting" id="step-cam-camera">
+                        <div class="stage-dot">02</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">02</span>
+                            <span class="stage-label">Camera</span>
+                        </div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-cam-align">
-                    <div class="stage-dot">04</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">04</span>
-                        <span class="stage-label">Align</span>
+                    <div class="stage-step waiting" id="step-cam-facescan">
+                        <div class="stage-dot">03</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">03</span>
+                            <span class="stage-label">Scan</span>
+                        </div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-cam-enroll">
-                    <div class="stage-dot">05</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">05</span>
-                        <span class="stage-label">Enroll</span>
+                    <div class="stage-step waiting" id="step-cam-align">
+                        <div class="stage-dot">04</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">04</span>
+                            <span class="stage-label">Align</span>
+                        </div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-cam-ready">
-                    <div class="stage-dot">06</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">06</span>
-                        <span class="stage-label">Ready</span>
+                    <div class="stage-step waiting" id="step-cam-enroll">
+                        <div class="stage-dot">05</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">05</span>
+                            <span class="stage-label">Enroll</span>
+                        </div>
+                    </div>
+                    <div class="stage-step waiting" id="step-cam-ready">
+                        <div class="stage-dot">06</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">06</span>
+                            <span class="stage-label">Ready</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Stage Progress Tracker (Batch Upload Mode) -->
-        <div id="batchTimeline" class="timeline-wrapper" style="display: none;">
-            <div class="stage-tracker">
-                <div class="timeline-progress-track">
-                    <div class="timeline-progress-fill" id="batchProgressFill"></div>
-                </div>
-                <div class="stage-step active" id="step-batch-identity">
-                    <div class="stage-dot">01</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">01</span>
-                        <span class="stage-label">Identity</span>
+            <!-- Stage Progress Tracker (Batch Upload Mode) -->
+            <div id="batchTimeline" class="timeline-wrapper" style="display: none;">
+                <div class="stage-tracker">
+                    <div class="timeline-progress-track">
+                        <div class="timeline-progress-fill" id="batchProgressFill"></div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-batch-select">
-                    <div class="stage-dot">02</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">02</span>
-                        <span class="stage-label">Select Files</span>
+                    <div class="stage-step active" id="step-batch-identity">
+                        <div class="stage-dot">01</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">01</span>
+                            <span class="stage-label">Identity</span>
+                        </div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-batch-validate">
-                    <div class="stage-dot">03</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">03</span>
-                        <span class="stage-label">Validate</span>
+                    <div class="stage-step waiting" id="step-batch-select">
+                        <div class="stage-dot">02</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">02</span>
+                            <span class="stage-label">Select Files</span>
+                        </div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-batch-extract">
-                    <div class="stage-dot">04</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">04</span>
-                        <span class="stage-label">Extract</span>
+                    <div class="stage-step waiting" id="step-batch-validate">
+                        <div class="stage-dot">03</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">03</span>
+                            <span class="stage-label">Validate</span>
+                        </div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-batch-enroll">
-                    <div class="stage-dot">05</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">05</span>
-                        <span class="stage-label">Enroll</span>
+                    <div class="stage-step waiting" id="step-batch-extract">
+                        <div class="stage-dot">04</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">04</span>
+                            <span class="stage-label">Extract</span>
+                        </div>
                     </div>
-                </div>
-                <div class="stage-step waiting" id="step-batch-ready">
-                    <div class="stage-dot">06</div>
-                    <div class="stage-meta">
-                        <span class="stage-num">06</span>
-                        <span class="stage-label">Ready</span>
+                    <div class="stage-step waiting" id="step-batch-enroll">
+                        <div class="stage-dot">05</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">05</span>
+                            <span class="stage-label">Enroll</span>
+                        </div>
+                    </div>
+                    <div class="stage-step waiting" id="step-batch-ready">
+                        <div class="stage-dot">06</div>
+                        <div class="stage-meta">
+                            <span class="stage-num">06</span>
+                            <span class="stage-label">Ready</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="stage-status-sub" id="timelineStatus">Enter student full name & identification ID</div>
+            <div class="stage-status-sub" id="timelineStatus">Enter student full name & identification ID</div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
-            <button class="tab-btn" onclick="switchTab('uploadTab', this)">Batch Upload</button>
-        </div>
-
-        <div id="webcamTab" class="tab-content active">
-            <div class="video-container">
-                <div class="cam-reticle-br"></div>
-                <video id="webcam" autoplay playsinline></video>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
+                <button class="tab-btn" onclick="switchTab('uploadTab', this)">Batch Upload</button>
             </div>
 
-            <div class="input-group">
-                <label for="studentName">Student Full Name</label>
-                <input type="text" id="studentName" placeholder="e.g. Alex Johnson" autocomplete="off">
+            <div id="webcamTab" class="tab-content active">
+                <div class="video-container">
+                    <div class="cam-reticle-br"></div>
+                    <video id="webcam" autoplay playsinline></video>
+                </div>
+
+                <div class="input-group">
+                    <label for="studentName">Student Full Name</label>
+                    <input type="text" id="studentName" placeholder="e.g. Nalin Tuscano" autocomplete="off">
+                </div>
+
+                <div class="input-group">
+                    <label for="studentId">Student ID / Roll Number</label>
+                    <input type="text" id="studentId" placeholder="e.g. 1009" autocomplete="off">
+                </div>
+
+                <button class="btn" id="captureBtn">
+                    <i data-lucide="camera"></i> Register Biometric Face ID
+                </button>
             </div>
 
-            <div class="input-group">
-                <label for="studentId">Student Identification ID</label>
-                <input type="text" id="studentId" placeholder="e.g. STU-4091" autocomplete="off">
+            <div id="uploadTab" class="tab-content">
+                <div class="file-upload-zone" onclick="document.getElementById('fileInput').click()">
+                    <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--cyan);margin-bottom:0.5rem;display:inline-block;"></i>
+                    <p style="margin-bottom:0;color:var(--t2);font-size:0.82rem;">Select student photos or ID documents<br><small style="color:var(--t3);font-family:var(--mono);">Format: "ID-Name.jpg" to auto-parse</small></p>
+                </div>
+                <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+                
+                <div class="file-list" id="fileList"></div>
+                
+                <button class="btn" id="uploadAllBtn" disabled>
+                    <i data-lucide="upload"></i> Enroll Batch Selected
+                </button>
             </div>
 
-            <button class="btn" id="captureBtn">
-                <i data-lucide="camera"></i> Register Biometric Face ID
-            </button>
+            <div id="statusMsg" class="message"></div>
         </div>
 
-        <div id="uploadTab" class="tab-content">
-            <div class="file-upload-zone" onclick="document.getElementById('fileInput').click()">
-                <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--cyan);margin-bottom:0.5rem;display:inline-block;"></i>
-                <p style="margin-bottom:0;color:var(--t2);font-size:0.82rem;">Select photos or ID documents<br><small style="color:var(--t3);font-family:var(--mono);">Format: "ID-Name.jpg" to auto-parse</small></p>
+        <!-- ═ RIGHT COLUMN: PRE-SESSION READINESS & ROSTER ═ -->
+        <div class="panel-container">
+            <div class="right-panel-hd">
+                <div class="r-title-wrap">
+                    <div class="r-icon">
+                        <i data-lucide="shield-check"></i>
+                    </div>
+                    <div>
+                        <div class="r-title">Pre-Session Readiness Matrix</div>
+                        <div class="r-sub">Verified Biometric Baseline for Active Examination</div>
+                    </div>
+                </div>
             </div>
-            <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
-            
-            <div class="file-list" id="fileList"></div>
-            
-            <button class="btn" id="uploadAllBtn" disabled>
-                <i data-lucide="upload"></i> Enroll Batch Selected
-            </button>
+
+            <!-- Readiness Indicators Grid -->
+            <div class="readiness-grid">
+                <div class="ready-card">
+                    <div class="ready-label">
+                        <span>Students Enrolled</span>
+                        <i data-lucide="users" style="width:12px;height:12px;"></i>
+                    </div>
+                    <div class="ready-val ok" id="enrolledCountDisplay">0 Verified</div>
+                    <div class="ready-sub">Current institution scope</div>
+                </div>
+
+                <div class="ready-card">
+                    <div class="ready-label">
+                        <span>Camera Sensor</span>
+                        <i data-lucide="video" style="width:12px;height:12px;"></i>
+                    </div>
+                    <div class="ready-val ok" id="camStatusDisplay">CONNECTED</div>
+                    <div class="ready-sub">Webcam / RTSP Active</div>
+                </div>
+
+                <div class="ready-card">
+                    <div class="ready-label">
+                        <span>AI Defense Matrix</span>
+                        <i data-lucide="cpu" style="width:12px;height:12px;"></i>
+                    </div>
+                    <div class="ready-val ok">READY</div>
+                    <div class="ready-sub">ArcFace + YOLO11s</div>
+                </div>
+
+                <div class="ready-card">
+                    <div class="ready-label">
+                        <span>Tenant Isolation</span>
+                        <i data-lucide="lock" style="width:12px;height:12px;"></i>
+                    </div>
+                    <div class="ready-val ok">ENFORCED</div>
+                    <div class="ready-sub">Zero cross-tenant exposure</div>
+                </div>
+            </div>
+
+            <!-- Enrolled Candidates Roster Section -->
+            <div class="roster-header">
+                <div class="roster-title">
+                    <i data-lucide="user-check" style="width:14px;height:14px;color:var(--success);"></i>
+                    Enrolled Candidates Roster
+                </div>
+                <input type="text" class="roster-search" id="rosterSearch" placeholder="Search candidate..." oninput="filterRoster(this.value)">
+            </div>
+
+            <div class="roster-scroll" id="rosterList">
+                <div class="roster-empty" id="rosterEmpty">
+                    <i data-lucide="loader" class="lucide-spin" style="width:20px;height:20px;margin-bottom:0.5rem;display:inline-block;"></i>
+                    <div>Loading enrolled candidates...</div>
+                </div>
+            </div>
+
+            <!-- Primary Call to Action Footer -->
+            <div class="start-cta-wrap">
+                <div class="cta-warning" id="ctaWarning">
+                    <i data-lucide="alert-triangle" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+                    ENROLLMENT REQUIRED: Complete student identity enrollment before starting the monitoring session.
+                </div>
+
+                <button class="start-session-btn" id="startSessionBtn">
+                    <i data-lucide="play" style="width:16px;height:16px;fill:currentColor;"></i>
+                    Start Examination Monitoring
+                </button>
+                <span class="cta-subtext">Launches real-time SOC proctoring with live identity recognition, gaze telemetry, and object defense.</span>
+            </div>
         </div>
 
-        <div id="statusMsg" class="message"></div>
-        
-        <hr style="border: 0; height: 1px; background: var(--border-subtle); margin: 1.5rem 0;">
-        
-        <button class="start-session-btn" id="startSessionBtn">
-            <i data-lucide="shield-check"></i> Launch SOC Examination Defense Matrix
-        </button>
     </div>
 
     <script>
         // ═══════════════════════════════════════════════════════════════════
-        // DEMO AUTHENTICATION & SETUP CHECK
-        // Redirect to setup/login if not authenticated
+        // AUTHENTICATION & INSTITUTION VERIFICATION
         // ═══════════════════════════════════════════════════════════════════
         (function checkAuth() {
-            const setupCompleted = sessionStorage.getItem('proctorai_setup_completed') || localStorage.getItem('proctorai_setup_completed');
             const demoAuth = sessionStorage.getItem('proctorai_demo_auth') || localStorage.getItem('proctorai_demo_auth');
-
-            if (setupCompleted !== 'true') {
-                window.location.replace('setup_institution.html?redirect=enrollment.html');
-                return;
-            }
             if (demoAuth !== 'true') {
                 window.location.replace('login.html?redirect=enrollment.html');
                 return;
             }
+            try {
+                const userObj = JSON.parse(sessionStorage.getItem('proctorai_auth_user') || '{}');
+                if (userObj.institution_name) {
+                    const el = document.getElementById('navInstName');
+                    if (el) el.textContent = userObj.institution_name;
+                }
+            } catch(e) {}
         })();
 
         lucide.createIcons();
@@ -932,6 +1184,7 @@ video {
         // TIMELINE & ENROLLMENT STATE MACHINE
         // ═══════════════════════════════════════════════════════════════════
         let currentMode = 'webcamTab';
+        let enrolledStudentsCache = [];
 
         // Live Camera Workflow State
         const camState = {
@@ -970,6 +1223,11 @@ video {
         const batchTimeline = document.getElementById('batchTimeline');
         const cameraProgressFill = document.getElementById('cameraProgressFill');
         const batchProgressFill = document.getElementById('batchProgressFill');
+
+        const enrolledCountDisplay = document.getElementById('enrolledCountDisplay');
+        const rosterList = document.getElementById('rosterList');
+        const startSessionBtn = document.getElementById('startSessionBtn');
+        const ctaWarning = document.getElementById('ctaWarning');
 
         const camSteps = {
             identity: document.getElementById('step-cam-identity'),
@@ -1012,8 +1270,6 @@ video {
 
             let progress = 0;
             let statusText = '';
-            let isError = false;
-            let isSuccess = false;
 
             // 1. IDENTITY
             if (!camState.identity) {
@@ -1037,7 +1293,6 @@ video {
                     setStepVisual(camSteps.enroll, '05', 'waiting');
                     setStepVisual(camSteps.ready, '06', 'waiting');
                     statusText = 'Camera connection failed: ' + camState.cameraError;
-                    isError = true;
                 } else if (!camState.cameraConnected) {
                     setStepVisual(camSteps.camera, '02', 'active');
                     setStepVisual(camSteps.facescan, '03', 'waiting');
@@ -1055,7 +1310,7 @@ video {
                         setStepVisual(camSteps.align, '04', 'waiting');
                         setStepVisual(camSteps.enroll, '05', 'waiting');
                         setStepVisual(camSteps.ready, '06', 'waiting');
-                        statusText = 'Scanning for face...';
+                        statusText = 'Scanning for face in camera frame...';
                     } else {
                         setStepVisual(camSteps.facescan, '03', 'complete');
                         progress = 60;
@@ -1065,20 +1320,20 @@ video {
                             setStepVisual(camSteps.align, '04', 'active');
                             setStepVisual(camSteps.enroll, '05', 'waiting');
                             setStepVisual(camSteps.ready, '06', 'waiting');
-                            statusText = 'Align your face inside the frame...';
+                            statusText = 'Align your face centered inside the frame...';
                         } else if (!camState.enrolling && !camState.enrollSuccess && !camState.enrollError) {
                             setStepVisual(camSteps.align, '04', 'complete');
                             setStepVisual(camSteps.enroll, '05', 'active');
                             setStepVisual(camSteps.ready, '06', 'waiting');
                             progress = 80;
-                            statusText = 'Face aligned & verified · Ready for biometric capture';
+                            statusText = 'Face aligned · Click "Register Biometric Face ID"';
                         } else if (camState.enrolling) {
                             // 5. ENROLL (Processing)
                             setStepVisual(camSteps.align, '04', 'complete');
                             setStepVisual(camSteps.enroll, '05', 'active');
                             setStepVisual(camSteps.ready, '06', 'waiting');
                             progress = 80;
-                            statusText = camState.enrollMessage || 'Extracting facial landmarks & registering biometric template...';
+                            statusText = camState.enrollMessage || 'Extracting facial landmarks & registering template...';
                         } else if (camState.enrollError) {
                             // 5. ENROLL (Error)
                             setStepVisual(camSteps.align, '04', 'complete');
@@ -1086,25 +1341,20 @@ video {
                             setStepVisual(camSteps.ready, '06', 'waiting');
                             progress = 80;
                             statusText = camState.enrollError;
-                            isError = true;
                         } else if (camState.enrollSuccess) {
                             // 6. READY (Success)
                             setStepVisual(camSteps.align, '04', 'complete');
                             setStepVisual(camSteps.enroll, '05', 'complete');
                             setStepVisual(camSteps.ready, '06', 'complete');
                             progress = 100;
-                            statusText = 'Identity enrollment complete.';
-                            isSuccess = true;
+                            statusText = 'Identity biometric enrollment verified!';
                         }
                     }
                 }
             }
 
-            if (cameraProgressFill) cameraProgressFill.style.width = progress + '%';
-            if (timelineStatus) {
-                timelineStatus.textContent = statusText;
-                timelineStatus.style.color = isError ? 'var(--danger)' : (isSuccess ? 'var(--success)' : 'var(--cyan)');
-            }
+            cameraProgressFill.style.width = progress + '%';
+            timelineStatus.textContent = statusText;
         }
 
         // Batch Upload Timeline Transition Engine
@@ -1113,13 +1363,11 @@ video {
 
             let progress = 0;
             let statusText = '';
-            let isError = false;
-            let isSuccess = false;
 
-            const count = selectedFilesData.length;
+            const hasValidFiles = selectedFilesData.length > 0;
+            const allNamed = selectedFilesData.every(x => x.studentId.trim() && x.studentName.trim());
 
-            // 1. IDENTITY
-            if (count === 0) {
+            if (!hasValidFiles) {
                 setStepVisual(batchSteps.identity, '01', 'active');
                 setStepVisual(batchSteps.select, '02', 'waiting');
                 setStepVisual(batchSteps.validate, '03', 'waiting');
@@ -1127,82 +1375,62 @@ video {
                 setStepVisual(batchSteps.enroll, '05', 'waiting');
                 setStepVisual(batchSteps.ready, '06', 'waiting');
                 progress = 0;
-                statusText = 'Select student photos or ID documents...';
+                statusText = 'Select candidate photos or ID cards for batch enrollment';
             } else {
                 setStepVisual(batchSteps.identity, '01', 'complete');
-                // 2. SELECT FILES
                 setStepVisual(batchSteps.select, '02', 'complete');
-                progress = 20;
+                progress = 40;
 
-                // 3. VALIDATE
-                const allValid = selectedFilesData.every(item => item.dataUrl && item.dataUrl.startsWith('data:image/'));
-                if (!allValid) {
-                    setStepVisual(batchSteps.validate, '03', 'error');
+                if (!allNamed) {
+                    setStepVisual(batchSteps.validate, '03', 'active');
                     setStepVisual(batchSteps.extract, '04', 'waiting');
                     setStepVisual(batchSteps.enroll, '05', 'waiting');
                     setStepVisual(batchSteps.ready, '06', 'waiting');
-                    progress = 40;
-                    statusText = 'Invalid file format detected in selection';
-                    isError = true;
-                } else {
+                    statusText = 'Assign Student ID and Name for all uploaded images';
+                } else if (!batchState.enrolling && !batchState.enrollSuccess && !batchState.enrollError) {
                     setStepVisual(batchSteps.validate, '03', 'complete');
-                    progress = 40;
-
-                    // 4. EXTRACT
-                    const allExtracted = selectedFilesData.every(item => item.studentId && item.studentId.trim() && item.studentName && item.studentName.trim());
-                    if (!allExtracted) {
-                        setStepVisual(batchSteps.extract, '04', 'active');
-                        setStepVisual(batchSteps.enroll, '05', 'waiting');
-                        setStepVisual(batchSteps.ready, '06', 'waiting');
-                        progress = 60;
-                        statusText = 'Extracting biometric information... enter missing Student IDs or Names';
-                    } else if (!batchState.enrolling && !batchState.enrollSuccess && !batchState.enrollError) {
-                        setStepVisual(batchSteps.extract, '04', 'complete');
-                        setStepVisual(batchSteps.enroll, '05', 'active');
-                        setStepVisual(batchSteps.ready, '06', 'waiting');
-                        progress = 80;
-                        statusText = `Extracted ${count} biometric profile${count > 1 ? 's' : ''} · Ready to enroll`;
-                    } else if (batchState.enrolling) {
-                        // 5. ENROLL (Processing)
-                        setStepVisual(batchSteps.extract, '04', 'complete');
-                        setStepVisual(batchSteps.enroll, '05', 'active');
-                        setStepVisual(batchSteps.ready, '06', 'waiting');
-                        progress = 80;
-                        statusText = `Registering biometric templates... (${batchState.processedCount}/${batchState.totalCount})`;
-                    } else if (batchState.enrollError) {
-                        // 5. ENROLL (Error)
-                        setStepVisual(batchSteps.extract, '04', 'complete');
-                        setStepVisual(batchSteps.enroll, '05', 'error');
-                        setStepVisual(batchSteps.ready, '06', 'waiting');
-                        progress = 80;
-                        statusText = batchState.enrollError;
-                        isError = true;
-                    } else if (batchState.enrollSuccess) {
-                        // 6. READY (Success)
-                        setStepVisual(batchSteps.extract, '04', 'complete');
-                        setStepVisual(batchSteps.enroll, '05', 'complete');
-                        setStepVisual(batchSteps.ready, '06', 'complete');
-                        progress = 100;
-                        statusText = 'Batch enrollment complete.';
-                        isSuccess = true;
-                    }
+                    setStepVisual(batchSteps.extract, '04', 'active');
+                    setStepVisual(batchSteps.enroll, '05', 'waiting');
+                    setStepVisual(batchSteps.ready, '06', 'waiting');
+                    progress = 60;
+                    statusText = `${selectedFilesData.length} photo(s) validated · Ready to enroll batch`;
+                } else if (batchState.enrolling) {
+                    setStepVisual(batchSteps.validate, '03', 'complete');
+                    setStepVisual(batchSteps.extract, '04', 'complete');
+                    setStepVisual(batchSteps.enroll, '05', 'active');
+                    setStepVisual(batchSteps.ready, '06', 'waiting');
+                    progress = 80;
+                    statusText = `Processing neural facial vectors (${batchState.processedCount}/${batchState.totalCount})...`;
+                } else if (batchState.enrollError) {
+                    setStepVisual(batchSteps.validate, '03', 'complete');
+                    setStepVisual(batchSteps.extract, '04', 'complete');
+                    setStepVisual(batchSteps.enroll, '05', 'error');
+                    setStepVisual(batchSteps.ready, '06', 'waiting');
+                    progress = 80;
+                    statusText = batchState.enrollError;
+                } else if (batchState.enrollSuccess) {
+                    setStepVisual(batchSteps.validate, '03', 'complete');
+                    setStepVisual(batchSteps.extract, '04', 'complete');
+                    setStepVisual(batchSteps.enroll, '05', 'complete');
+                    setStepVisual(batchSteps.ready, '06', 'complete');
+                    progress = 100;
+                    statusText = 'Batch identity enrollment completed successfully!';
                 }
             }
 
-            if (batchProgressFill) batchProgressFill.style.width = progress + '%';
-            if (timelineStatus) {
-                timelineStatus.textContent = statusText;
-                timelineStatus.style.color = isError ? 'var(--danger)' : (isSuccess ? 'var(--success)' : 'var(--cyan)');
-            }
+            batchProgressFill.style.width = progress + '%';
+            timelineStatus.textContent = statusText;
         }
 
-        function switchTab(tabId, btnElement) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        // Tab Switching
+        function switchTab(tabId, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            btn.classList.add('active');
             document.getElementById(tabId).classList.add('active');
-            btnElement.classList.add('active');
-
             currentMode = tabId;
+
             if (tabId === 'webcamTab') {
                 cameraTimeline.style.display = 'block';
                 batchTimeline.style.display = 'none';
@@ -1212,93 +1440,55 @@ video {
                 batchTimeline.style.display = 'block';
                 updateBatchTimeline();
             }
-            lucide.createIcons();
         }
 
-        studentName.addEventListener('input', updateLiveCameraTimeline);
-        studentId.addEventListener('input', updateLiveCameraTimeline);
+        // Form listeners for real-time state changes
+        studentName.addEventListener('input', () => {
+            camState.enrollSuccess = false;
+            camState.enrollError = null;
+            updateLiveCameraTimeline();
+        });
+        studentId.addEventListener('input', () => {
+            camState.enrollSuccess = false;
+            camState.enrollError = null;
+            updateLiveCameraTimeline();
+        });
 
         // ═══════════════════════════════════════════════════════════════════
-        // REAL-TIME VIDEO FEED & FACE DETECTION ANALYZER
+        // WEBCAM & REAL-TIME ALIGNMENT ENGINE
         // ═══════════════════════════════════════════════════════════════════
         let localStream = null;
-        let detectorCanvas = document.createElement('canvas');
-        let detectorCtx = detectorCanvas.getContext('2d', { willReadFrequently: true });
         let faceCheckInterval = null;
+        const scanCanvas = document.createElement('canvas');
+        const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
 
-        let nativeFaceDetector = null;
-        if ('FaceDetector' in window) {
+        function analyzeVideoFrame() {
+            if (!video.videoWidth || !video.videoHeight || video.paused || video.ended) return;
+
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            scanCanvas.width = 160;
+            scanCanvas.height = 120;
+
             try {
-                nativeFaceDetector = new FaceDetector({ fastMode: true, maxDetectedFaces: 2 });
-            } catch (e) {
-                nativeFaceDetector = null;
-            }
-        }
-
-        async function analyzeVideoFrame() {
-            if (currentMode !== 'webcamTab') return;
-            if (!video || video.readyState < 2 || video.paused || video.ended) {
-                camState.cameraConnected = false;
-                camState.faceDetected = false;
-                camState.faceAligned = false;
-                updateLiveCameraTimeline();
-                return;
-            }
-
-            camState.cameraConnected = true;
-
-            // 1. Native Face Detector API (Chromium / Experimental)
-            if (nativeFaceDetector) {
-                try {
-                    const faces = await nativeFaceDetector.detect(video);
-                    if (faces && faces.length > 0) {
-                        camState.faceDetected = true;
-                        const f = faces[0].boundingBox;
-                        const vw = video.videoWidth || 640;
-                        const vh = video.videoHeight || 480;
-                        const cx = (f.x + f.width / 2) / vw;
-                        const cy = (f.y + f.height / 2) / vh;
-                        const sizeRatio = (f.width * f.height) / (vw * vh);
-                        // Center within 0.28-0.72 and proper size
-                        camState.faceAligned = (cx >= 0.28 && cx <= 0.72 && cy >= 0.20 && cy <= 0.80 && sizeRatio >= 0.04 && sizeRatio <= 0.70);
-                    } else {
-                        camState.faceDetected = false;
-                        camState.faceAligned = false;
-                    }
-                    updateLiveCameraTimeline();
-                    return;
-                } catch (e) {
-                    // Fallback to canvas vision analysis
-                }
-            }
-
-            // 2. High-performance Canvas Computer Vision Fallback
-            try {
-                const w = 160;
-                const h = 120;
-                detectorCanvas.width = w;
-                detectorCanvas.height = h;
-                detectorCtx.drawImage(video, 0, 0, w, h);
-                const imgData = detectorCtx.getImageData(0, 0, w, h);
-                const data = imgData.data;
+                scanCtx.drawImage(video, 0, 0, 160, 120);
+                const frameData = scanCtx.getImageData(0, 0, 160, 120);
+                const data = frameData.data;
 
                 let skinPixelCount = 0;
                 let sumX = 0;
                 let sumY = 0;
 
-                const roiX1 = Math.floor(w * 0.12);
-                const roiX2 = Math.floor(w * 0.88);
-                const roiY1 = Math.floor(h * 0.08);
-                const roiY2 = Math.floor(h * 0.92);
+                const roiX1 = 20, roiX2 = 140;
+                const roiY1 = 15, roiY2 = 105;
 
                 for (let y = roiY1; y < roiY2; y += 2) {
                     for (let x = roiX1; x < roiX2; x += 2) {
-                        const idx = (y * w + x) * 4;
+                        const idx = (y * 160 + x) * 4;
                         const r = data[idx];
                         const g = data[idx + 1];
                         const b = data[idx + 2];
 
-                        // Chrominance & skin-tone signature detection
                         if (r > 55 && g > 35 && b > 20 && r > g && r > b && (r - g) >= 10 && Math.abs(r - g) > 6) {
                             skinPixelCount++;
                             sumX += x;
@@ -1314,18 +1504,15 @@ video {
                     camState.faceDetected = true;
                     const avgX = sumX / skinPixelCount;
                     const avgY = sumY / skinPixelCount;
-                    const normX = avgX / w;
-                    const normY = avgY / h;
+                    const normX = avgX / 160;
+                    const normY = avgY / 120;
 
-                    // Centered within frame
                     camState.faceAligned = (normX >= 0.30 && normX <= 0.70 && normY >= 0.25 && normY <= 0.75 && skinRatio <= 0.75);
                 } else {
                     camState.faceDetected = false;
                     camState.faceAligned = false;
                 }
-            } catch (e) {
-                // Ignore canvas access errors
-            }
+            } catch (e) {}
 
             updateLiveCameraTimeline();
         }
@@ -1338,9 +1525,7 @@ video {
         async function startWebcam() {
             try {
                 await fetch('/api/camera/pause', { method: 'POST' });
-            } catch (e) {
-                // Server unreachable - still try local camera
-            }
+            } catch (e) {}
 
             for (let attempt = 1; attempt <= 3; attempt++) {
                 try {
@@ -1350,6 +1535,8 @@ video {
                         video.play();
                         camState.cameraConnected = true;
                         camState.cameraError = null;
+                        document.getElementById('camStatusDisplay').textContent = 'CONNECTED';
+                        document.getElementById('camStatusDisplay').className = 'ready-val ok';
                         startFaceDetectionLoop();
                         updateLiveCameraTimeline();
                     };
@@ -1358,14 +1545,16 @@ video {
                 } catch (err) {
                     const busy = /in use|busy|NotReadable|Could not start/i.test(err.message || err.name);
                     if (busy && attempt < 3) {
-                        showMsg(`Camera is busy, releasing it… (attempt ${attempt}/3)`, 'error');
+                        showMsg(`Camera is initializing, releasing stream… (${attempt}/3)`, 'error');
                         await new Promise(r => setTimeout(r, 800));
                         continue;
                     }
-                    showMsg('Error accessing webcam: ' + err.message, 'error');
-                    captureBtn.disabled = true;
+                    showMsg('Camera access note: ' + err.message, 'error');
+                    captureBtn.disabled = false;
                     camState.cameraConnected = false;
                     camState.cameraError = err.message;
+                    document.getElementById('camStatusDisplay').textContent = 'STANDBY';
+                    document.getElementById('camStatusDisplay').className = 'ready-val warn';
                     updateLiveCameraTimeline();
                     return;
                 }
@@ -1438,23 +1627,23 @@ video {
 
             try {
                 for (const pose of POSES) {
-                    for (let s = 3; s > 0; s--) {
+                    for (let s = 2; s > 0; s--) {
                         captureBtn.innerHTML = `${pose} — ${s}`;
                         camState.enrollMessage = `${pose} — ${s}`;
                         updateLiveCameraTimeline();
-                        await wait(600);
+                        await wait(450);
                     }
                     for (let k = 0; k < SHOTS_PER_POSE; k++) {
                         snap();
                         captureBtn.innerHTML = `${pose} — captured ${images.length}`;
                         camState.enrollMessage = `${pose} — captured ${images.length} frames`;
                         updateLiveCameraTimeline();
-                        await wait(220);
+                        await wait(180);
                     }
                 }
 
-                captureBtn.innerHTML = `Processing ${images.length} frames…`;
-                camState.enrollMessage = 'Registering biometric template...';
+                captureBtn.innerHTML = `Processing ${images.length} biometric frames…`;
+                camState.enrollMessage = 'Registering biometric template into SOC gallery...';
                 updateLiveCameraTimeline();
 
                 const response = await fetch('/api/register', {
@@ -1470,13 +1659,14 @@ video {
                 const result = await response.json();
 
                 if (response.ok) {
-                    showMsg(result.message || ('Successfully enrolled Face ID for ' + name + ' (' + id + ')!'), 'success');
+                    showMsg(result.message || (`Successfully enrolled Face ID for ${name} (${id})!`), 'success');
                     studentName.value = '';
                     studentId.value = '';
                     camState.enrolling = false;
                     camState.enrollSuccess = true;
                     camState.enrollError = null;
                     updateLiveCameraTimeline();
+                    await fetchEnrolledStudents();
                 } else {
                     if (response.status === 401) {
                         window.location.href = 'login.html';
@@ -1489,7 +1679,7 @@ video {
                     updateLiveCameraTimeline();
                 }
             } catch (err) {
-                showMsg('Network error. Is the server running?', 'error');
+                showMsg('Network error communicating with AI server.', 'error');
                 camState.enrolling = false;
                 camState.enrollSuccess = false;
                 camState.enrollError = 'Network error communicating with AI server';
@@ -1501,41 +1691,11 @@ video {
             }
         });
 
-        captureBtn.title = 'Captures ~18 frames across 6 head positions (about 20 seconds)';
-
         function showMsg(msg, type) {
             statusMsg.textContent = msg;
             statusMsg.className = 'message ' + type;
         }
 
-        const startSessionBtn = document.getElementById('startSessionBtn');
-        startSessionBtn.addEventListener('click', async () => {
-            startSessionBtn.disabled = true;
-            startSessionBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin"></i> Initializing SOC...';
-            lucide.createIcons();
-            try {
-                const res = await fetch('/api/session/start', { method: 'POST' });
-                if (res.ok) {
-                    window.location.href = 'monitoring.html';
-                } else {
-                    if (res.status === 401) {
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                    let errText = await res.text();
-                    showMsg('Failed to start session: ' + res.status + ' ' + errText, 'error');
-                    startSessionBtn.disabled = false;
-                    startSessionBtn.innerHTML = '<i data-lucide="shield-check"></i> Launch SOC Examination Defense Matrix';
-                    lucide.createIcons();
-                }
-            } catch (err) {
-                showMsg('Network error starting session', 'error');
-                startSessionBtn.disabled = false;
-                startSessionBtn.innerHTML = '<i data-lucide="shield-check"></i> Launch SOC Examination Defense Matrix';
-                lucide.createIcons();
-            }
-        });
-        
         // ═══════════════════════════════════════════════════════════════════
         // BATCH UPLOAD LOGIC & STATE ENGINE
         // ═══════════════════════════════════════════════════════════════════
@@ -1593,9 +1753,9 @@ video {
                 el.className = 'file-item';
                 
                 let iconHtml = '';
-                if (item.status === 'success') iconHtml = '<i data-lucide="check-circle" style="color:var(--success);width:18px;"></i>';
-                else if (item.status === 'error') iconHtml = '<i data-lucide="x-circle" style="color:var(--danger);width:18px;"></i>';
-                else if (item.status === 'uploading') iconHtml = '<i data-lucide="loader" style="color:var(--cyan);width:18px;" class="lucide-spin"></i>';
+                if (item.status === 'success') iconHtml = '<i data-lucide="check-circle" style="color:var(--success);width:16px;"></i>';
+                else if (item.status === 'error') iconHtml = '<i data-lucide="x-circle" style="color:var(--danger);width:16px;"></i>';
+                else if (item.status === 'uploading') iconHtml = '<i data-lucide="loader" style="color:var(--cyan);width:16px;" class="lucide-spin"></i>';
                 
                 el.innerHTML = `
                     <img src="${item.dataUrl}">
@@ -1694,10 +1854,128 @@ video {
             btn.innerHTML = '<i data-lucide="upload"></i> Enroll Batch Selected';
             btn.disabled = false;
             lucide.createIcons();
+
+            await fetchEnrolledStudents();
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        // CANDIDATE ROSTER & READINESS VERIFICATION ENGINE
+        // ═══════════════════════════════════════════════════════════════════
+        async function fetchEnrolledStudents() {
+            try {
+                const res = await fetch('/api/students');
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error('Failed to load roster');
+                }
+                const students = await res.json();
+                enrolledStudentsCache = students || [];
+                renderRoster(enrolledStudentsCache);
+                updateReadinessState(enrolledStudentsCache);
+            } catch (err) {
+                console.error('Error fetching enrolled candidates:', err);
+                rosterList.innerHTML = '<div class="roster-empty">No candidate records available</div>';
+            }
+        }
+
+        function renderRoster(students) {
+            rosterList.innerHTML = '';
+            if (!students || students.length === 0) {
+                rosterList.innerHTML = '<div class="roster-empty">No students enrolled yet for this institution.<br><small style="color:var(--t4);">Enroll a candidate using the form on the left.</small></div>';
+                return;
+            }
+
+            students.forEach(s => {
+                const initials = (s.name || '?').charAt(0).toUpperCase();
+                const item = document.createElement('div');
+                item.className = 'roster-item';
+                item.innerHTML = `
+                    <div class="roster-avatar">${initials}</div>
+                    <div class="roster-info">
+                        <div class="roster-name">${s.name}</div>
+                        <div class="roster-id">ID: ${s.student_id}</div>
+                    </div>
+                    <span class="roster-badge">${s.enrolled ? 'VERIFIED' : 'PENDING'}</span>
+                `;
+                rosterList.appendChild(item);
+            });
+        }
+
+        function filterRoster(query) {
+            const q = query.toLowerCase().trim();
+            if (!q) {
+                renderRoster(enrolledStudentsCache);
+                return;
+            }
+            const filtered = enrolledStudentsCache.filter(s => 
+                (s.name && s.name.toLowerCase().includes(q)) || 
+                (s.student_id && s.student_id.toLowerCase().includes(q))
+            );
+            renderRoster(filtered);
+        }
+
+        function updateReadinessState(students) {
+            const count = students.length;
+            enrolledCountDisplay.textContent = `${count} Verified`;
+            
+            if (count > 0) {
+                startSessionBtn.disabled = false;
+                startSessionBtn.style.opacity = '1';
+                ctaWarning.style.display = 'none';
+            } else {
+                startSessionBtn.disabled = true;
+                startSessionBtn.style.opacity = '0.5';
+                ctaWarning.style.display = 'block';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        // START MONITORING SESSION TRANSITION
+        // ═══════════════════════════════════════════════════════════════════
+        startSessionBtn.addEventListener('click', async () => {
+            if (enrolledStudentsCache.length === 0) {
+                showMsg('Complete student identity enrollment before starting the monitoring session.', 'error');
+                return;
+            }
+
+            startSessionBtn.disabled = true;
+            startSessionBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:16px;height:16px;"></i> Initializing Examination SOC...';
+            lucide.createIcons();
+
+            try {
+                const res = await fetch('/api/session/start', { method: 'POST' });
+                if (res.ok) {
+                    releaseWebcam();
+                    document.body.style.opacity = '0';
+                    document.body.style.transition = 'opacity 0.25s ease';
+                    setTimeout(() => {
+                        window.location.href = 'monitoring.html';
+                    }, 250);
+                } else {
+                    if (res.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    const errText = await res.text();
+                    showMsg('Failed to initialize session: ' + errText, 'error');
+                    startSessionBtn.disabled = false;
+                    startSessionBtn.innerHTML = '<i data-lucide="play" style="width:16px;height:16px;fill:currentColor;"></i> Start Examination Monitoring';
+                    lucide.createIcons();
+                }
+            } catch (err) {
+                showMsg('Network error starting examination session.', 'error');
+                startSessionBtn.disabled = false;
+                startSessionBtn.innerHTML = '<i data-lucide="play" style="width:16px;height:16px;fill:currentColor;"></i> Start Examination Monitoring';
+                lucide.createIcons();
+            }
         });
 
         // Initialize state on load
         updateLiveCameraTimeline();
+        fetchEnrolledStudents();
     </script>
 </body>
 </html>

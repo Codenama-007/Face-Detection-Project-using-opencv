@@ -906,6 +906,8 @@ def auth_login():
         record_audit_event(None, "UNKNOWN", "UNKNOWN", None, "RATE_LIMITED", ip, "BLOCKED", f"Rate limit lockout for {wait_sec}s")
         return jsonify({"error": f"TOO MANY FAILED ATTEMPTS: Please wait {wait_sec} seconds before retrying"}), 429
 
+    global active_monitoring_institution
+
     data = request.json or {}
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()
@@ -989,7 +991,6 @@ def auth_login():
                     session['institution_id'] = target_inst
                     session['institution_name'] = inst_title
                     session['last_activity'] = time.time()
-                    global active_monitoring_institution
                     active_monitoring_institution = target_inst
 
                     reset_failed_attempts(rate_key)
@@ -998,7 +999,7 @@ def auth_login():
                     return jsonify({
                         "success": True,
                         "role": "FACULTY",
-                        "redirect": "/monitoring.html",
+                        "redirect": "/enrollment.html",
                         "user": {
                             "user_id": new_uid,
                             "name": faculty_name,
@@ -1078,11 +1079,13 @@ def auth_login():
         session['institution_id'] = inst_id
         session['institution_name'] = inst_name or ("Platform Command" if role == 'ADMIN' else "Institutional SOC")
         session['last_activity'] = time.time()
+        if inst_id:
+            active_monitoring_institution = inst_id
 
         record_audit_event(user_id, uname, role, inst_id, "LOGIN_SUCCESS", ip, "SUCCESS", f"Authenticated as {role} for {session['institution_name']}")
 
-        # Exactly 2 destinations: Admin -> /admin.html | Teacher/Supervisor -> /monitoring.html
-        redirect_url = '/admin.html' if role == 'ADMIN' else '/monitoring.html'
+        # Navigation destinations: Admin -> /admin.html | Faculty -> /enrollment.html
+        redirect_url = '/admin.html' if role == 'ADMIN' else '/enrollment.html'
 
         return jsonify({
             "success": True,
@@ -1506,6 +1509,54 @@ def admin_create_supervisor():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/students', methods=['GET'])
+def get_scoped_students():
+    """Returns enrolled students filtered to the authenticated faculty/admin institution."""
+    role = session.get('role', 'SUPERVISOR')
+    user_inst = session.get('institution_id')
+    req_inst = request.args.get('institution_id')
+
+    if role == 'ADMIN':
+        filter_inst = req_inst if (req_inst and req_inst != 'ALL') else user_inst
+    else:
+        filter_inst = user_inst or active_monitoring_institution or 'INST-001'
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        if filter_inst and filter_inst != 'ALL':
+            cursor.execute("""
+                SELECT s.student_id, s.name, s.institution_id, i.institution_name,
+                       CASE WHEN s.arcface_templates IS NOT NULL OR s.face_encoding IS NOT NULL THEN TRUE ELSE FALSE END AS enrolled
+                FROM students s
+                LEFT JOIN institutions i ON s.institution_id = i.institution_id
+                WHERE s.institution_id = %s
+                ORDER BY s.student_id ASC;
+            """, (filter_inst,))
+        else:
+            cursor.execute("""
+                SELECT s.student_id, s.name, s.institution_id, i.institution_name,
+                       CASE WHEN s.arcface_templates IS NOT NULL OR s.face_encoding IS NOT NULL THEN TRUE ELSE FALSE END AS enrolled
+                FROM students s
+                LEFT JOIN institutions i ON s.institution_id = i.institution_id
+                ORDER BY s.student_id ASC;
+            """)
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        students = []
+        for r in rows:
+            students.append({
+                "student_id": r[0],
+                "name": r[1],
+                "institution_id": r[2] or "N/A",
+                "institution_name": r[3] or "N/A",
+                "enrolled": bool(r[4])
+            })
+        return jsonify(students)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/admin/students', methods=['GET'])
 def admin_get_students():
     if session.get('role') != 'ADMIN':
@@ -1513,8 +1564,7 @@ def admin_get_students():
     inst_filter = request.args.get('institution_id')
     query = """
         SELECT s.student_id, s.name, s.institution_id, i.institution_name,
-               CASE WHEN s.face_encoding IS NOT NULL THEN TRUE ELSE FALSE END AS enrolled,
-               s.created_at
+               CASE WHEN s.arcface_templates IS NOT NULL OR s.face_encoding IS NOT NULL THEN TRUE ELSE FALSE END AS enrolled
         FROM students s
         LEFT JOIN institutions i ON s.institution_id = i.institution_id
         WHERE 1=1
@@ -1523,7 +1573,7 @@ def admin_get_students():
     if inst_filter and inst_filter != 'ALL':
         query += " AND s.institution_id = %s"
         params.append(inst_filter)
-    query += " ORDER BY s.created_at DESC;"
+    query += " ORDER BY s.student_id ASC;"
 
     try:
         conn = psycopg2.connect(DB_URL)
@@ -1537,8 +1587,7 @@ def admin_get_students():
                 "name": r[1],
                 "institution_id": r[2] or "N/A",
                 "institution_name": r[3] or "N/A",
-                "enrolled": bool(r[4]),
-                "created_at": r[5].strftime("%Y-%m-%d %H:%M") if r[5] else ""
+                "enrolled": bool(r[4])
             })
         cursor.close()
         conn.close()

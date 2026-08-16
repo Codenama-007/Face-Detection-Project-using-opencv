@@ -1935,11 +1935,7 @@ body::after {
                         <i data-lucide="users" class="panel-title-icon"></i>
                         <span class="panel-title">Active Students</span>
                     </div>
-                    <span class="stu-count-badge" id="stuCountBadge">0</span>
-                    <a href="enrollment.html" class="reg-btn">
-                        <i data-lucide="user-plus" style="width:12px;height:12px;"></i>
-                        Register
-                    </a>
+                    <span class="stu-count-badge" id="stuCountBadge">0 Active</span>
                 </div>
                 <div class="panel-body custom-scroll">
                     <div id="studentsGrid" class="students-body">
@@ -1949,8 +1945,8 @@ body::after {
                                 <i data-lucide="user-check"></i>
                             </div>
                             <div>
-                                <span class="empty-st-title">NO STUDENTS ACTIVE</span>
-                                <span class="empty-st-sub">No candidates currently detected in camera perimeter.</span>
+                                <span class="empty-st-title">MONITORING STANDBY</span>
+                                <span class="empty-st-sub">No students currently detected in examination room.</span>
                             </div>
                         </div>
                     </div>
@@ -2695,25 +2691,29 @@ function updateStudentsGrid(students) {
             $stuGrid.appendChild(tile);
         }
 
+        const formattedName = (student.name || 'UNKNOWN').toUpperCase();
+        const formattedId = student.id ? (String(student.id).startsWith('ID:') ? student.id : `ID: ${student.id}`) : 'ID: N/A';
+        const formattedTrust = `TRUST ${trust.toFixed(0)}`;
+        const formattedRisk = `RISK ${student.risk_score.toString().padStart(2, '0')}`;
+
         tile.className = `stu-tile ${riskClass}`;
         tile.innerHTML = `
             <div class="stu-top-row">
                 <div class="stu-avatar" style="background:${avatarBg};">${initials}</div>
                 <div class="stu-info">
-                    <div class="stu-name">${student.name}</div>
-                    <div class="stu-id">${student.id}</div>
+                    <div class="stu-name">${formattedName}</div>
+                    <div class="stu-id">${formattedId}</div>
                 </div>
                 <div class="stu-meta-right">
-                    <div class="stu-trust-num" style="color:${trustColor};">${trust.toFixed(0)}%</div>
-                    <div class="stu-gaze-pill" style="font-size:0.65rem;font-family:var(--mono);color:${gazeColor};font-weight:700;letter-spacing:0.04em;">GAZE: ${gazeText}</div>
-                    <div class="stu-status-pill ${riskClass}">${student.status || 'Active'}</div>
+                    <div class="stu-status-pill ${riskClass}">VERIFIED</div>
+                    <div class="stu-trust-num" style="color:${trustColor};font-size:0.75rem;font-family:var(--mono);">${formattedTrust}</div>
                 </div>
             </div>
-            <div class="stu-bar-wrap">
-                <div class="stu-bar-track">
+            <div class="stu-bar-wrap" style="display:flex;align-items:center;justify-content:space-between;margin-top:0.35rem;">
+                <div class="stu-bar-track" style="flex:1;margin-right:0.6rem;">
                     <div class="stu-bar-fill" style="width:${trust.toFixed(0)}%;background:${trustColor};"></div>
                 </div>
-                <span class="stu-risk-tag">Risk ${student.risk_score}</span>
+                <span class="stu-risk-tag" style="font-family:var(--mono);font-size:0.64rem;color:${riskClass==='danger'?'var(--danger)':(riskClass==='warning'?'var(--warning)':'var(--cyan)')};font-weight:700;">${formattedRisk} &middot; GAZE: ${gazeText}</span>
             </div>
         `;
     });
