@@ -142,8 +142,22 @@ class PhoneDetector:
         final = []
         for box, src in kept:
             if all(_iou(box[:4], f["bbox"]) < 0.45 for f in final):
-                final.append({"bbox": tuple(box[:4]), "conf": box[4],
-                              "source": src})
+                # Classify device type based on aspect ratio & size relative to person
+                w = box[2] - box[0]
+                h = box[3] - box[1]
+                area = w * h
+                dev_type = "phone"
+                if area < 1200 and 0.7 <= (w / max(h, 1)) <= 1.4:
+                    dev_type = "smartwatch"
+                elif area < 500:
+                    dev_type = "earbud"
+
+                final.append({
+                    "bbox": tuple(box[:4]),
+                    "conf": box[4],
+                    "device_type": dev_type,
+                    "source": src
+                })
         return final
 
 

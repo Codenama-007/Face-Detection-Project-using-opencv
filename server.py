@@ -2723,7 +2723,7 @@ def _ai_worker():
                 person_detections.append(([x1, y1, x2 - x1, y2 - y1], conf, "person"))
                 person_boxes.append((x1, y1, x2, y2))
 
-        # 2. Phone detection dispatch
+        # 2. Phone / Device detection dispatch
         with _phone_lock:
             if _phone_input["frame"] is None:
                 _phone_input["frame"] = frame.copy()
@@ -2732,14 +2732,29 @@ def _ai_worker():
             phone_hits = list(_phone_output["boxes"]) if fresh else []
 
         phone_boxes = []
+        smartwatch_boxes = []
+        earbud_boxes = []
+
         for d in phone_hits:
             px1, py1, px2, py2 = [int(v) for v in d["bbox"]]
             pconf = float(d["conf"])
-            phone_boxes.append((px1, py1, px2, py2, pconf))
-            draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 0, 255), 2,
-                             "PHONE DETECTED", f"CONFIDENCE: {pconf:.0%}"))
+            dev_type = d.get("device_type", "phone")
+            if dev_type == "smartwatch":
+                smartwatch_boxes.append((px1, py1, px2, py2, pconf))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 140, 255), 2,
+                                 "SMARTWATCH DETECTED", f"PROHIBITED DEVICE · {pconf:.0%}"))
+            elif dev_type == "earbud":
+                earbud_boxes.append((px1, py1, px2, py2, pconf))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 165, 255), 2,
+                                 "EARBUD DETECTED", f"PROHIBITED DEVICE · {pconf:.0%}"))
+            else:
+                phone_boxes.append((px1, py1, px2, py2, pconf))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 0, 255), 2,
+                                 "CELL PHONE DETECTED", f"PROHIBITED DEVICE · {pconf:.0%}"))
 
         room_state["phone_detected"] = len(phone_boxes) > 0
+        room_state["smartwatch_detected"] = len(smartwatch_boxes) > 0
+        room_state["earbud_detected"] = len(earbud_boxes) > 0
         room_state["book_detected"] = False
 
         # 3. MediaPipe FaceLandmarker analysis (all visible faces with real iris & head pose)
@@ -2853,7 +2868,7 @@ def _ai_worker():
                     color = (0, 0, 255)         # Red Violation
 
                 # Header & Subtitle displaying registered Name & ID
-                title = f"REGISTERED STUDENT: {snap['name']}"
+                title = f"REGISTERED: {snap['name']}"
                 sub = f"ID: {sid} | GAZE: {snap['gaze']} | TRUST: {trust_pct}%"
                 draw_ops.append(('hud_box', (sfx1, sfy1), (sfx2, sfy2), color, 2, title, sub))
 
@@ -2874,8 +2889,8 @@ def _ai_worker():
             else:
                 # Unregistered face
                 unknown_count += 1
-                draw_ops.append(('hud_box', (sfx1, sfy1), (sfx2, sfy2), (255, 180, 50), 2,
-                                 "UNKNOWN", f"GAZE: {obs.raw_gaze} | ALERT: UNVERIFIED"))
+                draw_ops.append(('hud_box', (sfx1, sfy1), (sfx2, sfy2), (0, 0, 255), 2,
+                                 "UNKNOWN PERSON", f"UNREGISTERED PARTICIPANT"))
                 if obs.left_iris_xy and obs.right_iris_xy:
                     draw_ops.append(('iris', obs.left_iris_xy, 2, (255, 220, 0)))
                     draw_ops.append(('iris', obs.right_iris_xy, 2, (255, 220, 0)))
@@ -3020,6 +3035,15 @@ def api_status():
             continue
 
         risk = int(data.get("suspicion_score", data.get("risk_score", 0)))
+        trust = int(data.get("trust_score", max(0, 100 - risk)))
+        yaw = float(data.get("yaw", 0))
+        pitch = float(data.get("pitch", 0))
+        gaze = data.get("gaze", "CENTER")
+        
+        # Calculate continuous eye attention index
+        attention_pen = min(60, int(abs(yaw) * 0.8 + abs(pitch) * 0.6)) + (15 if gaze not in ("CENTER", "UNKNOWN") else 0)
+        attention_pct = max(15, min(100, 100 - attention_pen))
+
         students_list.append({
             "id": sid,
             "name": data.get("name", sid),
@@ -3027,11 +3051,13 @@ def api_status():
             "status": data.get("status", "Active"),
             "suspicion_score": risk,
             "risk_score": risk,
+            "trust_score": trust,
             "tier": data.get("tier", "LOW"),
-            "yaw": data.get("yaw", 0),
-            "pitch": data.get("pitch", 0),
-            "gaze": data.get("gaze", "CENTER"),
+            "yaw": yaw,
+            "pitch": pitch,
+            "gaze": gaze,
             "direction": data.get("direction", "CENTER"),
+            "eye_attention_pct": attention_pct,
             "gaze_deviation": data.get("gaze_deviation", None),
             "phone_conf": data.get("phone_conf", 0),
             "last_event": data.get("last_event"),
@@ -3043,6 +3069,8 @@ def api_status():
         "room_status": room_state.get("status", "NORMAL"),
         "unknown_count": room_state.get("unknown_count", 0),
         "phone_detected": room_state.get("phone_detected", False),
+        "smartwatch_detected": room_state.get("smartwatch_detected", False),
+        "earbud_detected": room_state.get("earbud_detected", False),
         "book_detected": room_state.get("book_detected", False),
         "camera_blocked": room_state.get("camera_blocked", False),
         "room_alerts": room_state.get("alerts", []),
