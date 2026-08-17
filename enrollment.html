@@ -1043,12 +1043,23 @@ p.subtitle {
 
                 <div class="input-group">
                     <label for="studentName">Student Full Name</label>
-                    <input type="text" id="studentName" placeholder="e.g. Nalin Tuscano" autocomplete="off">
+                    <input type="text" id="studentName" placeholder="e.g. Nalin Tuscano" autocomplete="off" required>
                 </div>
 
                 <div class="input-group">
                     <label for="studentId">Student ID / Roll Number</label>
-                    <input type="text" id="studentId" placeholder="e.g. 1009" autocomplete="off">
+                    <input type="text" id="studentId" placeholder="e.g. 1009" autocomplete="off" required>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                    <div class="input-group">
+                        <label for="studentCourse">Class / Course</label>
+                        <input type="text" id="studentCourse" placeholder="e.g. CS302 AI Systems" value="CS302 Computer Vision">
+                    </div>
+                    <div class="input-group">
+                        <label for="studentExam">Examination</label>
+                        <input type="text" id="studentExam" placeholder="e.g. Final Examination" value="Final Semester Examination 2026">
+                    </div>
                 </div>
 
                 <button class="btn" id="captureBtn">
@@ -1673,6 +1684,20 @@ p.subtitle {
 
                 if (response.ok) {
                     showMsg(result.message || (`Successfully enrolled Face ID for ${name} (${id})!`), 'success');
+                    
+                    const regSession = {
+                        name: name,
+                        student_id: id,
+                        institution: document.getElementById('navInstName') ? document.getElementById('navInstName').textContent : 'Apex Institute of Technology',
+                        course: document.getElementById('studentCourse') ? document.getElementById('studentCourse').value : 'CS302 Computer Vision',
+                        exam: document.getElementById('studentExam') ? document.getElementById('studentExam').value : 'Final Semester Examination 2026',
+                        enrolled_at: new Date().toISOString()
+                    };
+                    try {
+                        sessionStorage.setItem('proctorai_student_session', JSON.stringify(regSession));
+                        localStorage.setItem('proctorai_active_candidate', JSON.stringify(regSession));
+                    } catch(e){}
+
                     studentName.value = '';
                     studentId.value = '';
                     camState.enrolling = false;
