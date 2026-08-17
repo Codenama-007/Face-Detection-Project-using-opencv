@@ -25,58 +25,67 @@
 
 :root {
     /* Base Color Palette */
-    --bg-base:        #070a0f;
-    --bg-surface:     #0b1018;
-    --bg-elevated:    #0e1420;
-    
-    /* Glass Panel Tokens */
-    --panel-glass:    rgba(14, 20, 32, 0.72);
-    --panel-card:     rgba(18, 26, 42, 0.65);
-    --panel-hover:    rgba(25, 36, 58, 0.75);
-    
+    /* Neutral slate surfaces. Flat and opaque rather than translucent glass:
+       stacked transparency made every panel a slightly different shade. */
+    --bg-base:        #0d1117;
+    --bg-surface:     #131920;
+    --bg-elevated:    #171e26;
+
+    --panel-glass:    #131920;
+    --panel-card:     #171e26;
+    --panel-hover:    #1c242e;
+
     /* Borders */
-    --border-subtle:  rgba(255, 255, 255, 0.06);
-    --border-light:   rgba(255, 255, 255, 0.12);
-    --border-hover:   rgba(56, 189, 248, 0.28);
-    --border-active:  rgba(56, 189, 248, 0.50);
-    --border-danger:  rgba(239, 68, 68, 0.40);
-    --border-success: rgba(16, 185, 129, 0.35);
+    --border-subtle:  #222b36;
+    --border-light:   #2d3745;
+    --border-hover:   #3a4655;
+    --border-active:  rgba(91, 141, 239, 0.40);
+    --border-danger:  rgba(248, 81, 73, 0.35);
+    --border-success: rgba(63, 185, 80, 0.30);
+
+    /* 4px spacing scale */
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px;
     
-    /* Brand & Accent Colors */
-    --cyan:           #00e5ff;
-    --cyan-glow:      rgba(0, 229, 255, 0.35);
-    --accent:         #38bdf8;
-    --accent-dim:     rgba(56, 189, 248, 0.12);
-    --accent-bd:      rgba(56, 189, 248, 0.28);
-    
-    /* State Accents */
-    --success:        #10b981;
-    --success-dim:    rgba(16, 185, 129, 0.12);
-    --success-bd:     rgba(16, 185, 129, 0.28);
-    --success-glow:   rgba(16, 185, 129, 0.45);
-    
-    --warning:        #f59e0b;
-    --warning-dim:    rgba(245, 158, 11, 0.12);
-    --warning-bd:     rgba(245, 158, 11, 0.28);
-    --warning-glow:   rgba(245, 158, 11, 0.45);
-    
-    --danger:         #ef4444;
-    --danger-dim:     rgba(239, 68, 68, 0.12);
-    --danger-bd:      rgba(239, 68, 68, 0.30);
-    --danger-glow:    rgba(239, 68, 68, 0.50);
+    /* Single accent. Token names are unchanged so existing markup keeps
+       working, but --cyan is no longer neon: colour in this UI encodes risk,
+       it is not decoration, so the chrome stays neutral and only state
+       colours carry meaning. */
+    --cyan:           #6b8cae;
+    --cyan-glow:      rgba(107, 140, 174, 0.18);
+    --accent:         #5b8def;
+    --accent-dim:     rgba(91, 141, 239, 0.10);
+    --accent-bd:      rgba(91, 141, 239, 0.22);
+
+    /* State accents - the only saturated colours in the interface */
+    --success:        #3fb950;
+    --success-dim:    rgba(63, 185, 80, 0.10);
+    --success-bd:     rgba(63, 185, 80, 0.24);
+    --success-glow:   rgba(63, 185, 80, 0.18);
+
+    --warning:        #d29922;
+    --warning-dim:    rgba(210, 153, 34, 0.10);
+    --warning-bd:     rgba(210, 153, 34, 0.24);
+    --warning-glow:   rgba(210, 153, 34, 0.18);
+
+    --danger:         #f85149;
+    --danger-dim:     rgba(248, 81, 73, 0.10);
+    --danger-bd:      rgba(248, 81, 73, 0.26);
+    --danger-glow:    rgba(248, 81, 73, 0.20);
     
     /* Typography Colors */
-    --t1: #f0f4ff;
-    --t2: #94a3b8;
-    --t3: #5c7098;
-    --t4: #2e3e58;
-    
-    /* Radii */
+    --t1: #e6edf3;
+    --t2: #9aa7b4;
+    --t3: #6e7d8d;
+    --t4: #48535f;
+
+    /* One radius, applied consistently. The old 5-step scale meant adjacent
+       panels rounded differently, which is a large part of why this read as
+       unconsidered. */
     --r-xs: 4px;
-    --r-sm: 8px;
-    --r-md: 12px;
-    --r-lg: 16px;
-    --r-xl: 18px;
+    --r-sm: 5px;
+    --r-md: 6px;
+    --r-lg: 6px;
+    --r-xl: 6px;
     
     /* Fonts */
     --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -477,20 +486,252 @@ body::after {
 /* ═════════════════════════════════════════════════════════════════════
    2. REFLOWED 2-COLUMN COMMAND CENTER GRID (CLEAN SOC ARCHITECTURE)
    ═════════════════════════════════════════════════════════════════════ */
+/* Three fixed regions: subjects, feed, risk. The outer page never scrolls --
+   only panel interiors do -- so the whole operating picture stays on screen. */
 .soc-grid {
     display: grid;
-    grid-template-columns: 1.45fr 1fr;
-    gap: 0.75rem;
+    grid-template-columns: 288px minmax(0, 1fr) 340px;
+    gap: var(--s3);
     flex: 1;
     min-height: 0;
     overflow: hidden;
 }
 
-@media (max-width: 1100px) {
-    .soc-grid {
-        grid-template-columns: 1fr;
-        overflow-y: auto;
-    }
+/* Note: .soc-grid's narrow-screen behaviour lives in the responsive section at
+   the bottom of this stylesheet. Keep it in one place -- a second breakpoint
+   for this selector here is what silently overrode that one and collapsed the
+   hero column to a sliver. */
+
+/* ─────────────────────────────────────────────────────────────────────
+   SHARED PANEL TYPOGRAPHY
+   Panels lead with a real heading and a quiet one-line description, rather
+   than an all-caps label crammed against a badge.
+   ───────────────────────────────────────────────────────────────────── */
+.panel-h1 {
+    font-size: 1.0rem;
+    font-weight: 600;
+    color: var(--t1);
+    letter-spacing: -0.01em;
+    margin: 0;
+}
+.panel-sub {
+    font-size: 0.76rem;
+    color: var(--t3);
+    margin: 2px 0 0;
+}
+.panel-hd-stack {
+    display: block;
+    padding: var(--s4) var(--s4) var(--s3);
+}
+.panel-hd-stack .hd-row {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--s2);
+}
+
+.live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--success); flex: 0 0 auto;
+}
+
+/* Feed header controls */
+.feed-select {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    color: var(--t1);
+    font-size: 0.76rem;
+    font-family: inherit;
+    border-radius: var(--r-md);
+    padding: 5px 9px;
+    cursor: pointer;
+}
+.icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    border-radius: var(--r-md);
+    color: var(--t2);
+    cursor: pointer;
+}
+.icon-btn:hover { color: var(--t1); border-color: var(--border-hover); }
+
+/* Camera status pill under the feed */
+.cam-status-row { display: flex; justify-content: center; padding: var(--s3) 0 var(--s4); }
+.cam-pill {
+    display: inline-flex; align-items: center; gap: var(--s2);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    border-radius: var(--r-md);
+    padding: 7px 14px;
+    font-size: 0.78rem;
+    color: var(--t1);
+}
+
+/* Session identity in the header */
+.sess-id-lbl { font-size: 0.78rem; color: var(--t3); }
+.sess-id {
+    font-size: 0.78rem; color: var(--t1); font-weight: 550;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Bottom status bar */
+.status-bar {
+    display: flex; align-items: center; gap: var(--s4);
+    flex: 0 0 auto;
+    padding: var(--s3) var(--s4);
+    background: var(--panel-glass);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-lg);
+    font-size: 0.78rem;
+    color: var(--t2);
+}
+.sb-item { display: inline-flex; align-items: center; gap: var(--s2); }
+.sb-sep { width: 1px; height: 16px; background: var(--border-light); }
+
+/* View-all footer link on the alerts panel */
+.view-all {
+    display: block;
+    padding: var(--s3) var(--s4);
+    border-top: 1px solid var(--border-subtle);
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 550;
+    text-decoration: none;
+}
+.view-all:hover { color: var(--t1); }
+
+/* ─────────────────────────────────────────────────────────────────────
+   SUBJECT ROSTER (left column)
+   ───────────────────────────────────────────────────────────────────── */
+.roster-list { display: flex; flex-direction: column; gap: var(--s2); padding: 0 var(--s3) var(--s3); }
+
+/* Each student is a card: avatar, identity, and a right-aligned score block.
+   Generous padding here is deliberate -- this is the list an invigilator scans
+   under pressure, so rows need to be separable at a glance. */
+.roster-row {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: var(--s3);
+    align-items: center;
+    padding: var(--s3);
+    background: var(--panel-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--r-lg);
+}
+.roster-row.is-top {
+    border-color: var(--border-active);
+    background: rgba(91, 141, 239, 0.06);
+}
+
+.roster-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    color: var(--t2);
+    font-size: 0.8rem; font-weight: 600;
+}
+
+.roster-id { min-width: 0; }
+.roster-name {
+    display: block;
+    font-size: 0.86rem;
+    font-weight: 550;
+    color: var(--t1);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.roster-name.unknown { color: var(--warning); }
+.roster-meta {
+    display: block;
+    margin-top: 1px;
+    font-size: 0.72rem;
+    color: var(--t3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.roster-right { text-align: right; }
+
+/* Tabular figures: without this the score jitters horizontally every poll. */
+.roster-score {
+    display: block;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+    font-weight: 650;
+    line-height: 1.15;
+    color: var(--success);
+}
+.roster-tier {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--success);
+    white-space: nowrap;
+}
+.roster-row.tier-medium   .roster-score,
+.roster-row.tier-medium   .roster-tier { color: var(--warning); }
+.roster-row.tier-high     .roster-score,
+.roster-row.tier-high     .roster-tier,
+.roster-row.tier-critical .roster-score,
+.roster-row.tier-critical .roster-tier { color: var(--danger); }
+
+.roster-empty, .queue-empty {
+    padding: var(--s5) var(--s3);
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--t3);
+}
+
+.hd-count {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.68rem;
+    color: var(--t2);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 99px;
+    padding: 1px 7px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   COMPACT STAT GRID
+   ───────────────────────────────────────────────────────────────────── */
+.stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border-subtle);
+}
+.stat {
+    background: var(--panel-glass);
+    padding: var(--s2) var(--s3);
+    display: flex; flex-direction: column; gap: 2px;
+}
+.stat-lbl {
+    font-size: 0.58rem; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--t3); font-weight: 600;
+}
+.stat-val {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 1.05rem; font-weight: 600; color: var(--t1); line-height: 1.1;
+}
+.stat-val.sm { font-size: 0.72rem; letter-spacing: 0.04em; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   FEED READOUT STRIP
+   ───────────────────────────────────────────────────────────────────── */
+.feed-readout {
+    display: flex; flex-wrap: wrap;
+    gap: var(--s4);
+    padding: var(--s2) var(--s3);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-surface);
+}
+.ro { display: flex; align-items: baseline; gap: var(--s2); }
+.ro-lbl {
+    font-size: 0.58rem; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--t3); font-weight: 600;
+}
+.ro-val {
+    font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 0.75rem; color: var(--t1); font-weight: 600;
 }
 
 .soc-col {
@@ -839,16 +1080,31 @@ body::after {
 }
 
 /* Feed Canvas Area */
+/* The feed is capped, not flex-grown. Letting it grow is what made the video
+   swallow the viewport: with nothing to push back, flex:1 took every pixel
+   the column had. A 16:9 box with a viewport-relative ceiling keeps the feed
+   dominant but leaves room for the panels around it. */
 .cctv-feed-area {
-    flex: 1;
+    flex: 0 1 auto;
     position: relative;
     overflow: hidden;
-    border-radius: 0 0 var(--r-xl) var(--r-xl);
-    background: #020509;
-    min-height: 0;
+    border-radius: 0;
+    background: #05080c;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: min(52vh, 560px);
+    min-height: 220px;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.cctv-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;   /* never crop or stretch the operator's evidence */
+    display: block;
 }
 
 /* Subtle Scanlines */
@@ -1731,21 +1987,45 @@ body::after {
 /* ═════════════════════════════════════════════════════════════════════
    9. RESPONSIVE BREAKPOINTS
    ═════════════════════════════════════════════════════════════════════ */
-@media (max-width: 1280px) {
+/* Keep three columns for as long as they genuinely fit. The rails are only
+   ~600px combined, so they still work at 1280 and below -- stacking at 1280
+   was far too eager and dropped desktop users (and anyone at 150% zoom) into
+   the narrow fallback. Shrink the rails in steps instead. */
+@media (max-width: 1600px) {
+    .soc-grid { grid-template-columns: 264px minmax(0, 1fr) 312px; }
+}
+
+@media (max-width: 1360px) {
+    .soc-grid { grid-template-columns: 236px minmax(0, 1fr) 288px; gap: var(--s2); }
+}
+
+@media (max-width: 1150px) {
+    .soc-grid { grid-template-columns: 210px minmax(0, 1fr) 256px; }
+}
+
+/* Only once the rails would genuinely starve the feed do we reflow to:
+   feed across the top, roster and risk queue side by side beneath it. */
+@media (max-width: 1000px) {
     html, body { overflow: auto; }
     .soc-wrap { height: auto; min-height: 100vh; overflow: visible; }
     .soc-grid {
-        grid-template-columns: 260px 1fr;
+        grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto;
         overflow: visible;
     }
-    .soc-col.right-col {
-        grid-column: 1 / -1;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.65rem;
+    .hero-stream-col { grid-column: 1 / -1; grid-row: 1; }
+    .col-roster      { grid-column: 1; grid-row: 2; }
+    .col-risk        { grid-column: 2; grid-row: 2; }
+    .col-roster .roster-panel { min-height: 260px; }
+    .cctv-feed-area { max-height: 46vh; }
+}
+
+/* One column once even a 2-up row is cramped. */
+@media (max-width: 900px) {
+    .soc-grid { grid-template-columns: 1fr; }
+    .hero-stream-col, .col-roster, .col-risk {
+        grid-column: 1; grid-row: auto;
     }
-    .cctv-feed-area { min-height: 380px; }
 }
 
 @media (max-width: 860px) {
@@ -1800,24 +2080,19 @@ body::after {
             <div class="h-brand-text">
                 <div class="h-brand-title-row">
                     <span class="h-brand-name">ProctorAI</span>
-                    <span class="h-brand-badge" style="background:rgba(56,189,248,0.1);color:var(--accent);border:1px solid rgba(56,189,248,0.25);">DEMO ENVIRONMENT</span>
                 </div>
-                <span class="h-brand-sub">Security Operations Center</span>
             </div>
         </a>
 
-        <div class="h-brand-sep"></div>
-
-        <!-- Center: Live Session Telemetry -->
+        <!-- Center: session identity and live state -->
         <div class="h-center">
+            <span class="sess-id-lbl">Session ID:</span>
+            <span class="sess-id" id="sessionIdDisplay">&mdash;</span>
             <div class="session-pill" id="globalStatusBanner">
                 <span class="s-dot" id="sessionStatusDot"></span>
-                <span id="globalStatusText">SESSION STANDBY</span>
+                <span id="globalStatusText">STANDBY</span>
             </div>
-            <div class="session-timer-box">
-                <i data-lucide="clock" class="session-timer-icon"></i>
-                <span class="session-timer" id="sessionTimerDisplay">00:00:00</span>
-            </div>
+            <span class="session-timer" id="sessionTimerDisplay">00:00:00</span>
         </div>
 
         <!-- Right: Supervisor Actions & Controls -->
@@ -1851,288 +2126,103 @@ body::after {
     <!-- ══ 2. REFLOWED 2-COLUMN COMMAND CENTER GRID ═════════════════ -->
     <main class="soc-grid">
 
-        <!-- ═ LEFT COLUMN: CCTV LIVE FEED + ALERTS & ACTIVITY SPLIT ═ -->
-        <div class="soc-col hero-stream-col">
-            <!-- CCTV Live Hero Panel -->
-            <div class="panel cctv-panel" id="video-feed" style="flex: 1.35; min-height: 380px;">
-                <!-- CCTV Header -->
+        <!-- ═ LEFT: LIVE EXAMINEES ═ -->
+        <aside class="soc-col col-roster">
+            <section class="panel roster-panel" style="flex:1; min-height:0;">
+                <div class="panel-hd panel-hd-stack">
+                    <h2 class="panel-h1">Live Examinees <span id="rosterCount">(0)</span></h2>
+                    <p class="panel-sub">Students currently in frame</p>
+                </div>
+                <div class="panel-body custom-scroll">
+                    <div id="rosterList" class="roster-list">
+                        <div class="roster-empty">No students in frame</div>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- ═ CENTRE: LIVE CCTV FEED ═ -->
+        <section class="soc-col hero-stream-col">
+            <div class="panel cctv-panel" id="video-feed" style="flex:1; min-height:0;">
                 <div class="panel-hd">
                     <div class="cctv-hd-left">
-                        <div class="cctv-status-dot" id="cctvStatusDot"></div>
-                        <span class="panel-title">CCTV LIVE FEED</span>
-                        <span class="cctv-cam-tag">CAM-01</span>
+                        <span class="live-dot" id="cctvStatusDot"></span>
+                        <h2 class="panel-h1">Live CCTV Feed</h2>
                     </div>
                     <div class="cctv-hd-right">
-                        <span class="cctv-specs">1080P · 30 FPS · ARCFACE + YOLO11s</span>
-                        <div class="ai-engine-pill">
-                            <div class="ai-pulse-dot"></div>
-                            <span>AI ACTIVE</span>
-                        </div>
+                        <select class="feed-select" id="feedQuality" aria-label="Stream quality">
+                            <option>1080p</option>
+                            <option>720p</option>
+                            <option>480p</option>
+                        </select>
+                        <button class="icon-btn" id="feedFullscreen" title="Fullscreen" aria-label="Fullscreen">
+                            <i data-lucide="maximize" style="width:15px;height:15px;"></i>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Feed Canvas Area -->
                 <div class="cctv-feed-area">
-                    <!-- Corner Reticles -->
-                    <div class="cc cc-tl"></div>
-                    <div class="cc cc-tr"></div>
-                    <div class="cc cc-bl"></div>
-                    <div class="cc cc-br"></div>
-
-                    <!-- Top-Left LIVE Badge -->
-                    <div class="cctv-hud-tl">
-                        <div class="hud-rec-dot"></div>
-                        <span class="hud-label">LIVE STREAM</span>
-                    </div>
-
-                    <!-- Top-Right AI Vision Status -->
-                    <div class="cctv-hud-tr">
-                        <i data-lucide="eye" style="width:11px;height:11px;color:var(--cyan);"></i>
-                        <span class="hud-label">NEURAL DEFENSE LOCK</span>
-                    </div>
-
-                    <!-- Tactical Warning Banner (Appears on threat) -->
                     <div class="hud-alert-banner" id="hudAlertBanner">
                         <i data-lucide="alert-triangle" style="width:14px;height:14px;color:#fff;"></i>
-                        <span class="hud-alert-text" id="hudAlertText">CRITICAL THREAT DETECTED</span>
+                        <span class="hud-alert-text" id="hudAlertText">Critical event</span>
                     </div>
 
-                    <!-- Bottom-Left Backend Status -->
-                    <div class="cctv-hud-bl" id="backendPill">
-                        <div class="ms-dot" id="backendDot"></div>
-                        <span class="hud-label" id="backendPillText">AI Backend Offline</span>
-                    </div>
+                    <img id="cctvFeedImg" src="/video_feed" alt="Live examination feed"
+                         class="cctv-img" onerror="onFeedError()" onload="onFeedLoaded()">
 
-                    <!-- Bottom-Right Threat Matrix Tag -->
-                    <div class="cctv-hud-br">
-                        <span class="hud-label" id="threatMatrixTag" style="color:var(--success);">DEFENSE: SECURE</span>
-                    </div>
-
-                    <!-- Video Feed Stream Image -->
-                    <img
-                        id="cctvFeedImg"
-                        src="http://localhost:5001/video_feed"
-                        alt="ProctorAI CCTV Live Feed"
-                        class="cctv-img"
-                        onerror="onFeedError()"
-                        onload="onFeedLoaded()"
-                    >
-
-                    <!-- Offline / Standby Screen -->
                     <div class="feed-offline show" id="feedOffline">
-                        <div class="fo-radar">
-                            <div class="fo-radar-circle"></div>
-                            <div class="fo-radar-circle-2"></div>
-                            <div class="fo-radar-sweep"></div>
-                            <i data-lucide="camera-off" class="fo-icon-center" style="width:32px;height:32px;"></i>
-                        </div>
                         <div class="fo-text-wrap">
-                            <div class="fo-title">CAMERA OFFLINE</div>
-                            <div style="font-size:0.75rem;font-family:var(--mono);color:var(--cyan);font-weight:700;letter-spacing:0.06em;margin:0.25rem 0;">SYSTEM READY</div>
-                            <div class="fo-body">
-                                Waiting for live examination feed...
-                            </div>
+                            <div class="fo-title">No signal</div>
+                            <div class="fo-body">Waiting for the examination feed.</div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Lower Split: Alert Center & Live Activity -->
-            <div class="hero-bottom-split">
-                <!-- Alert Center Panel -->
-                <div class="panel alerts-panel" id="alerts" style="flex: 1; min-height: 0;">
-                    <div class="panel-hd">
-                        <div class="panel-title-wrap">
-                            <i data-lucide="bell" class="panel-title-icon"></i>
-                            <span class="panel-title">Alert Center</span>
-                        </div>
+                <div class="cam-status-row">
+                    <span class="cam-pill">
+                        <span class="live-dot"></span>
+                        <span id="camStatusText">Camera 1 &ndash; Active</span>
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═ RIGHT: RISK ALERTS ═ -->
+        <aside class="soc-col col-risk">
+            <section class="panel alerts-panel" id="alerts" style="flex:1; min-height:0;">
+                <div class="panel-hd panel-hd-stack">
+                    <div class="hd-row">
+                        <h2 class="panel-h1">Risk Alerts</h2>
                         <span class="alert-count-badge" id="unknownCountBadge">0 Active</span>
                     </div>
-
-                    <!-- Filter Tabs -->
-                    <div class="alert-filters" id="alertFilters">
-                        <button class="af-tab active" data-filter="all">All</button>
-                        <button class="af-tab" data-filter="danger">Critical</button>
-                        <button class="af-tab" data-filter="warning">Warning</button>
-                        <button class="af-tab" data-filter="info">Info</button>
-                    </div>
-
-                    <div class="panel-body custom-scroll">
-                        <div id="alertsList" class="alerts-body">
-                            <div class="alerts-empty" id="alertsEmpty">
-                                <div class="alerts-empty-shield">
-                                    <i data-lucide="shield-check" style="width:18px;height:18px;"></i>
-                                </div>
-                                <div>
-                                    <div class="alerts-empty-title">NO ACTIVE ALERTS</div>
-                                    <div class="alerts-empty-sub">All candidates nominal. No anomalous behaviors or security threats detected.</div>
-                                </div>
+                    <p class="panel-sub">Real-time detection alerts</p>
+                </div>
+                <div class="panel-body custom-scroll">
+                    <div id="alertsList" class="alerts-body">
+                        <div class="alerts-empty" id="alertsEmpty">
+                            <div>
+                                <div class="alerts-empty-title">No active alerts</div>
+                                <div class="alerts-empty-sub">All students nominal.</div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Live Activity Timeline -->
-                <div class="panel activity-panel" id="activityPanel" style="flex: 1; min-height: 0;">
-                    <div class="panel-hd">
-                        <div class="panel-title-wrap">
-                            <i data-lucide="git-commit" class="panel-title-icon"></i>
-                            <span class="panel-title">Live Activity</span>
-                        </div>
-                    </div>
-                    <div class="panel-body custom-scroll">
-                        <div id="activityList" class="activity-body">
-                            <div class="act-empty" id="activityEmpty">NO ACTIVITY RECORDED</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═ RIGHT COLUMN: SOC OVERVIEW, RADIAL GAUGES & AI DEFENSE ENGINES ═ -->
-        <div class="soc-col right-col">
-
-            <!-- Security Overview Cards -->
-            <div class="panel sec-overview-panel" id="secOverview">
-                <div class="panel-hd">
-                    <div class="panel-title-wrap">
-                        <i data-lucide="activity" class="panel-title-icon"></i>
-                        <span class="panel-title">Security Overview</span>
-                    </div>
-                    <div id="roomStatusBadge" style="font-size:0.58rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--t3);background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);padding:0.15rem 0.55rem;border-radius:99px;transition:all 0.3s;font-family:var(--mono);">STANDBY</div>
-                </div>
-                
-                <div class="overview-grid">
-                    <div class="ov-metric">
-                        <div class="ov-metric-top">
-                            <span class="ov-label">SUBJECTS</span>
-                            <i data-lucide="users" class="ov-icon"></i>
-                        </div>
-                        <span class="ov-value" id="ovActive" style="color:#F5F7FA;">0</span>
-                        <span class="ov-sub">In Camera Zone</span>
-                    </div>
-                    <div class="ov-metric">
-                        <div class="ov-metric-top">
-                            <span class="ov-label">ZONE STATUS</span>
-                            <i data-lucide="shield" class="ov-icon" style="color:var(--success);"></i>
-                        </div>
-                        <span class="ov-value green" id="ovVerified" style="color:var(--success);font-size:0.92rem;">STANDBY</span>
-                        <span class="ov-sub">Room Security</span>
-                    </div>
-                    <div class="ov-metric">
-                        <div class="ov-metric-top">
-                            <span class="ov-label">ANOMALIES</span>
-                            <i data-lucide="alert-triangle" class="ov-icon" style="color:var(--warning);"></i>
-                        </div>
-                        <span class="ov-value amber" id="ovReview" style="color:var(--warning);">0</span>
-                        <span class="ov-sub">Active Alerts</span>
-                    </div>
-                    <div class="ov-metric">
-                        <div class="ov-metric-top">
-                            <span class="ov-label">THREAT LEVEL</span>
-                            <i data-lucide="shield-alert" class="ov-icon" style="color:var(--cyan);"></i>
-                        </div>
-                        <span class="ov-value" id="ovHighRisk" style="color:var(--cyan);font-size:0.92rem;">LOW</span>
-                        <span class="ov-sub">Heuristic Index</span>
-                    </div>
-                </div>
-
-                <!-- Dual Radial Gauges for Trust & Risk -->
-                <div class="score-gauges-wrap" id="examScorePanel">
-                    <!-- Trust Score Circular Meter -->
-                    <div class="gauge-card">
-                        <span class="gauge-title">TRUST SCORE</span>
-                        <div class="gauge-svg-wrap">
-                            <svg class="gauge-svg" viewBox="0 0 74 74">
-                                <circle class="gauge-bg-circle" cx="37" cy="37" r="32"></circle>
-                                <circle class="gauge-prog-circle" id="trustProgCircle" cx="37" cy="37" r="32" stroke="var(--success)"></circle>
-                            </svg>
-                            <div class="gauge-center-text">
-                                <span class="gauge-val" id="avgTrustVal" style="color:var(--success);">--</span>
-                            </div>
-                        </div>
-                        <span class="gauge-status" id="trustStatusTag" style="color:var(--success);background:var(--success-dim);">STABLE</span>
-                    </div>
-
-                    <!-- Risk Score Circular Meter -->
-                    <div class="gauge-card">
-                        <span class="gauge-title">RISK SCORE</span>
-                        <div class="gauge-svg-wrap">
-                            <svg class="gauge-svg" viewBox="0 0 74 74">
-                                <circle class="gauge-bg-circle" cx="37" cy="37" r="32"></circle>
-                                <circle class="gauge-prog-circle" id="riskProgCircle" cx="37" cy="37" r="32" stroke="var(--cyan)"></circle>
-                            </svg>
-                            <div class="gauge-center-text">
-                                <span class="gauge-val" id="avgRiskVal" style="color:var(--cyan);">--</span>
-                            </div>
-                        </div>
-                        <span class="gauge-status" id="scoreStatusPill" style="color:var(--cyan);background:var(--accent-dim);">LOW RISK</span>
-                    </div>
-                </div>
-
-                <!-- AI Security Engines Rows -->
-                <div class="engines-section">
-                    <div class="engines-hd">
-                        <span class="engines-title">AI Security Engines</span>
-                        <span class="engines-all-online" id="enginesSummaryText">STANDBY</span>
-                    </div>
-                    <div class="engine-row">
-                        <span class="engine-name">Face Verification (ArcFace)</span>
-                        <span class="engine-status off" id="eng-face"><span class="eng-dot"></span>Offline</span>
-                    </div>
-                    <div class="engine-row">
-                        <span class="engine-name">Phone Detection (YOLO11s)</span>
-                        <span class="engine-status off" id="eng-phone"><span class="eng-dot"></span>Offline</span>
-                    </div>
-                    <div class="engine-row">
-                        <span class="engine-name">Gaze & Pose Tracking</span>
-                        <span class="engine-status off" id="eng-gaze"><span class="eng-dot"></span>Offline</span>
-                    </div>
-                    <div class="engine-row">
-                        <span class="engine-name">Multi-Person AI Vision</span>
-                        <span class="engine-status off" id="eng-multi"><span class="eng-dot"></span>Offline</span>
-                    </div>
-                    <div class="engine-row">
-                        <span class="engine-name">Risk Engine (Heuristic)</span>
-                        <span class="engine-status off" id="eng-risk"><span class="eng-dot"></span>Offline</span>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+                <a class="view-all" href="reports.html">View All Alerts <span aria-hidden="true">&rarr;</span></a>
+            </section>
+        </aside>
     </main>
 
-    <!-- ══ 3. BOTTOM TELEMETRY METRICS STRIP ═══════════════════════ -->
-    <footer class="metrics-strip">
-        <div class="ms-item">
-            <div class="ms-dot" id="ms-face"></div>
-            <span>Face Verification</span>
-        </div>
-        <div class="ms-item">
-            <div class="ms-dot" id="ms-phone"></div>
-            <span>Phone Detection</span>
-        </div>
-        <div class="ms-item">
-            <div class="ms-dot" id="ms-gaze"></div>
-            <span>Gaze Tracking</span>
-        </div>
-        <div class="ms-item">
-            <div class="ms-dot" id="ms-multi"></div>
-            <span>Multi-Person</span>
-        </div>
-        <div class="ms-item">
-            <div class="ms-dot" id="ms-risk"></div>
-            <span>Risk Engine</span>
-        </div>
-
-        <div class="ms-spacer"></div>
-
-        <div class="ms-clock-box">
-            <i data-lucide="radio" style="width:11px;height:11px;color:var(--cyan);"></i>
-            <span>SOC UTC+5:30</span>
-            <span style="color:var(--t3);">|</span>
-            <span id="clockDisplay">--:--:--</span>
-        </div>
+    <!-- ══ STATUS BAR ══════════════════════════════════════════════ -->
+    <footer class="status-bar">
+        <span class="sb-item">
+            <i data-lucide="shield-check" style="width:15px;height:15px;color:var(--accent);"></i>
+            <span>AI Monitoring Active</span>
+        </span>
+        <span class="sb-sep"></span>
+        <span class="sb-item">
+            <span class="live-dot" id="sysHealthDot"></span>
+            <span id="sysHealthText">All systems operational</span>
+        </span>
     </footer>
 
 </div>
@@ -2262,42 +2352,61 @@ function setEnginesState(active) {
 }
 
 // ── DOM ELEMENTS ─────────────────────────────
-const $globalBanner    = document.getElementById('globalStatusBanner');
-const $globalText      = document.getElementById('globalStatusText');
-const $sessionDot      = document.getElementById('sessionStatusDot');
-const $timerDisplay    = document.getElementById('sessionTimerDisplay');
-const $clockDisplay    = document.getElementById('clockDisplay');
-const $unknownBadge    = document.getElementById('unknownCountBadge');
-const $alertsList      = document.getElementById('alertsList');
-const $alertsEmpty     = document.getElementById('alertsEmpty');
-const $feedImg         = document.getElementById('cctvFeedImg');
-const $feedOffline     = document.getElementById('feedOffline');
-const $cctvDot         = document.getElementById('cctvStatusDot');
-const $backendDot      = document.getElementById('backendDot');
-const $backendText     = document.getElementById('backendPillText');
-const $threatMatrixTag = document.getElementById('threatMatrixTag');
-const $hudAlertBanner  = document.getElementById('hudAlertBanner');
-const $hudAlertText    = document.getElementById('hudAlertText');
-const $roomBadge       = document.getElementById('roomStatusBadge');
-const $ovActive        = document.getElementById('ovActive');
-const $ovVerified      = document.getElementById('ovVerified');
-const $ovReview        = document.getElementById('ovReview');
-const $ovHighRisk      = document.getElementById('ovHighRisk');
-const $enginesSummary  = document.getElementById('enginesSummaryText');
-const $startSessionBtn = document.getElementById('startSessionBtn');
-const $endSessionBtn   = document.getElementById('endSessionBtn');
+// The operator layout deliberately omits several diagnostic panels (engine
+// rows, radial gauges, the activity log). The update paths below still compute
+// their values, so instead of scattering null checks through every one, a
+// missing element resolves to an inert stub that swallows reads, writes and
+// method calls. Deleting a panel from the markup can then never break polling.
+const INERT = new Proxy(function () {}, {
+    get(_t, prop) {
+        if (prop === 'textContent' || prop === 'innerHTML' || prop === 'className') return '';
+        if (prop === 'classList') {
+            return { add() {}, remove() {}, toggle() {}, contains() { return false; } };
+        }
+        if (prop === Symbol.toPrimitive || prop === 'toString') return () => '';
+        return INERT;
+    },
+    set() { return true; },
+    apply() { return INERT; }
+});
+const el = id => document.getElementById(id) || INERT;
+
+const $globalBanner    = el('globalStatusBanner');
+const $globalText      = el('globalStatusText');
+const $sessionDot      = el('sessionStatusDot');
+const $timerDisplay    = el('sessionTimerDisplay');
+const $clockDisplay    = el('clockDisplay');
+const $unknownBadge    = el('unknownCountBadge');
+const $alertsList      = el('alertsList');
+const $alertsEmpty     = el('alertsEmpty');
+const $feedImg         = el('cctvFeedImg');
+const $feedOffline     = el('feedOffline');
+const $cctvDot         = el('cctvStatusDot');
+const $backendDot      = el('backendDot');
+const $backendText     = el('backendPillText');
+const $threatMatrixTag = el('threatMatrixTag');
+const $hudAlertBanner  = el('hudAlertBanner');
+const $hudAlertText    = el('hudAlertText');
+const $roomBadge       = el('roomStatusBadge');
+const $ovActive        = el('ovActive');
+const $ovVerified      = el('ovVerified');
+const $ovReview        = el('ovReview');
+const $ovHighRisk      = el('ovHighRisk');
+const $enginesSummary  = el('enginesSummaryText');
+const $startSessionBtn = el('startSessionBtn');
+const $endSessionBtn   = el('endSessionBtn');
 
 // Radial Gauge DOM
-const $avgTrustVal     = document.getElementById('avgTrustVal');
-const $avgRiskVal      = document.getElementById('avgRiskVal');
-const $trustProgCircle = document.getElementById('trustProgCircle');
-const $riskProgCircle  = document.getElementById('riskProgCircle');
-const $trustStatusTag  = document.getElementById('trustStatusTag');
-const $scoreStatusPill = document.getElementById('scoreStatusPill');
+const $avgTrustVal     = el('avgTrustVal');
+const $avgRiskVal      = el('avgRiskVal');
+const $trustProgCircle = el('trustProgCircle');
+const $riskProgCircle  = el('riskProgCircle');
+const $trustStatusTag  = el('trustStatusTag');
+const $scoreStatusPill = el('scoreStatusPill');
 
 // Activity Log DOM
-const $actList         = document.getElementById('activityList');
-const $actEmpty        = document.getElementById('activityEmpty');
+const $actList         = el('activityList');
+const $actEmpty        = el('activityEmpty');
 
 // ── APP STATE ────────────────────────────────
 let displayedStudents  = new Set();
@@ -2561,7 +2670,7 @@ function updateOverview(students) {
         $ovHighRisk.textContent = 'CRITICAL';
         $ovHighRisk.style.color = 'var(--danger)';
         setRoomBadge('HIGH RISK', 'var(--danger)', 'var(--danger-dim)', 'var(--danger-bd)');
-        $threatMatrixTag.textContent = 'DEFENSE: HIGH ALERT';
+        $threatMatrixTag.textContent = 'High alert';
         $threatMatrixTag.style.color = 'var(--danger)';
     } else if (hasWarning) {
         $ovVerified.textContent = 'ELEVATED';
@@ -2569,7 +2678,7 @@ function updateOverview(students) {
         $ovHighRisk.textContent = 'MEDIUM';
         $ovHighRisk.style.color = 'var(--warning)';
         setRoomBadge('ATTENTION', 'var(--warning)', 'var(--warning-dim)', 'var(--warning-bd)');
-        $threatMatrixTag.textContent = 'DEFENSE: ELEVATED';
+        $threatMatrixTag.textContent = 'Elevated';
         $threatMatrixTag.style.color = 'var(--warning)';
     } else if (total > 0) {
         $ovVerified.textContent = 'NOMINAL';
@@ -2577,7 +2686,7 @@ function updateOverview(students) {
         $ovHighRisk.textContent = 'LOW';
         $ovHighRisk.style.color = 'var(--cyan)';
         setRoomBadge('SECURE', 'var(--success)', 'var(--success-dim)', 'var(--success-bd)');
-        $threatMatrixTag.textContent = 'DEFENSE: SECURE';
+        $threatMatrixTag.textContent = 'Nominal';
         $threatMatrixTag.style.color = 'var(--success)';
     } else {
         $ovVerified.textContent = 'STANDBY';
@@ -2585,7 +2694,7 @@ function updateOverview(students) {
         $ovHighRisk.textContent = 'ZERO';
         $ovHighRisk.style.color = 'var(--t3)';
         setRoomBadge('STANDBY', 'var(--t3)', 'rgba(255,255,255,0.04)', 'var(--border-subtle)');
-        $threatMatrixTag.textContent = 'DEFENSE: STANDBY';
+        $threatMatrixTag.textContent = 'Standby';
         $threatMatrixTag.style.color = 'var(--t3)';
     }
 
@@ -2655,6 +2764,82 @@ let sessionStats = {
     multiPersonEvents: 0,
     verified: false
 };
+
+// ── SUBJECT ROSTER (left column) ─────────────────
+// Renders who is in frame right now, worst risk first, so the operator never
+// has to hunt for the subject that needs attention.
+function tierOf(score) {
+    if (score >= 75) return 'critical';
+    if (score >= 50) return 'high';
+    if (score >= 25) return 'medium';
+    return 'low';
+}
+
+const TIER_LABEL = { low: 'Low Risk', medium: 'Medium Risk', high: 'High Risk', critical: 'Critical' };
+
+function renderRoster(students) {
+    const list = document.getElementById('rosterList');
+    const count = document.getElementById('rosterCount');
+    if (!list) return;
+
+    const rows = Array.isArray(students) ? students.slice() : [];
+    if (count) count.textContent = `(${rows.length})`;
+
+    if (!rows.length) {
+        list.innerHTML = '<div class="roster-empty">No students in frame</div>';
+        return;
+    }
+
+    // Highest risk first: the student who needs attention is always on top.
+    rows.sort((a, b) => (b.risk_score || 0) - (a.risk_score || 0));
+
+    list.innerHTML = rows.map((s, i) => {
+        const score = Math.round(s.risk_score || 0);
+        const tier = (s.tier || tierOf(score)).toString().toLowerCase();
+        const known = s.name && !/^unknown$/i.test(s.name);
+        const name = known ? s.name : 'Unidentified';
+        // Roll number if the enrolment carries one, otherwise the track id.
+        const roll = s.roll_no || s.roll || (s.id != null ? `ID ${s.id}` : '');
+        const initial = known ? name.trim().charAt(0).toUpperCase() : '?';
+        return `
+        <div class="roster-row tier-${tier}${i === 0 && score > 0 ? ' is-top' : ''}">
+            <div class="roster-avatar">${escapeHtml(initial)}</div>
+            <div class="roster-id">
+                <span class="roster-name${known ? '' : ' unknown'}">${escapeHtml(name)}</span>
+                <span class="roster-meta">${escapeHtml(roll)}</span>
+            </div>
+            <div class="roster-right">
+                <span class="roster-score">${score}</span>
+                <span class="roster-tier">${TIER_LABEL[tier] || 'Low Risk'}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── CAMERA STATUS PILL ───────────────────────────
+function renderReadout(data) {
+    const set = (id, v) => { const n = document.getElementById(id); if (n) n.textContent = v; };
+    const src = data.video_source === 'cctv' ? 'CCTV' : 'Camera 1';
+    const live = !data.camera_blocked;
+    set('camStatusText', `${src} – ${live ? 'Active' : 'No signal'}`);
+
+    const dot = document.querySelector('.cam-pill .live-dot');
+    if (dot) dot.style.background = live ? 'var(--success)' : 'var(--danger)';
+
+    // Session identity, shown once we know which exam this is.
+    const sid = document.getElementById('sessionIdDisplay');
+    if (sid && data.exam_name) {
+        const d = new Date();
+        const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        sid.textContent = `${String(data.exam_name).toUpperCase().replace(/\s+/g, '-')}-${stamp}`;
+    }
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
 
 // ── STUDENT TELEMETRY CONTROLLER ─────────────────
 function updateStudentsGrid(students) {
@@ -2726,7 +2911,7 @@ function applyFilter() {
     }
 }
 
-document.getElementById('alertFilters').addEventListener('click', e => {
+document.getElementById('alertFilters')?.addEventListener('click', e => {
     const tab = e.target.closest('.af-tab');
     if (!tab) return;
     document.querySelectorAll('.af-tab').forEach(t => t.classList.remove('active'));
@@ -2754,6 +2939,8 @@ async function fetchLiveStatus() {
         updateRoomThreats(data.room_status, data.unknown_count, data.phone_detected, data.book_detected);
         updateStudentsGrid(data.students);
         updateOverview(data.students);
+        renderRoster(data.students);
+        renderReadout(data);
 
         // Security Event Triggers & Alerts
         if (data.phone_detected && !prevAlerts.includes('phone')) {
