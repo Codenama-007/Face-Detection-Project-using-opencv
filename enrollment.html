@@ -252,34 +252,124 @@ p.subtitle {
     line-height: 1.45;
 }
 
-/* Timeline System */
+/* ═════════════════════════════════════════════════════════════════════
+   PREMIUM BIOMETRIC TIMELINE SYSTEM (AEROSPACE/CYBER THEME)
+   ═════════════════════════════════════════════════════════════════════ */
 .timeline-wrapper {
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.85rem;
     position: relative;
+}
+
+.timeline-meta-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.35rem 0.45rem 0.35rem;
+}
+
+.tmb-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.tmb-tag {
+    font-size: 0.62rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: var(--cyan);
+    letter-spacing: 0.08em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.tmb-tag svg,
+.tmb-tag i {
+    width: 12px;
+    height: 12px;
+}
+
+.tmb-sub {
+    font-size: 0.58rem;
+    font-weight: 600;
+    font-family: var(--mono);
+    color: var(--t4);
+    letter-spacing: 0.05em;
+}
+
+.tmb-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.58rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--cyan);
+    background: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.22);
+    padding: 0.15rem 0.55rem;
+    border-radius: 99px;
+}
+
+.tmb-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    animation: tmbBlink 1.8s infinite ease-in-out;
+}
+
+@keyframes tmbBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
 
 .stage-tracker {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(6, 9, 14, 0.75);
-    border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    padding: 0.75rem 0.8rem;
+    background: linear-gradient(180deg, rgba(14, 20, 32, 0.94) 0%, rgba(7, 10, 17, 0.98) 100%);
+    border: 1px solid rgba(0, 229, 255, 0.18);
+    border-radius: 14px;
+    padding: 1.15rem 0.9rem 0.9rem 0.9rem;
     position: relative;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 25px rgba(0, 229, 255, 0.05);
+    overflow: visible;
+}
+
+/* Subtle scanning line across tracker */
+.timeline-scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 229, 255, 0.7) 50%, transparent 100%);
+    opacity: 0.6;
+    animation: timelineScan 4s infinite linear;
+    pointer-events: none;
+    border-radius: 14px 14px 0 0;
+}
+
+@keyframes timelineScan {
+    0% { transform: translateY(0); opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.8; }
+    100% { transform: translateY(68px); opacity: 0; }
 }
 
 .timeline-progress-track {
     position: absolute;
-    top: 18px;
-    left: 8%;
-    right: 8%;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.08);
+    top: 28px;
+    left: 7%;
+    right: 7%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.07);
     z-index: 0;
-    border-radius: 2px;
+    border-radius: 99px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .timeline-progress-fill {
@@ -288,71 +378,168 @@ p.subtitle {
     left: 0;
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #10b981 0%, #00e5ff 100%);
-    border-radius: 2px;
-    transition: width 0.4s ease;
-    box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+    background: linear-gradient(90deg, #10b981 0%, #00e5ff 70%, #38bdf8 100%);
+    border-radius: 99px;
+    transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.6), 0 0 24px rgba(0, 229, 255, 0.25);
+}
+
+.timeline-pulse-spark {
+    position: absolute;
+    right: -5px;
+    top: -4px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #00e5ff;
+    box-shadow: 0 0 12px #00e5ff, 0 0 20px #00e5ff;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.timeline-progress-fill[style*="width"]:not([style*="width: 0%"]):not([style*="width: 0px"]) .timeline-pulse-spark {
+    opacity: 1;
 }
 
 .stage-step {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
     position: relative;
     z-index: 1;
     flex: 1;
     user-select: none;
-    pointer-events: none;
+    cursor: default;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.stage-dot {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #080c14;
-    border: 2px solid var(--t4);
+.stage-dot-wrap {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.58rem;
+}
+
+.stage-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #080d16;
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
     font-family: var(--mono);
     font-weight: 800;
     color: var(--t4);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+    position: relative;
+    z-index: 2;
+}
+
+.stage-dot svg,
+.stage-dot i {
+    width: 14px;
+    height: 14px;
     transition: all 0.3s ease;
 }
 
+.stage-dot .dot-num {
+    display: none;
+}
+
+/* Radar pulse halo around active node */
+.stage-halo {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    right: -7px;
+    bottom: -7px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 229, 255, 0.6);
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.9);
+    transition: opacity 0.3s ease;
+    z-index: 1;
+}
+
+/* Waiting / Inactive Stage */
 .stage-step.waiting .stage-dot {
-    opacity: 0.5;
-    border-color: rgba(255, 255, 255, 0.12);
-    color: var(--t3);
+    opacity: 0.45;
+    background: #060910;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--t4);
+}
+
+.stage-step.waiting:hover {
+    transform: translateY(-2px);
+}
+
+.stage-step.waiting:hover .stage-dot {
+    opacity: 0.8;
+    border-color: rgba(0, 229, 255, 0.35);
+    color: var(--t2);
+}
+
+/* Active Stage */
+.stage-step.active {
+    transform: scale(1.06);
 }
 
 .stage-step.active .stage-dot {
-    background: rgba(0, 229, 255, 0.15);
-    border-color: var(--cyan);
-    color: var(--cyan);
-    box-shadow: 0 0 12px rgba(0, 229, 255, 0.45);
-    animation: stagePulse 2s infinite ease-in-out;
+    background: #091728;
+    border-color: #00e5ff;
+    color: #00e5ff;
+    box-shadow: 0 0 0 5px rgba(0, 229, 255, 0.15), 0 0 20px rgba(0, 229, 255, 0.55), 0 6px 16px rgba(0, 0, 0, 0.6);
 }
 
-@keyframes stagePulse {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 8px rgba(0, 229, 255, 0.35); }
-    50%      { transform: scale(1.12); box-shadow: 0 0 16px rgba(0, 229, 255, 0.65); }
+.stage-step.active .stage-halo {
+    opacity: 1;
+    animation: stageHaloPing 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
+@keyframes stageHaloPing {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.9;
+        border-color: rgba(0, 229, 255, 0.85);
+    }
+    70% {
+        transform: scale(1.5);
+        opacity: 0;
+        border-color: rgba(0, 229, 255, 0);
+    }
+    100% {
+        transform: scale(1.55);
+        opacity: 0;
+    }
+}
+
+/* Completed Stage */
 .stage-step.complete .stage-dot {
-    background: var(--success);
-    border-color: var(--success);
-    color: #ffffff;
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.35);
+    background: #081a14;
+    border-color: #10b981;
+    color: #10b981;
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5);
+    opacity: 0.9;
 }
 
+.stage-step.complete:hover {
+    transform: translateY(-2px);
+    opacity: 1;
+}
+
+/* Error Stage */
 .stage-step.error .stage-dot {
-    background: var(--danger);
-    border-color: var(--danger);
-    color: #ffffff;
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    background: #240b0e;
+    border-color: #ef4444;
+    color: #ef4444;
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.5), 0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
 .stage-meta {
@@ -360,47 +547,241 @@ p.subtitle {
     flex-direction: column;
     align-items: center;
     gap: 1px;
+    margin-top: 1px;
 }
 
 .stage-num {
-    font-size: 0.48rem;
+    font-size: 0.52rem;
     font-weight: 700;
     font-family: var(--mono);
     color: var(--t4);
     letter-spacing: 0.04em;
+    transition: color 0.3s ease;
 }
 
 .stage-label {
-    font-size: 0.54rem;
+    font-size: 0.6rem;
     font-weight: 800;
     font-family: var(--mono);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--t3);
     white-space: nowrap;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+.stage-step.active .stage-num {
+    color: var(--cyan);
 }
 
 .stage-step.active .stage-label {
-    color: var(--cyan);
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.7);
 }
 
 .stage-step.complete .stage-label {
-    color: var(--success);
+    color: #10b981;
 }
 
 .stage-step.error .stage-label {
-    color: var(--danger);
+    color: #ef4444;
+}
+
+/* Tiny ACTIVE badge */
+.stage-active-badge {
+    font-size: 0.44rem;
+    font-weight: 900;
+    font-family: var(--mono);
+    color: #00e5ff;
+    background: rgba(0, 229, 255, 0.12);
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    padding: 0.08rem 0.35rem;
+    border-radius: 99px;
+    letter-spacing: 0.06em;
+    opacity: 0;
+    transform: translateY(3px);
+    transition: all 0.3s ease;
+    display: block;
+    height: 14px;
+    line-height: 12px;
+}
+
+.stage-step.active .stage-active-badge {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Micro-interaction Hover Tooltip */
+.stage-tooltip {
+    position: absolute;
+    bottom: calc(100% + 14px);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    background: rgba(10, 16, 26, 0.96);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    width: 170px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.75), 0 0 16px rgba(0, 229, 255, 0.15);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+    z-index: 999;
+    text-align: center;
+}
+
+.stage-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 229, 255, 0.3) transparent transparent transparent;
+}
+
+.stage-step:hover .stage-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.tt-step {
+    font-size: 0.52rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: var(--cyan);
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+}
+
+.tt-name {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 3px;
+}
+
+.tt-desc {
+    font-size: 0.62rem;
+    color: var(--t2);
+    line-height: 1.35;
+}
+
+/* Active Step Hierarchical Header Box */
+.active-step-header {
+    margin-top: 0.65rem;
+    margin-bottom: 1.15rem;
+    background: linear-gradient(180deg, rgba(14, 21, 33, 0.65) 0%, rgba(8, 12, 20, 0.85) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(0, 229, 255, 0.28);
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.active-step-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan);
+}
+
+.ash-eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+
+.ash-step-tag {
+    font-size: 0.62rem;
+    font-weight: 800;
+    font-family: var(--mono);
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.ash-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.58rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.12rem 0.45rem;
+    border-radius: 99px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ash-status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+}
+
+.ash-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #F5F7FA;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.25rem;
+}
+
+.ash-desc {
+    font-size: 0.76rem;
+    color: var(--t2);
+    line-height: 1.45;
 }
 
 .stage-status-sub {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--cyan);
-    font-family: var(--mono);
-    margin-bottom: 1rem;
-    letter-spacing: 0.02em;
-    min-height: 1.2rem;
-    text-align: center;
+    display: none;
+}
+
+@media (max-width: 680px) {
+    .stage-tracker {
+        padding: 0.85rem 0.5rem 0.75rem 0.5rem;
+    }
+    .stage-dot {
+        width: 26px;
+        height: 26px;
+    }
+    .stage-dot svg, .stage-dot i {
+        width: 12px;
+        height: 12px;
+    }
+    .stage-label {
+        font-size: 0.52rem;
+    }
+    .stage-num {
+        font-size: 0.46rem;
+    }
+    .stage-active-badge {
+        display: none;
+    }
+    .timeline-progress-track {
+        top: 24px;
+        left: 6%;
+        right: 6%;
+    }
+    .stage-tooltip {
+        display: none;
+    }
 }
 
 /* Tabs */
@@ -928,50 +1309,128 @@ p.subtitle {
 
             <!-- Stage Progress Tracker (Live Camera Mode) -->
             <div id="cameraTimeline" class="timeline-wrapper">
-                <div class="stage-tracker">
-                    <div class="timeline-progress-track">
-                        <div class="timeline-progress-fill" id="cameraProgressFill"></div>
+                <div class="timeline-meta-bar">
+                    <div class="tmb-left">
+                        <span class="tmb-tag"><i data-lucide="shield"></i> BIOMETRIC PIPELINE</span>
+                        <span class="tmb-sub">LIVE NEURAL ENROLLMENT</span>
                     </div>
-                    <div class="stage-step active" id="step-cam-identity">
-                        <div class="stage-dot">01</div>
+                    <div class="tmb-right">
+                        <span class="tmb-pill"><span class="tmb-dot"></span> 6 STAGES</span>
+                    </div>
+                </div>
+                <div class="stage-tracker">
+                    <div class="timeline-scan-line"></div>
+                    <div class="timeline-progress-track">
+                        <div class="timeline-progress-fill" id="cameraProgressFill">
+                            <div class="timeline-pulse-spark"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 01: Identity -->
+                    <div class="stage-step active" id="step-cam-identity" data-step-num="01" data-step-name="IDENTITY" data-step-desc="Capture candidate identity information." data-icon="user">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="user"></i><span class="dot-num">01</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">01</span>
                             <span class="stage-label">Identity</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 01</div>
+                            <div class="tt-name">IDENTITY</div>
+                            <div class="tt-desc">Capture candidate identity information.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-cam-camera">
-                        <div class="stage-dot">02</div>
+
+                    <!-- Step 02: Camera -->
+                    <div class="stage-step waiting" id="step-cam-camera" data-step-num="02" data-step-name="CAMERA" data-step-desc="Initialize secure camera capture." data-icon="camera">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="camera"></i><span class="dot-num">02</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">02</span>
                             <span class="stage-label">Camera</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 02</div>
+                            <div class="tt-name">CAMERA</div>
+                            <div class="tt-desc">Initialize secure camera capture.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-cam-facescan">
-                        <div class="stage-dot">03</div>
+
+                    <!-- Step 03: Scan -->
+                    <div class="stage-step waiting" id="step-cam-facescan" data-step-num="03" data-step-name="SCAN" data-step-desc="Analyze facial biometric landmarks." data-icon="scan-face">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="scan-face"></i><span class="dot-num">03</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">03</span>
                             <span class="stage-label">Scan</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 03</div>
+                            <div class="tt-name">SCAN</div>
+                            <div class="tt-desc">Analyze facial biometric landmarks.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-cam-align">
-                        <div class="stage-dot">04</div>
+
+                    <!-- Step 04: Align -->
+                    <div class="stage-step waiting" id="step-cam-align" data-step-num="04" data-step-name="ALIGN" data-step-desc="Optimize face position and image quality." data-icon="crosshair">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="crosshair"></i><span class="dot-num">04</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">04</span>
                             <span class="stage-label">Align</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 04</div>
+                            <div class="tt-name">ALIGN</div>
+                            <div class="tt-desc">Optimize face position and image quality.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-cam-enroll">
-                        <div class="stage-dot">05</div>
+
+                    <!-- Step 05: Enroll -->
+                    <div class="stage-step waiting" id="step-cam-enroll" data-step-num="05" data-step-name="ENROLL" data-step-desc="Create the biometric enrollment profile." data-icon="fingerprint">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="fingerprint"></i><span class="dot-num">05</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">05</span>
                             <span class="stage-label">Enroll</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 05</div>
+                            <div class="tt-name">ENROLL</div>
+                            <div class="tt-desc">Create the biometric enrollment profile.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-cam-ready">
-                        <div class="stage-dot">06</div>
+
+                    <!-- Step 06: Ready -->
+                    <div class="stage-step waiting" id="step-cam-ready" data-step-num="06" data-step-name="READY" data-step-desc="Identity is ready for secure verification." data-icon="shield-check">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="shield-check"></i><span class="dot-num">06</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">06</span>
                             <span class="stage-label">Ready</span>
+                        </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 06</div>
+                            <div class="tt-name">READY</div>
+                            <div class="tt-desc">Identity is ready for secure verification.</div>
                         </div>
                     </div>
                 </div>
@@ -979,53 +1438,141 @@ p.subtitle {
 
             <!-- Stage Progress Tracker (Batch Upload Mode) -->
             <div id="batchTimeline" class="timeline-wrapper" style="display: none;">
-                <div class="stage-tracker">
-                    <div class="timeline-progress-track">
-                        <div class="timeline-progress-fill" id="batchProgressFill"></div>
+                <div class="timeline-meta-bar">
+                    <div class="tmb-left">
+                        <span class="tmb-tag"><i data-lucide="layers"></i> BATCH PIPELINE</span>
+                        <span class="tmb-sub">BULK PHOTO REGISTRATION</span>
                     </div>
-                    <div class="stage-step active" id="step-batch-select">
-                        <div class="stage-dot">01</div>
+                    <div class="tmb-right">
+                        <span class="tmb-pill"><span class="tmb-dot"></span> 6 STAGES</span>
+                    </div>
+                </div>
+                <div class="stage-tracker">
+                    <div class="timeline-scan-line"></div>
+                    <div class="timeline-progress-track">
+                        <div class="timeline-progress-fill" id="batchProgressFill">
+                            <div class="timeline-pulse-spark"></div>
+                        </div>
+                    </div>
+
+                    <!-- Step 01: Select -->
+                    <div class="stage-step active" id="step-batch-select" data-step-num="01" data-step-name="SELECT" data-step-desc="Select candidate photos or ID cards." data-icon="file-up">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="file-up"></i><span class="dot-num">01</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">01</span>
                             <span class="stage-label">Select</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 01</div>
+                            <div class="tt-name">SELECT</div>
+                            <div class="tt-desc">Select candidate photos or ID cards.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-batch-validate">
-                        <div class="stage-dot">02</div>
+
+                    <!-- Step 02: Validate -->
+                    <div class="stage-step waiting" id="step-batch-validate" data-step-num="02" data-step-name="VALIDATE" data-step-desc="Validate identity data and image quality." data-icon="check-square">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="check-square"></i><span class="dot-num">02</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">02</span>
                             <span class="stage-label">Validate</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 02</div>
+                            <div class="tt-name">VALIDATE</div>
+                            <div class="tt-desc">Validate identity data and image quality.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-batch-review">
-                        <div class="stage-dot">03</div>
+
+                    <!-- Step 03: Review -->
+                    <div class="stage-step waiting" id="step-batch-review" data-step-num="03" data-step-name="REVIEW" data-step-desc="Review detected biometric information." data-icon="eye">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="eye"></i><span class="dot-num">03</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">03</span>
                             <span class="stage-label">Review</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 03</div>
+                            <div class="tt-name">REVIEW</div>
+                            <div class="tt-desc">Review detected biometric information.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-batch-process">
-                        <div class="stage-dot">04</div>
+
+                    <!-- Step 04: Process -->
+                    <div class="stage-step waiting" id="step-batch-process" data-step-num="04" data-step-name="PROCESS" data-step-desc="Process biometric enrollment data." data-icon="cpu">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="cpu"></i><span class="dot-num">04</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">04</span>
                             <span class="stage-label">Process</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 04</div>
+                            <div class="tt-name">PROCESS</div>
+                            <div class="tt-desc">Process biometric enrollment data.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-batch-enroll">
-                        <div class="stage-dot">05</div>
+
+                    <!-- Step 05: Enroll -->
+                    <div class="stage-step waiting" id="step-batch-enroll" data-step-num="05" data-step-name="ENROLL" data-step-desc="Create the secure biometric profile." data-icon="user-plus">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="user-plus"></i><span class="dot-num">05</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">05</span>
                             <span class="stage-label">Enroll</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 05</div>
+                            <div class="tt-name">ENROLL</div>
+                            <div class="tt-desc">Create the secure biometric profile.</div>
+                        </div>
                     </div>
-                    <div class="stage-step waiting" id="step-batch-complete">
-                        <div class="stage-dot">06</div>
+
+                    <!-- Step 06: Complete -->
+                    <div class="stage-step waiting" id="step-batch-complete" data-step-num="06" data-step-name="COMPLETE" data-step-desc="Enrollment completed successfully." data-icon="check-circle-2">
+                        <div class="stage-dot-wrap">
+                            <div class="stage-halo"></div>
+                            <div class="stage-dot"><i data-lucide="check-circle-2"></i><span class="dot-num">06</span></div>
+                        </div>
                         <div class="stage-meta">
                             <span class="stage-num">06</span>
                             <span class="stage-label">Complete</span>
                         </div>
+                        <span class="stage-active-badge">ACTIVE</span>
+                        <div class="stage-tooltip">
+                            <div class="tt-step">STEP 06</div>
+                            <div class="tt-name">COMPLETE</div>
+                            <div class="tt-desc">Enrollment completed successfully.</div>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Active Step Hierarchical Header -->
+            <div class="active-step-header" id="activeStepHeader">
+                <div class="ash-eyebrow">
+                    <span class="ash-step-tag" id="ashStepTag">STEP 01 / IDENTITY</span>
+                    <span class="ash-status-pill" id="ashStatusPill"><span class="ash-status-dot"></span> <span id="ashStatusText">SYSTEM READY</span></span>
+                </div>
+                <div class="ash-title" id="ashTitle">IDENTITY REGISTRATION</div>
+                <div class="ash-desc" id="ashDesc">Enter candidate full name and student ID to initiate biometric enrollment.</div>
             </div>
 
             <div class="stage-status-sub" id="timelineStatus">Enter student full name & identification ID</div>
@@ -1258,16 +1805,156 @@ p.subtitle {
             complete: document.getElementById('step-batch-complete')
         };
 
-        function setStepVisual(stepEl, numStr, state) {
+        // Step Metadata Registry for Active Step Header & Micro-interactions
+        const stepDetails = {
+            cam: {
+                identity: {
+                    eyebrow: 'STEP 01 / IDENTITY',
+                    title: 'IDENTITY REGISTRATION',
+                    desc: 'Enter candidate full name and student ID to initiate biometric enrollment.',
+                    status: 'INPUT REQUIRED',
+                    statusType: 'warn',
+                    icon: 'user'
+                },
+                camera: {
+                    eyebrow: 'STEP 02 / CAMERA',
+                    title: 'SENSOR INITIALIZATION',
+                    desc: 'Establishing secure ultra-low latency webcam stream for biometric capture.',
+                    status: 'INITIALIZING',
+                    statusType: 'warn',
+                    icon: 'camera'
+                },
+                facescan: {
+                    eyebrow: 'STEP 03 / SCAN',
+                    title: 'FACIAL SCANNING',
+                    desc: 'Continuous real-time skin and facial landmark detection in progress.',
+                    status: 'SCANNING SENSOR',
+                    statusType: 'active',
+                    icon: 'scan-face'
+                },
+                align: {
+                    eyebrow: 'STEP 04 / ALIGN',
+                    title: 'LANDMARK ALIGNMENT',
+                    desc: 'Position face centered in the reticle with direct lighting and steady gaze.',
+                    status: 'ALIGNING FACE',
+                    statusType: 'active',
+                    icon: 'crosshair'
+                },
+                enroll: {
+                    eyebrow: 'STEP 05 / ENROLL',
+                    title: 'ARC-FACE VECTOR EXTRACTION',
+                    desc: 'Extracting 512D ArcFace facial embeddings and registering identity template.',
+                    status: 'READY TO ENROLL',
+                    statusType: 'ok',
+                    icon: 'fingerprint'
+                },
+                ready: {
+                    eyebrow: 'STEP 06 / READY',
+                    title: 'BIOMETRIC ENROLLMENT VERIFIED',
+                    desc: 'Biometric Face ID profile registered successfully. Candidate is authenticated for exam.',
+                    status: 'VERIFIED & READY',
+                    statusType: 'ok',
+                    icon: 'shield-check'
+                }
+            },
+            batch: {
+                select: {
+                    eyebrow: 'STEP 01 / SELECT',
+                    title: 'PHOTO FILE SELECTION',
+                    desc: 'Select candidate photos or ID cards for automated bulk neural registration.',
+                    status: 'WAITING FOR FILES',
+                    statusType: 'ready',
+                    icon: 'file-up'
+                },
+                validate: {
+                    eyebrow: 'STEP 02 / VALIDATE',
+                    title: 'FORMAT & DIMENSION CHECK',
+                    desc: 'Validating image resolution, aspect ratio, and facial clarity standards.',
+                    status: 'VALIDATING FILES',
+                    statusType: 'active',
+                    icon: 'check-square'
+                },
+                review: {
+                    eyebrow: 'STEP 03 / REVIEW',
+                    title: 'CANDIDATE METADATA REVIEW',
+                    desc: 'Verify and assign student IDs and full names for all selected image records.',
+                    status: 'METADATA REQUIRED',
+                    statusType: 'warn',
+                    icon: 'eye'
+                },
+                process: {
+                    eyebrow: 'STEP 04 / PROCESS',
+                    title: 'BATCH QUEUE READY',
+                    desc: 'All candidate records confirmed. Ready to submit for deep neural extraction.',
+                    status: 'READY FOR BATCH',
+                    statusType: 'ok',
+                    icon: 'cpu'
+                },
+                enroll: {
+                    eyebrow: 'STEP 05 / ENROLL',
+                    title: 'NEURAL EMBEDDINGS GENERATION',
+                    desc: 'Generating facial feature vectors and storing biometric gallery across batch.',
+                    status: 'PROCESSING BATCH',
+                    statusType: 'active',
+                    icon: 'user-plus'
+                },
+                complete: {
+                    eyebrow: 'STEP 06 / COMPLETE',
+                    title: 'BATCH ENROLLMENT COMPLETE',
+                    desc: 'All candidate biometric profiles successfully verified and saved to database.',
+                    status: 'BATCH VERIFIED',
+                    statusType: 'ok',
+                    icon: 'check-circle-2'
+                }
+            }
+        };
+
+        function setStepVisual(stepEl, numStr, state, defaultIcon) {
             if (!stepEl) return;
             const dot = stepEl.querySelector('.stage-dot');
             stepEl.className = 'stage-step ' + state;
+            const iconName = stepEl.getAttribute('data-icon') || defaultIcon || 'circle';
+
             if (state === 'complete') {
-                dot.innerHTML = '✓';
+                dot.innerHTML = '<i data-lucide="check" style="color:#10b981;width:14px;height:14px;"></i>';
             } else if (state === 'error') {
-                dot.innerHTML = '!';
+                dot.innerHTML = '<span style="font-weight:900;color:#ef4444;">!</span>';
             } else {
-                dot.innerHTML = numStr;
+                dot.innerHTML = `<i data-lucide="${iconName}"></i><span class="dot-num">${numStr}</span>`;
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function updateActiveStepHeader(mode, stepKey, customDesc, customStatus, customStatusType) {
+            const data = (stepDetails[mode] && stepDetails[mode][stepKey]) || {};
+            const eyebrowEl = document.getElementById('ashStepTag');
+            const titleEl = document.getElementById('ashTitle');
+            const descEl = document.getElementById('ashDesc');
+            const statusTextEl = document.getElementById('ashStatusText');
+            const statusDotEl = document.querySelector('.ash-status-dot');
+
+            if (eyebrowEl && data.eyebrow) eyebrowEl.textContent = data.eyebrow;
+            if (titleEl && data.title) titleEl.textContent = data.title;
+            if (descEl) descEl.textContent = customDesc || data.desc || '';
+
+            const status = customStatus || data.status || 'SYSTEM READY';
+            if (statusTextEl) statusTextEl.textContent = status;
+
+            const sType = customStatusType || data.statusType || 'ready';
+            if (statusDotEl) {
+                if (sType === 'ok' || sType === 'complete') {
+                    statusDotEl.style.background = '#10b981';
+                    statusDotEl.style.boxShadow = '0 0 6px #10b981';
+                } else if (sType === 'error') {
+                    statusDotEl.style.background = '#ef4444';
+                    statusDotEl.style.boxShadow = '0 0 6px #ef4444';
+                } else if (sType === 'warn') {
+                    statusDotEl.style.background = '#f59e0b';
+                    statusDotEl.style.boxShadow = '0 0 6px #f59e0b';
+                } else {
+                    statusDotEl.style.background = '#00e5ff';
+                    statusDotEl.style.boxShadow = '0 0 6px #00e5ff';
+                }
             }
         }
 
@@ -1284,81 +1971,90 @@ p.subtitle {
 
             // 1. IDENTITY
             if (!camState.identity) {
-                setStepVisual(camSteps.identity, '01', 'active');
-                setStepVisual(camSteps.camera, '02', 'waiting');
-                setStepVisual(camSteps.facescan, '03', 'waiting');
-                setStepVisual(camSteps.align, '04', 'waiting');
-                setStepVisual(camSteps.enroll, '05', 'waiting');
-                setStepVisual(camSteps.ready, '06', 'waiting');
+                setStepVisual(camSteps.identity, '01', 'active', 'user');
+                setStepVisual(camSteps.camera, '02', 'waiting', 'camera');
+                setStepVisual(camSteps.facescan, '03', 'waiting', 'scan-face');
+                setStepVisual(camSteps.align, '04', 'waiting', 'crosshair');
+                setStepVisual(camSteps.enroll, '05', 'waiting', 'fingerprint');
+                setStepVisual(camSteps.ready, '06', 'waiting', 'shield-check');
                 progress = 0;
                 statusText = '01 IDENTITY — Enter student full name & identification ID';
+                updateActiveStepHeader('cam', 'identity', 'Enter student full name & identification ID to begin biometric enrollment.', 'INPUT REQUIRED', 'warn');
             } else {
-                setStepVisual(camSteps.identity, '01', 'complete');
+                setStepVisual(camSteps.identity, '01', 'complete', 'user');
                 progress = 20;
 
                 // 2. CAMERA
                 if (camState.cameraError) {
-                    setStepVisual(camSteps.camera, '02', 'error');
-                    setStepVisual(camSteps.facescan, '03', 'waiting');
-                    setStepVisual(camSteps.align, '04', 'waiting');
-                    setStepVisual(camSteps.enroll, '05', 'waiting');
-                    setStepVisual(camSteps.ready, '06', 'waiting');
+                    setStepVisual(camSteps.camera, '02', 'error', 'camera');
+                    setStepVisual(camSteps.facescan, '03', 'waiting', 'scan-face');
+                    setStepVisual(camSteps.align, '04', 'waiting', 'crosshair');
+                    setStepVisual(camSteps.enroll, '05', 'waiting', 'fingerprint');
+                    setStepVisual(camSteps.ready, '06', 'waiting', 'shield-check');
                     statusText = '02 CAMERA — Connection failed: ' + camState.cameraError;
+                    updateActiveStepHeader('cam', 'camera', 'Camera sensor access error: ' + camState.cameraError, 'SENSOR ERROR', 'error');
                 } else if (!camState.cameraConnected) {
-                    setStepVisual(camSteps.camera, '02', 'active');
-                    setStepVisual(camSteps.facescan, '03', 'waiting');
-                    setStepVisual(camSteps.align, '04', 'waiting');
-                    setStepVisual(camSteps.enroll, '05', 'waiting');
-                    setStepVisual(camSteps.ready, '06', 'waiting');
+                    setStepVisual(camSteps.camera, '02', 'active', 'camera');
+                    setStepVisual(camSteps.facescan, '03', 'waiting', 'scan-face');
+                    setStepVisual(camSteps.align, '04', 'waiting', 'crosshair');
+                    setStepVisual(camSteps.enroll, '05', 'waiting', 'fingerprint');
+                    setStepVisual(camSteps.ready, '06', 'waiting', 'shield-check');
                     statusText = '02 CAMERA — Initializing camera feed...';
+                    updateActiveStepHeader('cam', 'camera', 'Initializing camera feed and optical sensor pipeline...', 'INITIALIZING SENSOR', 'warn');
                 } else {
-                    setStepVisual(camSteps.camera, '02', 'complete');
+                    setStepVisual(camSteps.camera, '02', 'complete', 'camera');
                     progress = 40;
 
                     // 3. FACE SCAN
                     if (!camState.faceDetected) {
-                        setStepVisual(camSteps.facescan, '03', 'active');
-                        setStepVisual(camSteps.align, '04', 'waiting');
-                        setStepVisual(camSteps.enroll, '05', 'waiting');
-                        setStepVisual(camSteps.ready, '06', 'waiting');
+                        setStepVisual(camSteps.facescan, '03', 'active', 'scan-face');
+                        setStepVisual(camSteps.align, '04', 'waiting', 'crosshair');
+                        setStepVisual(camSteps.enroll, '05', 'waiting', 'fingerprint');
+                        setStepVisual(camSteps.ready, '06', 'waiting', 'shield-check');
                         statusText = '03 SCAN — Scanning for face in camera frame...';
+                        updateActiveStepHeader('cam', 'facescan', 'Scanning for face in camera frame. Ensure adequate lighting.', 'SCANNING SENSOR', 'active');
                     } else {
-                        setStepVisual(camSteps.facescan, '03', 'complete');
+                        setStepVisual(camSteps.facescan, '03', 'complete', 'scan-face');
                         progress = 60;
 
                         // 4. ALIGN
                         if (!camState.faceAligned) {
-                            setStepVisual(camSteps.align, '04', 'active');
-                            setStepVisual(camSteps.enroll, '05', 'waiting');
-                            setStepVisual(camSteps.ready, '06', 'waiting');
+                            setStepVisual(camSteps.align, '04', 'active', 'crosshair');
+                            setStepVisual(camSteps.enroll, '05', 'waiting', 'fingerprint');
+                            setStepVisual(camSteps.ready, '06', 'waiting', 'shield-check');
                             statusText = '04 ALIGN — Position your face centered inside the frame reticle';
+                            updateActiveStepHeader('cam', 'align', 'Position face centered in the reticle with neutral head pose.', 'ALIGNING FACE', 'active');
                         } else if (!camState.enrolling && !camState.enrollSuccess && !camState.enrollError) {
-                            setStepVisual(camSteps.align, '04', 'complete');
-                            setStepVisual(camSteps.enroll, '05', 'active');
-                            setStepVisual(camSteps.ready, '06', 'waiting');
+                            setStepVisual(camSteps.align, '04', 'complete', 'crosshair');
+                            setStepVisual(camSteps.enroll, '05', 'active', 'fingerprint');
+                            setStepVisual(camSteps.ready, '06', 'waiting', 'shield-check');
                             progress = 80;
                             statusText = '05 ENROLL — Face aligned · Click "Register Biometric Face ID"';
+                            updateActiveStepHeader('cam', 'enroll', 'Face aligned and verified. Click "Register Biometric Face ID" below.', 'READY TO ENROLL', 'ok');
                         } else if (camState.enrolling) {
                             // 5. ENROLL (Processing)
-                            setStepVisual(camSteps.align, '04', 'complete');
-                            setStepVisual(camSteps.enroll, '05', 'active');
-                            setStepVisual(camSteps.ready, '06', 'waiting');
+                            setStepVisual(camSteps.align, '04', 'complete', 'crosshair');
+                            setStepVisual(camSteps.enroll, '05', 'active', 'fingerprint');
+                            setStepVisual(camSteps.ready, '06', 'waiting', 'shield-check');
                             progress = 80;
                             statusText = '05 ENROLL — ' + (camState.enrollMessage || 'Extracting facial landmarks & registering template...');
+                            updateActiveStepHeader('cam', 'enroll', camState.enrollMessage || 'Extracting facial landmarks & registering ArcFace template...', 'EXTRACTING VECTORS', 'active');
                         } else if (camState.enrollError) {
                             // 5. ENROLL (Error)
-                            setStepVisual(camSteps.align, '04', 'complete');
-                            setStepVisual(camSteps.enroll, '05', 'error');
-                            setStepVisual(camSteps.ready, '06', 'waiting');
+                            setStepVisual(camSteps.align, '04', 'complete', 'crosshair');
+                            setStepVisual(camSteps.enroll, '05', 'error', 'fingerprint');
+                            setStepVisual(camSteps.ready, '06', 'waiting', 'shield-check');
                             progress = 80;
                             statusText = '05 ENROLL — ' + camState.enrollError;
+                            updateActiveStepHeader('cam', 'enroll', camState.enrollError, 'ENROLLMENT FAILED', 'error');
                         } else if (camState.enrollSuccess) {
                             // 6. READY (Success)
-                            setStepVisual(camSteps.align, '04', 'complete');
-                            setStepVisual(camSteps.enroll, '05', 'complete');
-                            setStepVisual(camSteps.ready, '06', 'complete');
+                            setStepVisual(camSteps.align, '04', 'complete', 'crosshair');
+                            setStepVisual(camSteps.enroll, '05', 'complete', 'fingerprint');
+                            setStepVisual(camSteps.ready, '06', 'complete', 'shield-check');
                             progress = 100;
                             statusText = '06 READY — Identity biometric enrollment verified and ready!';
+                            updateActiveStepHeader('cam', 'ready', 'Identity biometric enrollment verified into SOC gallery and ready for monitoring!', 'ENROLLMENT VERIFIED', 'ok');
                         }
                     }
                 }
@@ -1379,65 +2075,72 @@ p.subtitle {
             const allNamed = hasFiles && selectedFilesData.every(x => x.studentId.trim() && x.studentName.trim());
 
             if (!hasFiles) {
-                setStepVisual(batchSteps.select, '01', 'active');
-                setStepVisual(batchSteps.validate, '02', 'waiting');
-                setStepVisual(batchSteps.review, '03', 'waiting');
-                setStepVisual(batchSteps.process, '04', 'waiting');
-                setStepVisual(batchSteps.enroll, '05', 'waiting');
-                setStepVisual(batchSteps.complete, '06', 'waiting');
+                setStepVisual(batchSteps.select, '01', 'active', 'file-up');
+                setStepVisual(batchSteps.validate, '02', 'waiting', 'check-square');
+                setStepVisual(batchSteps.review, '03', 'waiting', 'eye');
+                setStepVisual(batchSteps.process, '04', 'waiting', 'cpu');
+                setStepVisual(batchSteps.enroll, '05', 'waiting', 'user-plus');
+                setStepVisual(batchSteps.complete, '06', 'waiting', 'check-circle-2');
                 progress = 0;
                 statusText = '01 SELECT — Select candidate photos or ID cards for batch enrollment';
+                updateActiveStepHeader('batch', 'select', 'Select candidate photos or ID cards for batch enrollment.', 'WAITING FOR FILES', 'ready');
             } else {
-                setStepVisual(batchSteps.select, '01', 'complete');
+                setStepVisual(batchSteps.select, '01', 'complete', 'file-up');
                 progress = 20;
 
                 // 2. VALIDATE
                 if (!batchState.isValid) {
-                    setStepVisual(batchSteps.validate, '02', 'active');
-                    setStepVisual(batchSteps.review, '03', 'waiting');
-                    setStepVisual(batchSteps.process, '04', 'waiting');
-                    setStepVisual(batchSteps.enroll, '05', 'waiting');
-                    setStepVisual(batchSteps.complete, '06', 'waiting');
+                    setStepVisual(batchSteps.validate, '02', 'active', 'check-square');
+                    setStepVisual(batchSteps.review, '03', 'waiting', 'eye');
+                    setStepVisual(batchSteps.process, '04', 'waiting', 'cpu');
+                    setStepVisual(batchSteps.enroll, '05', 'waiting', 'user-plus');
+                    setStepVisual(batchSteps.complete, '06', 'waiting', 'check-circle-2');
                     statusText = '02 VALIDATE — Validating file formats and dimensions...';
+                    updateActiveStepHeader('batch', 'validate', 'Validating image resolution, file formats, and facial dimensions...', 'VALIDATING FILES', 'active');
                 } else {
-                    setStepVisual(batchSteps.validate, '02', 'complete');
+                    setStepVisual(batchSteps.validate, '02', 'complete', 'check-square');
                     progress = 40;
 
                     // 3. REVIEW
                     if (!allNamed) {
-                        setStepVisual(batchSteps.review, '03', 'active');
-                        setStepVisual(batchSteps.process, '04', 'waiting');
-                        setStepVisual(batchSteps.enroll, '05', 'waiting');
-                        setStepVisual(batchSteps.complete, '06', 'waiting');
+                        setStepVisual(batchSteps.review, '03', 'active', 'eye');
+                        setStepVisual(batchSteps.process, '04', 'waiting', 'cpu');
+                        setStepVisual(batchSteps.enroll, '05', 'waiting', 'user-plus');
+                        setStepVisual(batchSteps.complete, '06', 'waiting', 'check-circle-2');
                         statusText = '03 REVIEW — Assign Student ID and Name for all uploaded images';
+                        updateActiveStepHeader('batch', 'review', 'Assign Student ID and Name for all uploaded images to proceed.', 'METADATA REQUIRED', 'warn');
                     } else if (!batchState.enrolling && !batchState.enrollSuccess && !batchState.enrollError) {
-                        setStepVisual(batchSteps.review, '03', 'complete');
-                        setStepVisual(batchSteps.process, '04', 'active');
-                        setStepVisual(batchSteps.enroll, '05', 'waiting');
-                        setStepVisual(batchSteps.complete, '06', 'waiting');
+                        setStepVisual(batchSteps.review, '03', 'complete', 'eye');
+                        setStepVisual(batchSteps.process, '04', 'active', 'cpu');
+                        setStepVisual(batchSteps.enroll, '05', 'waiting', 'user-plus');
+                        setStepVisual(batchSteps.complete, '06', 'waiting', 'check-circle-2');
                         progress = 60;
                         statusText = `04 PROCESS — ${selectedFilesData.length} photo(s) reviewed · Click "Enroll Batch Selected"`;
+                        updateActiveStepHeader('batch', 'process', `${selectedFilesData.length} photo(s) reviewed. Click "Enroll Batch Selected" below.`, 'READY TO ENROLL', 'ok');
                     } else if (batchState.enrolling) {
-                        setStepVisual(batchSteps.review, '03', 'complete');
-                        setStepVisual(batchSteps.process, '04', 'complete');
-                        setStepVisual(batchSteps.enroll, '05', 'active');
-                        setStepVisual(batchSteps.complete, '06', 'waiting');
+                        setStepVisual(batchSteps.review, '03', 'complete', 'eye');
+                        setStepVisual(batchSteps.process, '04', 'complete', 'cpu');
+                        setStepVisual(batchSteps.enroll, '05', 'active', 'user-plus');
+                        setStepVisual(batchSteps.complete, '06', 'waiting', 'check-circle-2');
                         progress = 80;
                         statusText = `05 ENROLL — Processing neural facial vectors (${batchState.processedCount}/${batchState.totalCount})...`;
+                        updateActiveStepHeader('batch', 'enroll', `Extracting neural vectors and enrolling batch (${batchState.processedCount}/${batchState.totalCount})...`, 'BATCH PROCESSING', 'active');
                     } else if (batchState.enrollError) {
-                        setStepVisual(batchSteps.review, '03', 'complete');
-                        setStepVisual(batchSteps.process, '04', 'complete');
-                        setStepVisual(batchSteps.enroll, '05', 'error');
-                        setStepVisual(batchSteps.complete, '06', 'waiting');
+                        setStepVisual(batchSteps.review, '03', 'complete', 'eye');
+                        setStepVisual(batchSteps.process, '04', 'complete', 'cpu');
+                        setStepVisual(batchSteps.enroll, '05', 'error', 'user-plus');
+                        setStepVisual(batchSteps.complete, '06', 'waiting', 'check-circle-2');
                         progress = 80;
                         statusText = '05 ENROLL — ' + batchState.enrollError;
+                        updateActiveStepHeader('batch', 'enroll', batchState.enrollError, 'BATCH ERROR', 'error');
                     } else if (batchState.enrollSuccess) {
-                        setStepVisual(batchSteps.review, '03', 'complete');
-                        setStepVisual(batchSteps.process, '04', 'complete');
-                        setStepVisual(batchSteps.enroll, '05', 'complete');
-                        setStepVisual(batchSteps.complete, '06', 'complete');
+                        setStepVisual(batchSteps.review, '03', 'complete', 'eye');
+                        setStepVisual(batchSteps.process, '04', 'complete', 'cpu');
+                        setStepVisual(batchSteps.enroll, '05', 'complete', 'user-plus');
+                        setStepVisual(batchSteps.complete, '06', 'complete', 'check-circle-2');
                         progress = 100;
                         statusText = '06 COMPLETE — Batch identity enrollment completed successfully!';
+                        updateActiveStepHeader('batch', 'complete', 'All candidate biometric profiles successfully registered into database!', 'BATCH COMPLETED', 'ok');
                     }
                 }
             }

@@ -14,8 +14,6 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import base64
-import hmac
-import hashlib
 import struct
 from ultralytics import YOLO
 from deep_sort_realtime.deepsort_tracker import DeepSort
@@ -522,7 +520,8 @@ def init_db():
 
         # Seed default institution if table empty
         cursor.execute("SELECT COUNT(*) FROM institutions;")
-        if cursor.fetchone()[0] == 0:
+        _row = cursor.fetchone()
+        if _row is not None and _row[0] == 0:
             cursor.execute("""
                 INSERT INTO institutions (institution_id, institution_name, institution_type, country, state, city, email, contact, institution_code, status)
                 VALUES ('INST-001', 'Apex Institute of Technology', 'University', 'United States', 'California', 'San Francisco', 'admin@apex.edu', '+1 (555) 019-2834', 'AIT-001', 'ACTIVE');
@@ -530,7 +529,8 @@ def init_db():
 
         # Seed single platform Admin if not exists
         cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'ADMIN';")
-        if cursor.fetchone()[0] == 0:
+        _row = cursor.fetchone()
+        if _row is not None and _row[0] == 0:
             admin_hash = generate_password_hash("Admin@ProctorAI2026")
             cursor.execute("""
                 INSERT INTO users (name, username, password_hash, role, institution_id, status, mfa_secret, mfa_enabled)
@@ -539,7 +539,8 @@ def init_db():
 
         # Seed default Faculty user for INST-001 if not exists
         cursor.execute("SELECT COUNT(*) FROM users WHERE role IN ('FACULTY', 'SUPERVISOR');")
-        if cursor.fetchone()[0] == 0:
+        _row = cursor.fetchone()
+        if _row is not None and _row[0] == 0:
             faculty_hash = generate_password_hash("Faculty@123")
             cursor.execute("""
                 INSERT INTO users (name, username, password_hash, role, institution_id, status, mfa_secret, mfa_enabled)
@@ -1275,19 +1276,24 @@ def admin_overview():
         conn = psycopg2.connect(DB_URL)
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*), COUNT(CASE WHEN status='ACTIVE' THEN 1 END) FROM institutions;")
-        total_inst, active_inst = cursor.fetchone()
+        _inst_row = cursor.fetchone()
+        total_inst, active_inst = (_inst_row[0], _inst_row[1]) if _inst_row is not None else (0, 0)
 
         cursor.execute("SELECT COUNT(*) FROM users WHERE role='SUPERVISOR' AND status='ACTIVE';")
-        total_sup = cursor.fetchone()[0]
+        _sup_row = cursor.fetchone()
+        total_sup = _sup_row[0] if _sup_row is not None else 0
 
         cursor.execute("SELECT COUNT(*) FROM users WHERE role='STUDENT' AND status='ACTIVE';")
-        total_stu = cursor.fetchone()[0]
+        _stu_row = cursor.fetchone()
+        total_stu = _stu_row[0] if _stu_row is not None else 0
 
         cursor.execute("SELECT COUNT(*) FROM exam_logs;")
-        total_events = cursor.fetchone()[0]
+        _ev_row = cursor.fetchone()
+        total_events = _ev_row[0] if _ev_row is not None else 0
 
         cursor.execute("SELECT AVG(100 - risk_score) FROM exam_logs WHERE risk_score IS NOT NULL;")
-        avg_trust_row = cursor.fetchone()[0]
+        _avg_row = cursor.fetchone()
+        avg_trust_row = _avg_row[0] if _avg_row is not None else None
         avg_trust = round(float(avg_trust_row), 1) if avg_trust_row is not None else 98.4
 
         cursor.close()
@@ -1497,7 +1503,8 @@ def admin_create_supervisor():
             VALUES (%s, %s, %s, 'SUPERVISOR', %s, 'ACTIVE')
             RETURNING user_id;
         """, (name, username, pwd_hash, inst_id))
-        uid = cursor.fetchone()[0]
+        _uid_row = cursor.fetchone()
+        uid = _uid_row[0] if _uid_row is not None else None
         conn.commit()
         cursor.close()
         conn.close()
@@ -1696,16 +1703,17 @@ def get_student_details(student_id):
 
         if not row:
             # Fallback to users table
-            cursor.execute("""
+            conn2 = psycopg2.connect(DB_URL)
+            cursor2 = conn2.cursor()
+            cursor2.execute("""
                 SELECT u.student_id, u.name, u.institution_id, i.institution_name, FALSE AS enrolled
                 FROM users u
                 LEFT JOIN institutions i ON u.institution_id = i.institution_id
                 WHERE u.student_id = %s;
             """, (student_id,))
-            row = cursor.fetchone()
-
-        cursor.close()
-        conn.close()
+            row = cursor2.fetchone()
+            cursor2.close()
+            conn2.close()
 
         if not row:
             return jsonify({"error": "Student not found"}), 404
@@ -2341,7 +2349,6 @@ def _is_dim(frame):
 
 def _identification_worker():
     """Continuously identifies faces in the freshest frame, scoped to the active institution."""
-    global _id_output
     while True:
         if not len(gallery):
             time.sleep(0.5)
@@ -2422,6 +2429,8 @@ def _phone_worker():
         try:
             pass_no += 1
             whole = (pass_no % PHONE_WHOLE_FRAME_EVERY == 0) or not persons
+            if phone_detector is None:
+                continue
             found = phone_detector.detect(frame, persons, whole_frame=whole, whole_imgsz=480)
             with _phone_lock:
                 _phone_output["boxes"] = found
@@ -2690,7 +2699,7 @@ def _ai_worker():
     """Asynchronous AI Detection Worker Thread.
     Runs YOLO person detection, MediaPipe FaceLandmarker, ArcFace Identity Matching,
     and behavior engines off the video stream's critical path. Never blocks camera preview."""
-    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, smooth_boxes, smooth_face_boxes
+    global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, smooth_boxes, smooth_face_boxes, _shared_draw_ops
     last_ai_ts = 0.0
     last_log_time = 0.0
 
@@ -2769,7 +2778,7 @@ def _ai_worker():
                         if (now - _id_output["ts"]) <= ID_RESULT_TTL else [])
 
         # 5. Tracking update (persons)
-        tracks = tracker.update_tracks(person_detections, frame=frame)
+        tracker.update_tracks(person_detections, frame=frame)
 
         current_students_in_frame = set()
         unknown_count = 0
@@ -2890,7 +2899,7 @@ def _ai_worker():
                 # Unregistered face
                 unknown_count += 1
                 draw_ops.append(('hud_box', (sfx1, sfy1), (sfx2, sfy2), (0, 0, 255), 2,
-                                 "UNKNOWN PERSON", f"UNREGISTERED PARTICIPANT"))
+                                 "UNKNOWN PERSON", "UNREGISTERED PARTICIPANT"))
                 if obs.left_iris_xy and obs.right_iris_xy:
                     draw_ops.append(('iris', obs.left_iris_xy, 2, (255, 220, 0)))
                     draw_ops.append(('iris', obs.right_iris_xy, 2, (255, 220, 0)))
