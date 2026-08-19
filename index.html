@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -65,7 +65,7 @@
             </div>
         </div>
     </section>
-    <section id="features" class="features section-padding tab-content active">
+    <section id="features" class="features section-padding">
         <div class="container">
             <div class="features-intro reveal-up">
                 <div class="features-intro-left">
@@ -126,87 +126,179 @@
             </div>
         </div>
     </section>
-    <section id="how-it-works" class="how-it-works section-padding tab-content">
+    <section id="how-it-works" class="how-it-works section-padding">
         <div class="container">
             <div class="hiw-header section-header reveal-up">
                 <div class="feat-label hiw-label">SECURITY PIPELINE</div>
                 <h2 class="section-title">How ProctorAI secures an exam.</h2>
                 <p class="section-subtitle">A structured six-stage security pipeline &mdash; from identity registration through post-examination analysis.</p>
             </div>
-            <div class="hiw-timeline">
+            <div class="hiw-timeline" id="hiwTimeline">
                 <div class="hiw-connector-track" aria-hidden="true">
-                    <div class="hiw-connector-line" id="hiwConnector"></div>
+                    <div class="hiw-connector-line" id="hiwConnector">
+                        <div class="hiw-glow-head"></div>
+                    </div>
                 </div>
-                <div class="hiw-step hiw-step-reveal" data-step="0">
-                    <div class="hiw-step-left hiw-content-left"><div class="hiw-step-num">01</div></div>
-                    <div class="hiw-step-node-col"><div class="hiw-node-ring"><div class="hiw-node-icon"><i data-lucide="user-plus"></i></div></div></div>
-                    <div class="hiw-step-right hiw-content-right">
+
+                <!-- Stage 01: Register -->
+                <div class="hiw-step" data-step="0">
+                    <div class="hiw-step-col hiw-col-left hiw-num-desktop">
+                        <div class="hiw-step-num">01</div>
+                    </div>
+                    <div class="hiw-step-node-col">
+                        <div class="hiw-node-ring">
+                            <div class="hiw-node-halo"></div>
+                            <div class="hiw-node-icon"><i data-lucide="user-plus"></i></div>
+                        </div>
+                    </div>
+                    <div class="hiw-step-col hiw-col-right hiw-card-col">
                         <div class="hiw-step-card glass-panel">
-                            <div class="hiw-card-tag">PRE-EXAMINATION</div>
+                            <div class="hiw-card-header">
+                                <div class="hiw-card-tag">PRE-EXAMINATION</div>
+                                <span class="hiw-step-num-mobile">01</span>
+                            </div>
                             <h3>Register</h3>
                             <p>Student identity is enrolled before the examination. A biometric facial profile is captured and stored for the session.</p>
+                            <div class="hiw-card-status">
+                                <span class="hiw-status-dot"></span> Stage 1 of 6
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="hiw-step hiw-step-reveal hiw-step-alt" data-step="1">
-                    <div class="hiw-step-left hiw-content-right">
+
+                <!-- Stage 02: Verify -->
+                <div class="hiw-step hiw-step-alt" data-step="1">
+                    <div class="hiw-step-col hiw-col-left hiw-card-col">
                         <div class="hiw-step-card glass-panel">
-                            <div class="hiw-card-tag">IDENTITY GATE</div>
+                            <div class="hiw-card-header">
+                                <div class="hiw-card-tag">IDENTITY GATE</div>
+                                <span class="hiw-step-num-mobile">02</span>
+                            </div>
                             <h3>Verify</h3>
                             <p>At session start, face identity is checked against the registered biometric profile using ArcFace recognition.</p>
+                            <div class="hiw-card-status">
+                                <span class="hiw-status-dot"></span> Stage 2 of 6
+                            </div>
                         </div>
                     </div>
-                    <div class="hiw-step-node-col"><div class="hiw-node-ring"><div class="hiw-node-icon"><i data-lucide="shield-check"></i></div></div></div>
-                    <div class="hiw-step-right hiw-content-left"><div class="hiw-step-num hiw-num-right">02</div></div>
+                    <div class="hiw-step-node-col">
+                        <div class="hiw-node-ring">
+                            <div class="hiw-node-halo"></div>
+                            <div class="hiw-node-icon"><i data-lucide="shield-check"></i></div>
+                        </div>
+                    </div>
+                    <div class="hiw-step-col hiw-col-right hiw-num-desktop">
+                        <div class="hiw-step-num hiw-num-right">02</div>
+                    </div>
                 </div>
-                <div class="hiw-step hiw-step-reveal" data-step="2">
-                    <div class="hiw-step-left hiw-content-left"><div class="hiw-step-num">03</div></div>
-                    <div class="hiw-step-node-col"><div class="hiw-node-ring"><div class="hiw-node-icon"><i data-lucide="camera"></i></div></div></div>
-                    <div class="hiw-step-right hiw-content-right">
+
+                <!-- Stage 03: Monitor -->
+                <div class="hiw-step" data-step="2">
+                    <div class="hiw-step-col hiw-col-left hiw-num-desktop">
+                        <div class="hiw-step-num">03</div>
+                    </div>
+                    <div class="hiw-step-node-col">
+                        <div class="hiw-node-ring">
+                            <div class="hiw-node-halo"></div>
+                            <div class="hiw-node-icon"><i data-lucide="camera"></i></div>
+                        </div>
+                    </div>
+                    <div class="hiw-step-col hiw-col-right hiw-card-col">
                         <div class="hiw-step-card glass-panel">
-                            <div class="hiw-card-tag">LIVE SESSION</div>
+                            <div class="hiw-card-header">
+                                <div class="hiw-card-tag">LIVE SESSION</div>
+                                <span class="hiw-step-num-mobile">03</span>
+                            </div>
                             <h3>Monitor</h3>
                             <p>Camera continuously monitors the examination environment. Face presence, gaze direction, and device detection run in parallel.</p>
+                            <div class="hiw-card-status">
+                                <span class="hiw-status-dot"></span> Stage 3 of 6
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="hiw-step hiw-step-reveal hiw-step-alt" data-step="3">
-                    <div class="hiw-step-left hiw-content-right">
+
+                <!-- Stage 04: Analyze -->
+                <div class="hiw-step hiw-step-alt" data-step="3">
+                    <div class="hiw-step-col hiw-col-left hiw-card-col">
                         <div class="hiw-step-card glass-panel">
-                            <div class="hiw-card-tag">AI ANALYSIS</div>
+                            <div class="hiw-card-header">
+                                <div class="hiw-card-tag">AI ANALYSIS</div>
+                                <span class="hiw-step-num-mobile">04</span>
+                            </div>
                             <h3>Analyze</h3>
                             <p>AI engines analyze face identity, gaze deviations, prohibited objects, and additional person events simultaneously in real-time.</p>
+                            <div class="hiw-card-status">
+                                <span class="hiw-status-dot"></span> Stage 4 of 6
+                            </div>
                         </div>
                     </div>
-                    <div class="hiw-step-node-col"><div class="hiw-node-ring"><div class="hiw-node-icon"><i data-lucide="cpu"></i></div></div></div>
-                    <div class="hiw-step-right hiw-content-left"><div class="hiw-step-num hiw-num-right">04</div></div>
+                    <div class="hiw-step-node-col">
+                        <div class="hiw-node-ring">
+                            <div class="hiw-node-halo"></div>
+                            <div class="hiw-node-icon"><i data-lucide="cpu"></i></div>
+                        </div>
+                    </div>
+                    <div class="hiw-step-col hiw-col-right hiw-num-desktop">
+                        <div class="hiw-step-num hiw-num-right">04</div>
+                    </div>
                 </div>
-                <div class="hiw-step hiw-step-reveal" data-step="4">
-                    <div class="hiw-step-left hiw-content-left"><div class="hiw-step-num">05</div></div>
-                    <div class="hiw-step-node-col"><div class="hiw-node-ring"><div class="hiw-node-icon"><i data-lucide="alert-triangle"></i></div></div></div>
-                    <div class="hiw-step-right hiw-content-right">
+
+                <!-- Stage 05: Respond -->
+                <div class="hiw-step" data-step="4">
+                    <div class="hiw-step-col hiw-col-left hiw-num-desktop">
+                        <div class="hiw-step-num">05</div>
+                    </div>
+                    <div class="hiw-step-node-col">
+                        <div class="hiw-node-ring">
+                            <div class="hiw-node-halo"></div>
+                            <div class="hiw-node-icon"><i data-lucide="alert-triangle"></i></div>
+                        </div>
+                    </div>
+                    <div class="hiw-step-col hiw-col-right hiw-card-col">
                         <div class="hiw-step-card glass-panel">
-                            <div class="hiw-card-tag">ALERT RESPONSE</div>
+                            <div class="hiw-card-header">
+                                <div class="hiw-card-tag">ALERT RESPONSE</div>
+                                <span class="hiw-step-num-mobile">05</span>
+                            </div>
                             <h3>Respond</h3>
                             <p>Risk signals and alerts are surfaced immediately to the proctor via the Alert Center with severity classification.</p>
+                            <div class="hiw-card-status">
+                                <span class="hiw-status-dot"></span> Stage 5 of 6
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="hiw-step hiw-step-reveal hiw-step-alt" data-step="5">
-                    <div class="hiw-step-left hiw-content-right">
+
+                <!-- Stage 06: Report -->
+                <div class="hiw-step hiw-step-alt" data-step="5">
+                    <div class="hiw-step-col hiw-col-left hiw-card-col">
                         <div class="hiw-step-card glass-panel">
-                            <div class="hiw-card-tag">POST-EXAMINATION</div>
+                            <div class="hiw-card-header">
+                                <div class="hiw-card-tag">POST-EXAMINATION</div>
+                                <span class="hiw-step-num-mobile">06</span>
+                            </div>
                             <h3>Report</h3>
                             <p>After the exam ends, session results, trust scores, risk events, and detection history are compiled into a full integrity report.</p>
+                            <div class="hiw-card-status hiw-status-final">
+                                <span class="hiw-status-dot"></span> Stage 6 of 6 &bull; Verified
+                            </div>
                         </div>
                     </div>
-                    <div class="hiw-step-node-col"><div class="hiw-node-ring hiw-node-final"><div class="hiw-node-icon"><i data-lucide="file-text"></i></div></div></div>
-                    <div class="hiw-step-right hiw-content-left"><div class="hiw-step-num hiw-num-right">06</div></div>
+                    <div class="hiw-step-node-col">
+                        <div class="hiw-node-ring hiw-node-final">
+                            <div class="hiw-node-halo"></div>
+                            <div class="hiw-node-icon"><i data-lucide="file-text"></i></div>
+                        </div>
+                    </div>
+                    <div class="hiw-step-col hiw-col-right hiw-num-desktop">
+                        <div class="hiw-step-num hiw-num-right">06</div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
-    <section id="showcase" class="showcase section-padding tab-content">
+    <section id="showcase" class="showcase section-padding">
         <div class="container">
             <div class="section-header reveal-up">
                 <h2 class="section-title">A unified suite.</h2>

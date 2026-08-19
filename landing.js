@@ -244,37 +244,145 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { root: null, threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
     revealElements.forEach(el => revealObserver.observe(el));
 
-    // ─── How It Works Timeline Animation ────────────────────────────
+    // ─── How It Works Timeline (Bidirectional Scroll Engine) ───────
     function initHowItWorksTimeline() {
-        const steps = document.querySelectorAll('.hiw-step-reveal');
-        const connector = document.getElementById('hiwConnector');
-        let visibleCount = 0;
+        const timeline = document.getElementById('hiwTimeline') || document.querySelector('.hiw-timeline');
+        if (!timeline) return;
 
+        const steps = Array.from(timeline.querySelectorAll('.hiw-step'));
+        const connector = document.getElementById('hiwConnector');
+        const track = timeline.querySelector('.hiw-connector-track');
         if (!steps.length) return;
 
-        const stepObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const step = entry.target;
-                    const stepIndex = parseInt(step.getAttribute('data-step') || '0', 10);
-                    
-                    // Staggered delay based on step index
-                    setTimeout(() => {
-                        step.classList.add('hiw-visible');
-                        visibleCount++;
-                        // Animate connector line to fill progressively
-                        if (connector) {
-                            const pct = Math.round((visibleCount / steps.length) * 100);
-                            connector.style.height = Math.min(pct, 100) + '%';
-                        }
-                    }, stepIndex * 120);
+        let ticking = false;
 
-                    stepObserver.unobserve(step);
+        function updateTimeline() {
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+            const triggerY = viewportHeight * 0.52; // 52% from top is the focal activation line
+
+            const timelineRect = timeline.getBoundingClientRect();
+            
+            // Measure actual center positions of first and last nodes
+            const firstNode = steps[0].querySelector('.hiw-node-ring');
+            const lastNode = steps[steps.length - 1].querySelector('.hiw-node-ring');
+
+            let trackTop = 30;
+            let trackHeight = timeline.offsetHeight - 60;
+
+            if (firstNode && lastNode) {
+                const firstNodeRect = firstNode.getBoundingClientRect();
+                const lastNodeRect = lastNode.getBoundingClientRect();
+                
+                const firstCenterRel = (firstNodeRect.top + firstNodeRect.height / 2) - timelineRect.top;
+                const lastCenterRel = (lastNodeRect.top + lastNodeRect.height / 2) - timelineRect.top;
+                
+                trackTop = firstCenterRel;
+                trackHeight = Math.max(20, lastCenterRel - firstCenterRel);
+                
+                if (track) {
+                    track.style.top = `${firstCenterRel}px`;
+                    track.style.height = `${trackHeight}px`;
+                }
+            }
+
+            // Determine active step index based on scroll position
+            let activeIdx = -1;
+
+            steps.forEach((step, idx) => {
+                const node = step.querySelector('.hiw-node-ring');
+                const targetEl = node || step;
+                const rect = targetEl.getBoundingClientRect();
+                const nodeCenterY = rect.top + rect.height / 2;
+
+                // Step is active if its node has crossed the focal trigger zone
+                if (nodeCenterY <= triggerY) {
+                    activeIdx = idx;
                 }
             });
-        }, { threshold: 0.25, rootMargin: '0px 0px -60px 0px' });
 
-        steps.forEach(step => stepObserver.observe(step));
+            // Bidirectional state update: activates when scrolling down, reverses when scrolling up
+            steps.forEach((step, idx) => {
+                if (idx <= activeIdx) {
+                    // Reached or passed
+                    step.classList.add('hiw-visible');
+                    step.classList.add('hiw-passed');
+                    if (idx === activeIdx) {
+                        step.classList.add('hiw-current');
+                    } else {
+                        step.classList.remove('hiw-current');
+                    }
+                } else {
+                    // Upcoming or reversed by scrolling UP
+                    step.classList.remove('hiw-visible');
+                    step.classList.remove('hiw-passed');
+                    step.classList.remove('hiw-current');
+                }
+            });
+
+            // Sub-pixel continuous connector line progress
+            if (connector && trackHeight > 0) {
+                if (activeIdx < 0) {
+                    // Before the first step
+                    if (firstNode) {
+                        const firstRect = firstNode.getBoundingClientRect();
+                        const firstCenter = firstRect.top + firstRect.height / 2;
+                        if (firstCenter < viewportHeight) {
+                            const leadPct = Math.max(0, Math.min(1, (viewportHeight - firstCenter) / (viewportHeight - triggerY)));
+                            connector.style.height = `${(leadPct * 0.04 * 100).toFixed(2)}%`;
+                        } else {
+                            connector.style.height = '0%';
+                        }
+                    } else {
+                        connector.style.height = '0%';
+                    }
+                } else if (activeIdx >= steps.length - 1) {
+                    // Final step reached / passed
+                    connector.style.height = '100%';
+                } else {
+                    // Smooth continuous fraction between current step and next step
+                    const currNode = steps[activeIdx].querySelector('.hiw-node-ring');
+                    const nextNode = steps[activeIdx + 1].querySelector('.hiw-node-ring');
+                    
+                    if (currNode && nextNode) {
+                        const currRect = currNode.getBoundingClientRect();
+                        const nextRect = nextNode.getBoundingClientRect();
+                        const currCenter = currRect.top + currRect.height / 2;
+                        const nextCenter = nextRect.top + nextRect.height / 2;
+                        
+                        const stepSpan = Math.max(1, nextCenter - currCenter);
+                        const progressTraveled = triggerY - currCenter;
+                        const stepFraction = Math.max(0, Math.min(1, progressTraveled / stepSpan));
+                        
+                        const basePct = activeIdx / (steps.length - 1);
+                        const spanPct = 1 / (steps.length - 1);
+                        const totalPct = Math.min(100, Math.max(0, (basePct + stepFraction * spanPct) * 100));
+                        
+                        connector.style.height = `${totalPct.toFixed(2)}%`;
+                    } else {
+                        const pct = ((activeIdx + 1) / steps.length) * 100;
+                        connector.style.height = `${pct.toFixed(2)}%`;
+                    }
+                }
+            }
+
+            ticking = false;
+        }
+
+        function requestUpdate() {
+            if (!ticking) {
+                window.requestAnimationFrame(updateTimeline);
+                ticking = true;
+            }
+        }
+
+        window.addEventListener('scroll', requestUpdate, { passive: true });
+        window.addEventListener('resize', requestUpdate, { passive: true });
+
+        // Initial trigger and delayed checks for font/layout stabilization
+        updateTimeline();
+        setTimeout(updateTimeline, 100);
+        setTimeout(updateTimeline, 400);
+        setTimeout(updateTimeline, 1000);
     }
 
     initHowItWorksTimeline();
@@ -317,10 +425,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { threshold: 0.5 });
     document.querySelectorAll('.stat-number').forEach(el => statsObserver.observe(el));
 
-    // 2. Navbar scroll effect
+    // 2. Navbar scroll effect & ScrollSpy
     const navbar = document.querySelector('.navbar');
-    if (navbar) {
-        window.addEventListener('scroll', () => {
+    const navLinks = document.querySelectorAll('.nav-links .tab-link');
+    const sections = [
+        document.getElementById('features'),
+        document.getElementById('how-it-works'),
+        document.getElementById('showcase')
+    ].filter(Boolean);
+
+    function updateNavScrollSpy() {
+        if (navbar) {
             if (window.scrollY > 50) {
                 navbar.style.background = 'rgba(5,5,5,0.92)';
                 navbar.style.borderColor = 'rgba(255,255,255,0.12)';
@@ -330,37 +445,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 navbar.style.borderColor = 'rgba(255,255,255,0.08)';
                 navbar.style.boxShadow = 'none';
             }
-        }, { passive: true });
+        }
+
+        // Scrollspy link active state
+        const scrollPos = window.scrollY + (navbar ? navbar.offsetHeight + 100 : 150);
+        let currentSectionId = '';
+        sections.forEach(sec => {
+            if (sec.offsetTop <= scrollPos && (sec.offsetTop + sec.offsetHeight) > scrollPos) {
+                currentSectionId = sec.id;
+            }
+        });
+
+        if (currentSectionId) {
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === `#${currentSectionId}`) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
     }
 
-    // 3. Smooth scroll for anchor links (with navbar offset & tab support)
+    window.addEventListener('scroll', updateNavScrollSpy, { passive: true });
+    updateNavScrollSpy();
+
+    // 3. Smooth scroll for anchor links (with navbar offset)
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
-            e.preventDefault();
             const targetId = this.getAttribute('href');
             if (!targetId || targetId === '#') return;
             
             const el = document.querySelector(targetId);
             if (el) {
-                // If the target is a tab, switch it
-                if (el.classList.contains('tab-content')) {
-                    document.querySelectorAll('.tab-link').forEach(l => {
-                        if (l.getAttribute('href') === targetId) l.classList.add('active');
-                        else l.classList.remove('active');
-                    });
-                    
-                    document.querySelectorAll('.tab-content').forEach(c => {
-                        c.classList.remove('active');
-                        c.style.display = 'none';
-                    });
-                    
-                    el.style.display = 'block';
-                    // Trigger reflow
-                    void el.offsetWidth;
-                    el.classList.add('active');
-                }
-
-                const navH = navbar ? navbar.offsetHeight + 30 : 80;
+                e.preventDefault();
+                const navH = navbar ? navbar.offsetHeight + 20 : 75;
                 const top = el.getBoundingClientRect().top + window.scrollY - navH;
                 window.scrollTo({ top, behavior: 'smooth' });
             }
