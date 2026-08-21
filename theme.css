@@ -3,7 +3,7 @@
    High-Precision SOC Night Ops ↔ Day Ops Transition Engine
    ═════════════════════════════════════════════════════════════════════ */
 
-/* ── 1. LIGHT THEME TOKENS ── */
+/* ── 1. LIGHT THEME DESIGN TOKENS (HIGH WCAG CONTRAST) ── */
 :root[data-theme="light"],
 html[data-theme="light"],
 [data-theme="light"] {
@@ -20,29 +20,29 @@ html[data-theme="light"],
     --surface-hover:      #f1f5f9;
 
     /* Glass & Card Panels */
-    --panel-glass:        rgba(255, 255, 255, 0.92);
-    --panel-card:         rgba(255, 255, 255, 0.95);
-    --panel-hover:        rgba(241, 245, 249, 0.95);
+    --panel-glass:        rgba(255, 255, 255, 0.94);
+    --panel-card:         rgba(255, 255, 255, 0.96);
+    --panel-hover:        rgba(241, 245, 249, 0.96);
     --card-bg:            #ffffff;
     --card-bg-hover:      #f8fafc;
-    --bg-card:            rgba(255, 255, 255, 0.94);
+    --bg-card:            rgba(255, 255, 255, 0.95);
 
     /* Precision Light Borders */
-    --border:             rgba(15, 23, 42, 0.10);
-    --border-subtle:      rgba(15, 23, 42, 0.08);
-    --border-light:       rgba(15, 23, 42, 0.14);
-    --border-color:       rgba(15, 23, 42, 0.10);
-    --border-hover:       rgba(2, 132, 199, 0.40);
-    --border-active:      rgba(2, 132, 199, 0.70);
-    --card-border:        rgba(15, 23, 42, 0.09);
-    --card-border-hover:  rgba(2, 132, 199, 0.40);
+    --border:             rgba(15, 23, 42, 0.12);
+    --border-subtle:      rgba(15, 23, 42, 0.09);
+    --border-light:       rgba(15, 23, 42, 0.16);
+    --border-color:       rgba(15, 23, 42, 0.12);
+    --border-hover:       rgba(2, 132, 199, 0.45);
+    --border-active:      rgba(2, 132, 199, 0.75);
+    --card-border:        rgba(15, 23, 42, 0.10);
+    --card-border-hover:  rgba(2, 132, 199, 0.45);
 
     /* Brand & Accent Vectors */
     --primary:            #0284c7;
     --primary-soft:       rgba(2, 132, 199, 0.10);
     --accent:             #0284c7;
     --accent-dim:         rgba(2, 132, 199, 0.08);
-    --accent-bd:          rgba(2, 132, 199, 0.25);
+    --accent-bd:          rgba(2, 132, 199, 0.28);
     --accent-glow:        rgba(2, 132, 199, 0.20);
     --primary-accent:     #0284c7;
     --secondary-accent:   #0ea5e9;
@@ -52,26 +52,26 @@ html[data-theme="light"],
     /* State Signals */
     --success:            #059669;
     --success-dim:        rgba(5, 150, 105, 0.10);
-    --success-bd:         rgba(5, 150, 105, 0.28);
+    --success-bd:         rgba(5, 150, 105, 0.30);
     --success-glow:       rgba(5, 150, 105, 0.25);
-    --success-border:     rgba(5, 150, 105, 0.28);
+    --success-border:     rgba(5, 150, 105, 0.30);
 
-    --warning:            #d97706;
-    --warning-dim:        rgba(217, 119, 6, 0.10);
-    --warning-bd:         rgba(217, 119, 6, 0.28);
-    --warning-glow:       rgba(217, 119, 6, 0.25);
-    --warning-border:     rgba(217, 119, 6, 0.28);
+    --warning:            #b45309;
+    --warning-dim:        rgba(180, 83, 9, 0.10);
+    --warning-bd:         rgba(180, 83, 9, 0.30);
+    --warning-glow:       rgba(180, 83, 9, 0.25);
+    --warning-border:     rgba(180, 83, 9, 0.30);
 
     --danger:             #dc2626;
     --danger-dim:         rgba(220, 38, 38, 0.10);
-    --danger-bd:          rgba(220, 38, 38, 0.28);
+    --danger-bd:          rgba(220, 38, 38, 0.30);
     --danger-glow:        rgba(220, 38, 38, 0.25);
-    --danger-border:      rgba(220, 38, 38, 0.28);
+    --danger-border:      rgba(220, 38, 38, 0.30);
 
-    /* High-Contrast Typography */
+    /* High-Contrast Crystal-Clear Typography */
     --text-primary:       #0f172a;
-    --text-secondary:     #475569;
-    --text-muted:         #64748b;
+    --text-secondary:     #334155;
+    --text-muted:         #475569;
     --t1:                 #0f172a;
     --t2:                 #334155;
     --t3:                 #475569;
@@ -109,7 +109,7 @@ html[data-theme="light"],
 
 html[data-theme="light"] .theme-toggle-btn {
     background: #e2e8f0;
-    border-color: rgba(15, 23, 42, 0.15);
+    border-color: rgba(15, 23, 42, 0.18);
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
@@ -282,28 +282,122 @@ html.theme-transitioning div {
     opacity: 0;
 }
 
-/* ── 5. LIGHT MODE SURFACE & COMPONENT POLISH ── */
+/* ═════════════════════════════════════════════════════════════════════
+   5. LIGHT MODE COMPREHENSIVE TEXT VISIBILITY & CONTRAST OVERRIDES
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── Base Body & Surfaces ── */
 html[data-theme="light"] body {
     background-color: var(--bg-primary);
-    color: var(--text-primary);
+    color: #0f172a;
 }
 
 html[data-theme="light"] body::before {
     opacity: 0.12;
 }
 
-html[data-theme="light"] input,
-html[data-theme="light"] select,
-html[data-theme="light"] textarea {
-    background: #ffffff !important;
-    border-color: rgba(15, 23, 42, 0.18) !important;
+/* ── Headings, Titles & Brand Names ── */
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4,
+html[data-theme="light"] h5,
+html[data-theme="light"] h6,
+html[data-theme="light"] .hero-heading,
+html[data-theme="light"] .hero-title,
+html[data-theme="light"] .setup-title,
+html[data-theme="light"] .section-title,
+html[data-theme="light"] .panel-title,
+html[data-theme="light"] .panel-h1,
+html[data-theme="light"] .card-title,
+html[data-theme="light"] .summary-title,
+html[data-theme="light"] .modal-title,
+html[data-theme="light"] .ash-title,
+html[data-theme="light"] .pem-title,
+html[data-theme="light"] .pem-card-val,
+html[data-theme="light"] .fhc-title,
+html[data-theme="light"] .cap-title,
+html[data-theme="light"] .step-card h3,
+html[data-theme="light"] .hiw-step-card h3,
+html[data-theme="light"] .feature-card h3,
+html[data-theme="light"] .rule-content h4,
+html[data-theme="light"] .profile-meta h3,
+html[data-theme="light"] .quote,
+html[data-theme="light"] .logo,
+html[data-theme="light"] .brand-title,
+html[data-theme="light"] .h-brand-name,
+html[data-theme="light"] .student-name,
+html[data-theme="light"] .sup-name,
+html[data-theme="light"] .trust-rating-label,
+html[data-theme="light"] #adminName,
+html[data-theme="light"] #navStudentName,
+html[data-theme="light"] #supNameDisplay {
     color: #0f172a !important;
 }
 
-html[data-theme="light"] input::placeholder {
-    color: #94a3b8 !important;
+/* ── Subtitles, Descriptions, Leads & Paragraphs ── */
+html[data-theme="light"] p,
+html[data-theme="light"] .hero-lead,
+html[data-theme="light"] .hero-subtitle,
+html[data-theme="light"] .hero-subhead,
+html[data-theme="light"] .setup-subtitle,
+html[data-theme="light"] .section-subtitle,
+html[data-theme="light"] .panel-subtitle,
+html[data-theme="light"] .panel-sub,
+html[data-theme="light"] .subtitle,
+html[data-theme="light"] .card-desc,
+html[data-theme="light"] .fhc-desc,
+html[data-theme="light"] .cap-desc,
+html[data-theme="light"] .step-card p,
+html[data-theme="light"] .hiw-step-card p,
+html[data-theme="light"] .feature-card p,
+html[data-theme="light"] .rule-content p,
+html[data-theme="light"] .profile-meta p,
+html[data-theme="light"] .text-secondary,
+html[data-theme="light"] .text-muted,
+html[data-theme="light"] .summary-sub,
+html[data-theme="light"] .upload-desc,
+html[data-theme="light"] .guideline-desc,
+html[data-theme="light"] .event-desc,
+html[data-theme="light"] .footer-desc {
+    color: #334155 !important;
 }
 
+/* ── Navigation Links, Headers & Breadcrumbs ── */
+html[data-theme="light"] .nav-links a,
+html[data-theme="light"] .tab-link,
+html[data-theme="light"] .footer-links a,
+html[data-theme="light"] .back-btn,
+html[data-theme="light"] .step-item,
+html[data-theme="light"] .brand-sub,
+html[data-theme="light"] .brand-title-badge,
+html[data-theme="light"] .mobile-menu-btn {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .nav-links a:hover,
+html[data-theme="light"] .tab-link.active,
+html[data-theme="light"] .footer-links a:hover,
+html[data-theme="light"] .back-btn:hover {
+    color: #0284c7 !important;
+}
+
+html[data-theme="light"] .step-item.active {
+    color: #0284c7 !important;
+    font-weight: 700 !important;
+}
+
+html[data-theme="light"] .top-nav,
+html[data-theme="light"] .soc-header,
+html[data-theme="light"] .glass-header,
+html[data-theme="light"] .enroll-nav,
+html[data-theme="light"] .navbar {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    backdrop-filter: blur(16px) !important;
+}
+
+/* ── Panels, Cards, Stat Boxes & Glass Elements ── */
 html[data-theme="light"] .glass-panel,
 html[data-theme="light"] .panel,
 html[data-theme="light"] .stat-card,
@@ -313,44 +407,195 @@ html[data-theme="light"] .panel-container,
 html[data-theme="light"] .login-card,
 html[data-theme="light"] .setup-card,
 html[data-theme="light"] .glass-card,
-html[data-theme="light"] .auth-card {
+html[data-theme="light"] .auth-card,
+html[data-theme="light"] .step-card,
+html[data-theme="light"] .feature-card,
+html[data-theme="light"] .hiw-step-card,
+html[data-theme="light"] .summary-box,
+html[data-theme="light"] .rule-item {
     background: #ffffff !important;
-    border-color: rgba(15, 23, 42, 0.10) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+    color: #0f172a !important;
 }
 
-html[data-theme="light"] .top-nav,
-html[data-theme="light"] .soc-header,
-html[data-theme="light"] .glass-header,
-html[data-theme="light"] .enroll-nav,
-html[data-theme="light"] .navbar {
-    background: rgba(255, 255, 255, 0.90) !important;
-    border-color: rgba(15, 23, 42, 0.10) !important;
-    backdrop-filter: blur(16px) !important;
+/* ── Form Labels, Inputs, Selects & Placeholders ── */
+html[data-theme="light"] label,
+html[data-theme="light"] .form-label,
+html[data-theme="light"] .input-label,
+html[data-theme="light"] .input-group label,
+html[data-theme="light"] .form-group label,
+html[data-theme="light"] .inst-select-wrap label {
+    color: #1e293b !important;
+    font-weight: 600 !important;
 }
 
-html[data-theme="light"] .file-upload-zone {
-    background: rgba(2, 132, 199, 0.03) !important;
-    border-color: rgba(2, 132, 199, 0.25) !important;
-}
-
-html[data-theme="light"] .file-item {
-    background: #f8fafc !important;
-    border-color: rgba(15, 23, 42, 0.10) !important;
-}
-
-html[data-theme="light"] .roster-item,
-html[data-theme="light"] .audit-row,
-html[data-theme="light"] .log-entry {
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea,
+html[data-theme="light"] .form-input,
+html[data-theme="light"] .form-select,
+html[data-theme="light"] .inst-select,
+html[data-theme="light"] .input-group input,
+html[data-theme="light"] .form-group input,
+html[data-theme="light"] .form-group select {
     background: #ffffff !important;
-    border-color: rgba(15, 23, 42, 0.08) !important;
+    border-color: rgba(15, 23, 42, 0.20) !important;
+    color: #0f172a !important;
 }
 
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] select::placeholder,
+html[data-theme="light"] textarea::placeholder,
+html[data-theme="light"] .form-input::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="light"] option {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .hint,
+html[data-theme="light"] .help-text,
+html[data-theme="light"] .form-help,
+html[data-theme="light"] .input-desc,
+html[data-theme="light"] .upload-specs,
+html[data-theme="light"] .ai-spec-tag,
+html[data-theme="light"] .auth-footer {
+    color: #475569 !important;
+}
+
+/* ── Badges, Chips, Pills & Tags ── */
+html[data-theme="light"] .badge,
+html[data-theme="light"] .badge-outline,
+html[data-theme="light"] .status-pill,
+html[data-theme="light"] .session-pill,
+html[data-theme="light"] .user-badge,
+html[data-theme="light"] .nav-inst-pill,
+html[data-theme="light"] .card-header-badge,
+html[data-theme="light"] .demo-env-badge,
+html[data-theme="light"] .status-live-tag span,
+html[data-theme="light"] .hud-tag,
+html[data-theme="light"] .date-range,
+html[data-theme="light"] .session-status {
+    background: #f8fafc !important;
+    border-color: rgba(15, 23, 42, 0.14) !important;
+    color: #1e293b !important;
+}
+
+html[data-theme="light"] .badge-hero {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.25) !important;
+    color: #0284c7 !important;
+}
+
+html[data-theme="light"] .user-badge-role {
+    color: #0284c7 !important;
+}
+
+/* ── Buttons Contrast ── */
+html[data-theme="light"] .btn-primary,
+html[data-theme="light"] .btn-submit,
+html[data-theme="light"] .btn-primary-confirm,
+html[data-theme="light"] .start-session-btn {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    border-color: #0284c7 !important;
+}
+
+html[data-theme="light"] .btn-outline {
+    color: #0f172a !important;
+    background: transparent !important;
+    border-color: rgba(15, 23, 42, 0.22) !important;
+}
+
+html[data-theme="light"] .btn-outline:hover {
+    background: rgba(2, 132, 199, 0.08) !important;
+    color: #0284c7 !important;
+    border-color: #0284c7 !important;
+}
+
+html[data-theme="light"] .btn-secondary {
+    color: #334155 !important;
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.20) !important;
+}
+
+html[data-theme="light"] .btn-secondary:hover {
+    background: #f8fafc !important;
+    border-color: rgba(15, 23, 42, 0.30) !important;
+}
+
+html[data-theme="light"] .btn-signout,
+html[data-theme="light"] .btn-logout {
+    color: #dc2626 !important;
+    background: rgba(220, 38, 38, 0.06) !important;
+    border-color: rgba(220, 38, 38, 0.25) !important;
+}
+
+html[data-theme="light"] .btn-signout:hover,
+html[data-theme="light"] .btn-logout:hover {
+    background: rgba(220, 38, 38, 0.12) !important;
+    color: #b91c1c !important;
+}
+
+html[data-theme="light"] .tab-btn {
+    background: transparent;
+    color: #475569 !important;
+    border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+html[data-theme="light"] .tab-btn.active {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+}
+
+html[data-theme="light"] .role-tab-btn {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+html[data-theme="light"] .role-tab-btn.active {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+}
+
+/* ── Stage Tracker, Timelines & Tooltips ── */
 html[data-theme="light"] .timeline-wrapper,
 html[data-theme="light"] .stage-tracker,
 html[data-theme="light"] .timeline-meta-bar {
     background: #ffffff !important;
-    border-color: rgba(15, 23, 42, 0.10) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .tmb-tag {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .tmb-sub {
+    color: #475569 !important;
+}
+
+html[data-theme="light"] .tmb-pill {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .stage-label,
+html[data-theme="light"] .stage-num,
+html[data-theme="light"] .step-number,
+html[data-theme="light"] .hiw-step-num {
+    color: #475569 !important;
+}
+
+html[data-theme="light"] .stage-step.active .stage-label {
+    color: #0284c7 !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
 }
 
 html[data-theme="light"] .stage-step.waiting .stage-dot {
@@ -359,21 +604,78 @@ html[data-theme="light"] .stage-step.waiting .stage-dot {
     color: #64748b !important;
 }
 
-html[data-theme="light"] .modal-overlay {
-    background: rgba(15, 23, 42, 0.45) !important;
+html[data-theme="light"] .stage-tooltip {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
 }
 
-html[data-theme="light"] .modal-card,
-html[data-theme="light"] .modal-content {
-    background: #ffffff !important;
-    border-color: rgba(15, 23, 42, 0.12) !important;
+html[data-theme="light"] .tt-step {
+    color: #0284c7 !important;
+    font-weight: 700 !important;
+}
+
+html[data-theme="light"] .tt-name {
     color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+html[data-theme="light"] .tt-desc {
+    color: #334155 !important;
+}
+
+/* ── Rosters, Logs, Tables & Audit Rows ── */
+html[data-theme="light"] .file-upload-zone {
+    background: rgba(2, 132, 199, 0.03) !important;
+    border-color: rgba(2, 132, 199, 0.28) !important;
+}
+
+html[data-theme="light"] .file-item {
+    background: #f8fafc !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .file-item-info input {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.18) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .roster-item,
+html[data-theme="light"] .audit-row,
+html[data-theme="light"] .log-entry {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-theme="light"] .student-id,
+html[data-theme="light"] .student-seat,
+html[data-theme="light"] .sup-role,
+html[data-theme="light"] .log-time,
+html[data-theme="light"] .sess-id,
+html[data-theme="light"] .session-timer,
+html[data-theme="light"] .sess-id-lbl,
+html[data-theme="light"] .stat-label,
+html[data-theme="light"] .stat-sub,
+html[data-theme="light"] .kpi-header,
+html[data-theme="light"] .summary-label,
+html[data-theme="light"] .event-time,
+html[data-theme="light"] .roster-empty {
+    color: #475569 !important;
+}
+
+html[data-theme="light"] .stat-value,
+html[data-theme="light"] .kpi-value,
+html[data-theme="light"] .summary-value {
+    color: #0f172a !important;
+    font-weight: 800 !important;
 }
 
 html[data-theme="light"] table th {
     background: #f8fafc !important;
-    color: #334155 !important;
-    border-color: rgba(15, 23, 42, 0.10) !important;
+    color: #1e293b !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    font-weight: 700 !important;
 }
 
 html[data-theme="light"] table td {
@@ -381,21 +683,43 @@ html[data-theme="light"] table td {
     color: #0f172a !important;
 }
 
-html[data-theme="light"] .hero-title,
-html[data-theme="light"] .setup-title,
-html[data-theme="light"] .panel-h1,
-html[data-theme="light"] h1,
-html[data-theme="light"] h2,
-html[data-theme="light"] h3,
-html[data-theme="light"] h4 {
-    color: #0f172a;
+/* ── Modals & Popups ── */
+html[data-theme="light"] .modal-overlay {
+    background: rgba(15, 23, 42, 0.45) !important;
 }
 
-html[data-theme="light"] .hero-subtitle,
-html[data-theme="light"] .setup-subtitle,
-html[data-theme="light"] .panel-sub,
-html[data-theme="light"] .subtitle {
-    color: #475569;
+html[data-theme="light"] .modal-card,
+html[data-theme="light"] .modal-content {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.14) !important;
+    color: #0f172a !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
+}
+
+html[data-theme="light"] .modal-close {
+    color: #475569 !important;
+}
+
+html[data-theme="light"] .modal-close:hover {
+    color: #0f172a !important;
+}
+
+/* ── Mockup HUD & Background Elements ── */
+html[data-theme="light"] .hud-indicators .hud-pill {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #0f172a !important;
+    border-color: rgba(15, 23, 42, 0.16) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .mockup-header {
+    background: #f1f5f9 !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .mockup-bar-label {
+    color: #334155 !important;
+    font-weight: 700 !important;
 }
 
 html[data-theme="light"] #particles-bg {
