@@ -8,7 +8,8 @@
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+    <script src="theme.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -325,6 +326,13 @@ p {
     </style>
 </head>
 <body>
+
+    <!-- Theme Toggle -->
+    <div style="position: fixed; top: 1.25rem; right: 1.5rem; z-index: 999;">
+        <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light mode" title="Toggle theme">
+            <span data-theme-icon><i data-lucide="sun" style="width:15px;height:15px;"></i></span>
+        </button>
+    </div>
 
     <div class="container">
         <div class="logo-badge">

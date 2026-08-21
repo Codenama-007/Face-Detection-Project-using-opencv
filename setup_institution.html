@@ -9,7 +9,8 @@
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+    <script src="theme.js"></script>
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -903,7 +904,7 @@ html, body {
 
             <!-- Header -->
             <header class="setup-header">
-                <div class="brand-badge-wrap">
+                <div class="brand-badge-wrap" style="position: relative;">
                     <div class="brand-icon-box">
                         <i data-lucide="shield-check" style="width:20px;height:20px;"></i>
                     </div>
@@ -912,6 +913,9 @@ html, body {
                         <i data-lucide="sparkles" style="width:11px;height:11px;"></i>
                         <span>Hackathon Demo</span>
                     </span>
+                    <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light mode" title="Toggle theme" style="margin-left:auto;">
+                        <span data-theme-icon><i data-lucide="sun" style="width:14px;height:14px;"></i></span>
+                    </button>
                 </div>
                 
                 <h1 class="setup-title" id="pageTitle">INSTITUTION SETUP</h1>

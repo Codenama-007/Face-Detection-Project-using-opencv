@@ -1,0 +1,250 @@
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — ENTERPRISE THEME SYSTEM (DARK & LIGHT MODES)
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. LIGHT THEME TOKENS ── */
+:root[data-theme="light"],
+html[data-theme="light"],
+[data-theme="light"] {
+    /* Background Surface Hierarchy */
+    --bg-primary:         #f1f5f9;
+    --bg-secondary:       #e2e8f0;
+    --bg-base:            #f1f5f9;
+    --bg-main:            #f8fafc;
+    --bg-app:             #f1f5f9;
+    --bg-surface:         #ffffff;
+    --bg-elevated:        #ffffff;
+    --surface:            #ffffff;
+    --surface-elevated:   #f8fafc;
+    --surface-hover:      #f1f5f9;
+
+    /* Glass & Card Panels */
+    --panel-glass:        rgba(255, 255, 255, 0.92);
+    --panel-card:         rgba(255, 255, 255, 0.95);
+    --panel-hover:        rgba(241, 245, 249, 0.95);
+    --card-bg:            #ffffff;
+    --card-bg-hover:      #f8fafc;
+    --bg-card:            rgba(255, 255, 255, 0.94);
+
+    /* Precision Light Borders */
+    --border:             rgba(15, 23, 42, 0.10);
+    --border-subtle:      rgba(15, 23, 42, 0.08);
+    --border-light:       rgba(15, 23, 42, 0.14);
+    --border-color:       rgba(15, 23, 42, 0.10);
+    --border-hover:       rgba(2, 132, 199, 0.40);
+    --border-active:      rgba(2, 132, 199, 0.70);
+    --card-border:        rgba(15, 23, 42, 0.09);
+    --card-border-hover:  rgba(2, 132, 199, 0.40);
+
+    /* Brand & Accent Vectors */
+    --primary:            #0284c7;
+    --primary-soft:       rgba(2, 132, 199, 0.10);
+    --accent:             #0284c7;
+    --accent-dim:         rgba(2, 132, 199, 0.08);
+    --accent-bd:          rgba(2, 132, 199, 0.25);
+    --accent-glow:        rgba(2, 132, 199, 0.20);
+    --primary-accent:     #0284c7;
+    --secondary-accent:   #0ea5e9;
+    --cyan:               #0284c7;
+    --cyan-glow:          rgba(2, 132, 199, 0.20);
+
+    /* State Signals */
+    --success:            #059669;
+    --success-dim:        rgba(5, 150, 105, 0.10);
+    --success-bd:         rgba(5, 150, 105, 0.28);
+    --success-glow:       rgba(5, 150, 105, 0.25);
+    --success-border:     rgba(5, 150, 105, 0.28);
+
+    --warning:            #d97706;
+    --warning-dim:        rgba(217, 119, 6, 0.10);
+    --warning-bd:         rgba(217, 119, 6, 0.28);
+    --warning-glow:       rgba(217, 119, 6, 0.25);
+    --warning-border:     rgba(217, 119, 6, 0.28);
+
+    --danger:             #dc2626;
+    --danger-dim:         rgba(220, 38, 38, 0.10);
+    --danger-bd:          rgba(220, 38, 38, 0.28);
+    --danger-glow:        rgba(220, 38, 38, 0.25);
+    --danger-border:      rgba(220, 38, 38, 0.28);
+
+    /* High-Contrast Typography */
+    --text-primary:       #0f172a;
+    --text-secondary:     #475569;
+    --text-muted:         #64748b;
+    --t1:                 #0f172a;
+    --t2:                 #334155;
+    --t3:                 #475569;
+    --t4:                 #64748b;
+
+    /* Light Theme Shadows */
+    --shadow-sm:          0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md:          0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    --shadow-lg:          0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+}
+
+/* ── 2. COMPACT THEME TOGGLE BUTTON ── */
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--surface-elevated, rgba(255, 255, 255, 0.06));
+    border: 1px solid var(--border-light, rgba(255, 255, 255, 0.12));
+    color: var(--text-primary, #f8fafc);
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--surface-hover, rgba(255, 255, 255, 0.12));
+    border-color: var(--accent, #38bdf8);
+    color: var(--accent, #38bdf8);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px var(--accent-glow, rgba(56, 189, 248, 0.25));
+}
+
+.theme-toggle-btn:active {
+    transform: scale(0.95);
+}
+
+.theme-toggle-btn:focus-visible {
+    box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent);
+}
+
+.theme-toggle-btn * {
+    pointer-events: none;
+}
+
+/* ── 3. SMOOTH THEME TRANSITION ── */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+    transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease !important;
+}
+
+/* ── 4. LIGHT MODE SURFACE & COMPONENT POLISH ── */
+html[data-theme="light"] body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+html[data-theme="light"] body::before {
+    opacity: 0.12;
+}
+
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.18) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] input::placeholder {
+    color: #94a3b8 !important;
+}
+
+html[data-theme="light"] .glass-panel,
+html[data-theme="light"] .panel,
+html[data-theme="light"] .stat-card,
+html[data-theme="light"] .card,
+html[data-theme="light"] .kpi-card,
+html[data-theme="light"] .panel-container,
+html[data-theme="light"] .login-card,
+html[data-theme="light"] .setup-card,
+html[data-theme="light"] .glass-card,
+html[data-theme="light"] .auth-card {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+html[data-theme="light"] .top-nav,
+html[data-theme="light"] .soc-header,
+html[data-theme="light"] .glass-header,
+html[data-theme="light"] .enroll-nav,
+html[data-theme="light"] .navbar {
+    background: rgba(255, 255, 255, 0.90) !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+    backdrop-filter: blur(16px) !important;
+}
+
+html[data-theme="light"] .file-upload-zone {
+    background: rgba(2, 132, 199, 0.03) !important;
+    border-color: rgba(2, 132, 199, 0.25) !important;
+}
+
+html[data-theme="light"] .file-item {
+    background: #f8fafc !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-theme="light"] .roster-item,
+html[data-theme="light"] .audit-row,
+html[data-theme="light"] .log-entry {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-theme="light"] .timeline-wrapper,
+html[data-theme="light"] .stage-tracker,
+html[data-theme="light"] .timeline-meta-bar {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-theme="light"] .stage-step.waiting .stage-dot {
+    background: #f1f5f9 !important;
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    color: #64748b !important;
+}
+
+html[data-theme="light"] .modal-overlay {
+    background: rgba(15, 23, 42, 0.45) !important;
+}
+
+html[data-theme="light"] .modal-card,
+html[data-theme="light"] .modal-content {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] table th {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-theme="light"] table td {
+    border-color: rgba(15, 23, 42, 0.08) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .hero-title,
+html[data-theme="light"] .setup-title,
+html[data-theme="light"] .panel-h1,
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4 {
+    color: #0f172a;
+}
+
+html[data-theme="light"] .hero-subtitle,
+html[data-theme="light"] .setup-subtitle,
+html[data-theme="light"] .panel-sub,
+html[data-theme="light"] .subtitle {
+    color: #475569;
+}
+
+html[data-theme="light"] #particles-bg {
+    opacity: 0.15;
+}
+

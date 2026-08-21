@@ -10,6 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="replay.css">
+    <link rel="stylesheet" href="theme.css">
+    <script src="theme.js"></script>
     <script src="https://unpkg.com/lucide@0.462.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 </head>
@@ -34,6 +36,9 @@
                     <span class="status-dot red"></span> Final Review Required
                 </div>
                 <div class="replay-controls-header">
+                    <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light mode" title="Toggle theme">
+                        <span data-theme-icon><i data-lucide="sun" style="width:15px;height:15px;"></i></span>
+                    </button>
                     <button class="btn-icon" title="Previous Session" aria-label="Previous"><i data-lucide="chevron-left"></i></button>
                     <button class="btn-icon" title="Next Session" aria-label="Next"><i data-lucide="chevron-right"></i></button>
                     <button class="btn-primary"><i data-lucide="share"></i> Export Replay</button>

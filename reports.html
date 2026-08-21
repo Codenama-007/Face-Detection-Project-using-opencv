@@ -10,6 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="reports.css">
+    <link rel="stylesheet" href="theme.css">
+    <script src="theme.js"></script>
     <!-- Icons and Charting library via CDN to keep it framework-free but production ready -->
     <script src="https://unpkg.com/lucide@0.462.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
@@ -35,6 +37,9 @@
                     <span>Last 30 Days</span>
                     <i data-lucide="chevron-down"></i>
                 </div>
+                <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light mode" title="Toggle theme">
+                    <span data-theme-icon><i data-lucide="sun" style="width:15px;height:15px;"></i></span>
+                </button>
                 <button class="btn-primary" id="exportBtnTop">
                     <i data-lucide="download"></i>
                     Export Report
