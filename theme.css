@@ -1,5 +1,6 @@
 /* ═════════════════════════════════════════════════════════════════════
    PROCTORAI — ENTERPRISE THEME SYSTEM (DARK & LIGHT MODES)
+   High-Precision SOC Night Ops ↔ Day Ops Transition Engine
    ═════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. LIGHT THEME TOKENS ── */
@@ -82,53 +83,206 @@ html[data-theme="light"],
     --shadow-lg:          0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
 }
 
-/* ── 2. COMPACT THEME TOGGLE BUTTON ── */
+/* ── 2. PREMIUM SLIDING THEME TOGGLE SWITCH ── */
 .theme-toggle-btn {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: var(--surface-elevated, rgba(255, 255, 255, 0.06));
-    border: 1px solid var(--border-light, rgba(255, 255, 255, 0.12));
-    color: var(--text-primary, #f8fafc);
+    justify-content: flex-start;
+    width: 48px;
+    height: 26px;
+    border-radius: 999px;
+    background: rgba(14, 20, 34, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     cursor: pointer;
-    padding: 0;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 2px;
     outline: none;
     flex-shrink: 0;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: background 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.2s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html[data-theme="light"] .theme-toggle-btn {
+    background: #e2e8f0;
+    border-color: rgba(15, 23, 42, 0.15);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .theme-toggle-btn:hover {
-    background: var(--surface-hover, rgba(255, 255, 255, 0.12));
     border-color: var(--accent, #38bdf8);
-    color: var(--accent, #38bdf8);
-    transform: scale(1.05);
-    box-shadow: 0 0 10px var(--accent-glow, rgba(56, 189, 248, 0.25));
+    box-shadow: 0 0 12px var(--accent-glow, rgba(56, 189, 248, 0.3));
+    transform: scale(1.04);
 }
 
 .theme-toggle-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.96);
 }
 
 .theme-toggle-btn:focus-visible {
     box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent);
 }
 
-.theme-toggle-btn * {
+/* Background static track icons */
+.theme-track-icons {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px;
     pointer-events: none;
 }
 
-/* ── 3. SMOOTH THEME TRANSITION ── */
-html.theme-transition,
-html.theme-transition *,
-html.theme-transition *::before,
-html.theme-transition *::after {
-    transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease !important;
+.theme-track-icons .track-moon {
+    color: #38bdf8;
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
 }
 
-/* ── 4. LIGHT MODE SURFACE & COMPONENT POLISH ── */
+.theme-track-icons .track-sun {
+    color: #f59e0b;
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+}
+
+/* Sliding thumb */
+.theme-toggle-thumb {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateX(0px);
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                background 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 2;
+    pointer-events: none;
+}
+
+html[data-theme="light"] .theme-toggle-thumb {
+    transform: translateX(22px);
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+    border-color: rgba(2, 132, 199, 0.35);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Morphing and rotating thumb icons */
+.theme-thumb-icon {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+}
+
+.theme-thumb-icon.moon {
+    color: #38bdf8;
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+}
+
+.theme-thumb-icon.sun {
+    color: #f59e0b;
+    transform: rotate(90deg) scale(0.3);
+    opacity: 0;
+}
+
+html[data-theme="light"] .theme-thumb-icon.moon {
+    transform: rotate(-90deg) scale(0.3);
+    opacity: 0;
+}
+
+html[data-theme="light"] .theme-thumb-icon.sun {
+    color: #0284c7;
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+}
+
+/* ── 3. GLOBAL SMOOTH THEME TRANSITIONS (500–700MS) ── */
+html.theme-transitioning,
+html.theme-transitioning body,
+html.theme-transitioning .glass-panel,
+html.theme-transitioning .panel,
+html.theme-transitioning .card,
+html.theme-transitioning .stat-card,
+html.theme-transitioning .kpi-card,
+html.theme-transitioning .panel-container,
+html.theme-transitioning .top-nav,
+html.theme-transitioning .soc-header,
+html.theme-transitioning .glass-header,
+html.theme-transitioning .enroll-nav,
+html.theme-transitioning .navbar,
+html.theme-transitioning .file-item,
+html.theme-transitioning .roster-item,
+html.theme-transitioning .stage-tracker,
+html.theme-transitioning .timeline-wrapper,
+html.theme-transitioning .login-card,
+html.theme-transitioning .setup-card,
+html.theme-transitioning input,
+html.theme-transitioning select,
+html.theme-transitioning textarea,
+html.theme-transitioning button,
+html.theme-transitioning h1,
+html.theme-transitioning h2,
+html.theme-transitioning h3,
+html.theme-transitioning h4,
+html.theme-transitioning p,
+html.theme-transitioning span,
+html.theme-transitioning div {
+    transition: background 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                fill 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                stroke 0.5s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* ── 4. EXPANDING AMBIENT RIPPLE OVERLAY ── */
+.theme-ripple-overlay {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    transform: scale(0.01);
+    opacity: 0.90;
+    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: center center;
+}
+
+.theme-ripple-overlay.to-light {
+    background: radial-gradient(circle, rgba(2, 132, 199, 0.32) 0%, rgba(241, 245, 249, 0.85) 45%, rgba(241, 245, 249, 0.98) 75%);
+    box-shadow: 0 0 60px rgba(56, 189, 248, 0.35);
+}
+
+.theme-ripple-overlay.to-dark {
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.28) 0%, rgba(14, 20, 34, 0.88) 45%, rgba(6, 9, 14, 0.98) 75%);
+    box-shadow: 0 0 60px rgba(0, 229, 255, 0.25);
+}
+
+.theme-ripple-overlay.active {
+    transform: scale(1);
+    opacity: 0;
+}
+
+/* ── 5. LIGHT MODE SURFACE & COMPONENT POLISH ── */
 html[data-theme="light"] body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
@@ -248,3 +402,18 @@ html[data-theme="light"] #particles-bg {
     opacity: 0.15;
 }
 
+/* ── 6. ACCESSIBILITY & PREFERS-REDUCED-MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+    html.theme-transitioning,
+    html.theme-transitioning body,
+    html.theme-transitioning * {
+        transition: none !important;
+    }
+    .theme-ripple-overlay {
+        display: none !important;
+    }
+    .theme-toggle-thumb,
+    .theme-thumb-icon {
+        transition: none !important;
+    }
+}
