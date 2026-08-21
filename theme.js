@@ -30,11 +30,102 @@
         localStorage.setItem('proctorai_theme', next);
 
         updateThemeToggleUI(next);
+        showThemeNotification(next, event);
 
         setTimeout(() => {
             document.documentElement.classList.remove('theme-transitioning');
         }, 700);
     };
+
+    // 5. Temporary Status Notification near the Theme Toggle
+    let themeNotificationEl = null;
+    let themeNotificationTimer = null;
+
+    function showThemeNotification(nextTheme, event) {
+        try {
+            if (themeNotificationTimer) {
+                clearTimeout(themeNotificationTimer);
+                themeNotificationTimer = null;
+            }
+
+            if (!themeNotificationEl) {
+                themeNotificationEl = document.createElement('div');
+                themeNotificationEl.id = 'themeStatusNotification';
+                themeNotificationEl.className = 'theme-status-toast';
+                themeNotificationEl.innerHTML = `
+                    <span class="theme-toast-dot"></span>
+                    <span class="theme-toast-text"></span>
+                `;
+                document.body.appendChild(themeNotificationEl);
+            }
+
+            const isDark = nextTheme === 'dark';
+            const label = isDark ? 'Dark Mode Active' : 'Light Mode Active';
+
+            const textEl = themeNotificationEl.querySelector('.theme-toast-text');
+            if (textEl) {
+                textEl.textContent = label;
+            }
+
+            themeNotificationEl.className = 'theme-status-toast theme-status-' + nextTheme;
+
+            // Locate the clicked or active toggle button to position nearby
+            let targetBtn = null;
+            if (event && event.currentTarget && event.currentTarget.getBoundingClientRect) {
+                targetBtn = event.currentTarget;
+            } else if (event && event.target && event.target.closest) {
+                targetBtn = event.target.closest('.theme-toggle-btn');
+            }
+            if (!targetBtn) {
+                targetBtn = document.querySelector('.theme-toggle-btn');
+            }
+
+            if (targetBtn) {
+                const rect = targetBtn.getBoundingClientRect();
+                let top = rect.bottom + 8;
+                let right = window.innerWidth - rect.right;
+                if (right < 12) right = 12;
+                if (top + 38 > window.innerHeight) {
+                    top = Math.max(8, rect.top - 38);
+                }
+
+                themeNotificationEl.style.top = `${top}px`;
+                themeNotificationEl.style.right = `${right}px`;
+                themeNotificationEl.style.left = 'auto';
+            } else {
+                themeNotificationEl.style.top = '20px';
+                themeNotificationEl.style.right = '20px';
+                themeNotificationEl.style.left = 'auto';
+            }
+
+            // Trigger smooth slide and fade in
+            requestAnimationFrame(() => {
+                if (themeNotificationEl) {
+                    themeNotificationEl.classList.remove('closing');
+                    themeNotificationEl.classList.add('visible');
+                }
+            });
+
+            // Automatically dismiss smoothly after 3.5 seconds
+            themeNotificationTimer = setTimeout(() => {
+                hideThemeNotification();
+            }, 3500);
+        } catch (e) {
+            console.warn('Theme notification error:', e);
+        }
+    }
+
+    function hideThemeNotification() {
+        if (themeNotificationEl) {
+            themeNotificationEl.classList.remove('visible');
+            themeNotificationEl.classList.add('closing');
+            setTimeout(() => {
+                if (themeNotificationEl && themeNotificationEl.classList.contains('closing')) {
+                    themeNotificationEl.classList.remove('closing');
+                }
+            }, 350);
+        }
+    }
 
     // 5. Expand circular wave from the clicked toggle button
     function createThemeRipple(event, nextTheme) {

@@ -285,6 +285,73 @@ html.theme-transitioning div {
     opacity: 0;
 }
 
+/* ── 4b. THEME STATUS TOAST NOTIFICATION ── */
+.theme-status-toast {
+    position: fixed;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.38rem 0.85rem;
+    border-radius: 999px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    z-index: 999999;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+    transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    box-sizing: border-box;
+}
+
+.theme-status-toast.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.theme-status-toast.closing {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+}
+
+/* Dark Mode status notification */
+.theme-status-toast.theme-status-dark {
+    background: rgba(10, 15, 26, 0.95);
+    color: #f1f5f9;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(56, 189, 248, 0.15);
+    backdrop-filter: blur(12px);
+}
+
+.theme-status-toast.theme-status-dark .theme-toast-dot {
+    width: 6.5px;
+    height: 6.5px;
+    border-radius: 50%;
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8;
+    flex-shrink: 0;
+}
+
+/* Light Mode status notification */
+.theme-status-toast.theme-status-light {
+    background: rgba(255, 255, 255, 0.98);
+    color: #0f172a;
+    border: 1px solid rgba(2, 132, 199, 0.30);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12), 0 0 16px rgba(2, 132, 199, 0.10);
+    backdrop-filter: blur(12px);
+}
+
+.theme-status-toast.theme-status-light .theme-toast-dot {
+    width: 6.5px;
+    height: 6.5px;
+    border-radius: 50%;
+    background: #0284c7;
+    box-shadow: 0 0 8px rgba(2, 132, 199, 0.6);
+    flex-shrink: 0;
+}
+
 /* ═════════════════════════════════════════════════════════════════════
    5. LIGHT MODE COMPREHENSIVE TEXT VISIBILITY & CONTRAST OVERRIDES
    ═════════════════════════════════════════════════════════════════════ */
