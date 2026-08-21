@@ -982,6 +982,44 @@ p.subtitle {
     width: 50%;
 }
 
+.file-remove-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #ef4444;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 0.25rem;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+.file-remove-btn:hover {
+    background: rgba(239, 68, 68, 0.28);
+    border-color: #ef4444;
+    color: #ff6b6b;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+}
+
+.file-remove-btn:active {
+    transform: scale(0.92);
+}
+
+.file-remove-btn:focus-visible {
+    box-shadow: 0 0 0 2px var(--bg-dark), 0 0 0 4px #ef4444;
+}
+
+.file-remove-btn * {
+    pointer-events: none;
+}
+
 .message {
     padding: 0.65rem 0.85rem;
     border-radius: 6px;
@@ -2474,7 +2512,7 @@ p.subtitle {
                         defaultName = file.name.split('.')[0].trim();
                     }
                     
-                    const fileId = Date.now() + i + Math.random();
+                    const fileId = 'file_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 9);
                     selectedFilesData.push({
                         id: fileId,
                         dataUrl: e.target.result,
@@ -2514,21 +2552,56 @@ p.subtitle {
                 else if (item.status === 'error') iconHtml = '<i data-lucide="x-circle" style="color:var(--danger);width:16px;"></i>';
                 else if (item.status === 'uploading') iconHtml = '<i data-lucide="loader" style="color:var(--cyan);width:16px;" class="lucide-spin"></i>';
                 
+                const safeId = (item.studentId || '').replace(/"/g, '&quot;');
+                const safeName = (item.studentName || '').replace(/"/g, '&quot;');
+
                 el.innerHTML = `
-                    <img src="${item.dataUrl}">
+                    <img src="${item.dataUrl}" alt="Student Photo">
                     <div class="file-item-info">
-                        <input type="text" placeholder="ID" value="${item.studentId}" oninput="updateFileData(${item.id}, 'studentId', this.value)">
-                        <input type="text" placeholder="Name" value="${item.studentName}" oninput="updateFileData(${item.id}, 'studentName', this.value)">
+                        <input type="text" placeholder="ID" value="${safeId}" oninput="updateFileData('${item.id}', 'studentId', this.value)">
+                        <input type="text" placeholder="Name" value="${safeName}" oninput="updateFileData('${item.id}', 'studentName', this.value)">
                     </div>
                     <div id="status-${item.id}">${iconHtml}</div>
+                    <button type="button" class="file-remove-btn" onclick="removeBatchFile('${item.id}')" aria-label="Remove student" title="Remove student">
+                        <i data-lucide="x" style="width:14px;height:14px;stroke-width:2.5;"></i>
+                    </button>
                 `;
                 fileListEl.appendChild(el);
             });
             lucide.createIcons();
         }
         
+        function removeBatchFile(id) {
+            selectedFilesData = selectedFilesData.filter(item => String(item.id) !== String(id));
+            
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput && selectedFilesData.length === 0) {
+                fileInput.value = '';
+            }
+            
+            if (selectedFilesData.length === 0) {
+                batchState.isValid = false;
+                batchState.enrollSuccess = false;
+                batchState.enrollError = null;
+                batchState.enrolling = false;
+                batchState.processedCount = 0;
+                batchState.totalCount = 0;
+            } else {
+                batchState.totalCount = selectedFilesData.length;
+                batchState.isValid = selectedFilesData.every(x => Boolean(x.dataUrl));
+                const allSucceeded = selectedFilesData.every(x => x.status === 'success');
+                if (allSucceeded) {
+                    batchState.enrollSuccess = true;
+                    batchState.enrollError = null;
+                }
+            }
+            
+            renderFileList();
+            updateBatchTimeline();
+        }
+        
         function updateFileData(id, field, value) {
-            const item = selectedFilesData.find(x => x.id === id);
+            const item = selectedFilesData.find(x => String(x.id) === String(id));
             if (item) {
                 item[field] = value;
                 updateBatchTimeline();
