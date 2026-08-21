@@ -1749,41 +1749,92 @@ def _decode_b64_image(image_b64):
 
 @app.route('/api/validate_face', methods=['POST'])
 def validate_face():
-    """Validates if an uploaded candidate image contains a detectable human face."""
+    """Validates that an uploaded image contains EXACTLY ONE human face (rejects 0 faces and group photos with 2+ faces)."""
     try:
         data = request.json or {}
         image_b64 = data.get('image') or ''
         if not image_b64:
-            return jsonify({"valid": False, "error": "No image provided"}), 400
-
-        frame = _decode_b64_image(image_b64)
-        if frame is None:
-            return jsonify({"valid": False, "error": "Unreadable image format"}), 200
-
-        # Run face detection using the project's existing SCRFD detector
-        faces = face_detector.detect(face_recog.enhance_lowlight(frame), thresh=0.45)
-        if not faces:
-            faces = face_detector.detect(frame, thresh=0.35)
-
-        if not faces:
             return jsonify({
                 "valid": False,
                 "faces_count": 0,
-                "error": "No face detected"
+                "error": "No image provided",
+                "message": "No image provided — Invalid"
+            }), 400
+
+        frame = _decode_b64_image(image_b64)
+        if frame is None or frame.size == 0:
+            return jsonify({
+                "valid": False,
+                "faces_count": 0,
+                "error": "Unreadable image format",
+                "message": "Unreadable image — Invalid"
             }), 200
 
-        f = faces[0]
-        ok, reason, _m = face_recog.face_quality(frame, f["bbox"])
+        # Step 1: Detect all faces in the uploaded image using SCRFD neural detector
+        # Score threshold 0.35 ignores weak false-positive background noise
+        faces = face_detector.detect(frame, thresh=0.35)
 
-        return jsonify({
-            "valid": True,
-            "faces_count": len(faces),
-            "quality": "ok" if ok else reason,
-            "bbox": [float(v) for v in f["bbox"][:4]]
-        }), 200
+        # If no faces found on raw frame, try enhanced low-light frame
+        if not faces:
+            enhanced = face_recog.enhance_lowlight(frame)
+            faces = face_detector.detect(enhanced, thresh=0.30)
+
+        # Step 2: Fallback with OpenCV Haar Cascade if SCRFD found 0 faces (e.g. extreme lighting or unique camera angles)
+        if not faces:
+            try:
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                haar_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+                haar_faces = haar_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(32, 32))
+                if len(haar_faces) > 0:
+                    faces = [{"bbox": (float(x), float(y), float(w), float(h)), "score": 0.85} for (x, y, w, h) in haar_faces]
+            except Exception:
+                pass
+
+        # Filter out invalid or zero-area detections
+        valid_faces = []
+        for f in faces:
+            bbox = f.get("bbox", (0, 0, 0, 0))
+            if len(bbox) >= 4 and bbox[2] >= 10 and bbox[3] >= 10:
+                valid_faces.append(f)
+
+        face_count = len(valid_faces)
+
+        # MANDATORY ONE PERSON PER UPLOAD RULE:
+        # face_count == 1 -> VALID (GREEN ✓)
+        # face_count == 0 -> INVALID (RED ✕)
+        # face_count > 1  -> INVALID (RED ✕) Group / cricket / team / crowd photos rejected
+        if face_count == 1:
+            f = valid_faces[0]
+            bbox = [float(v) for v in f["bbox"][:4]]
+            return jsonify({
+                "valid": True,
+                "faces_count": 1,
+                "message": "1 face detected — Valid",
+                "bbox": bbox
+            }), 200
+        elif face_count > 1:
+            return jsonify({
+                "valid": False,
+                "faces_count": face_count,
+                "error": f"Multiple faces detected ({face_count} faces)",
+                "message": f"Multiple faces detected ({face_count}) — Invalid"
+            }), 200
+        else:
+            return jsonify({
+                "valid": False,
+                "faces_count": 0,
+                "error": "No face detected",
+                "message": "No face detected — Invalid"
+            }), 200
+
     except Exception as e:
         print(f"Error validating face: {e}")
-        return jsonify({"valid": False, "error": str(e)}), 200
+        return jsonify({
+            "valid": False,
+            "faces_count": 0,
+            "error": str(e),
+            "message": "Validation error — Invalid"
+        }), 200
 
 @app.route('/api/register', methods=['POST'])
 def register():
