@@ -1020,6 +1020,36 @@ p.subtitle {
     pointer-events: none;
 }
 
+.file-item-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.status-icon-valid {
+    color: #10b981 !important;
+    filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.5));
+    animation: statusPop 0.22s ease-out;
+}
+
+.status-icon-invalid {
+    color: #ef4444 !important;
+    filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5));
+    animation: statusPop 0.22s ease-out;
+}
+
+.status-icon-loading {
+    color: var(--cyan) !important;
+}
+
+@keyframes statusPop {
+    0% { transform: scale(0.7); opacity: 0.6; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
 .message {
     padding: 0.65rem 0.85rem;
     border-radius: 6px;
@@ -2485,9 +2515,8 @@ p.subtitle {
             const uploadBtn = document.getElementById('uploadAllBtn');
             if (!files || files.length === 0) return;
             
-            let validCount = 0;
-            const totalImages = Array.from(files).filter(f => f.type.startsWith('image/')).length;
-            if (totalImages === 0) {
+            const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (imageFiles.length === 0) {
                 showMsg('Please select valid image files (JPG/PNG).', 'error');
                 return;
             }
@@ -2496,9 +2525,8 @@ p.subtitle {
             batchState.enrollSuccess = false;
             batchState.enrollError = null;
 
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (!file.type.startsWith('image/')) continue;
+            for (let i = 0; i < imageFiles.length; i++) {
+                const file = imageFiles[i];
                 
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -2513,23 +2541,111 @@ p.subtitle {
                     }
                     
                     const fileId = 'file_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 9);
-                    selectedFilesData.push({
+                    const itemData = {
                         id: fileId,
                         dataUrl: e.target.result,
                         studentId: defaultId,
                         studentName: defaultName,
-                        status: 'pending'
-                    });
-                    
-                    validCount++;
-                    if (validCount === totalImages) {
-                        batchState.isValid = true;
-                    }
+                        validationStatus: 'validating',
+                        hasFace: null,
+                        enrollStatus: 'pending'
+                    };
+                    selectedFilesData.push(itemData);
                     renderFileList();
                     updateBatchTimeline();
+                    
+                    // Trigger real face detection validation for this uploaded image
+                    validateStudentFace(itemData);
                 };
                 reader.readAsDataURL(file);
             }
+        }
+
+        async function validateStudentFace(item) {
+            try {
+                const response = await fetch('/api/validate_face', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: item.dataUrl })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result && result.valid === true) {
+                        item.hasFace = true;
+                        item.validationStatus = 'valid';
+                    } else {
+                        item.hasFace = false;
+                        item.validationStatus = 'invalid';
+                    }
+                } else {
+                    const clientCheck = await detectFaceInImage(item.dataUrl);
+                    item.hasFace = clientCheck;
+                    item.validationStatus = clientCheck ? 'valid' : 'invalid';
+                }
+            } catch (err) {
+                const clientCheck = await detectFaceInImage(item.dataUrl);
+                item.hasFace = clientCheck;
+                item.validationStatus = clientCheck ? 'valid' : 'invalid';
+            }
+
+            const allValidated = selectedFilesData.every(x => x.validationStatus !== 'validating');
+            if (allValidated && selectedFilesData.length > 0) {
+                batchState.isValid = true;
+            }
+            
+            renderFileList();
+            updateBatchTimeline();
+        }
+
+        async function detectFaceInImage(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = async () => {
+                    try {
+                        if (window.FaceDetector) {
+                            try {
+                                const detector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 5 });
+                                const detected = await detector.detect(img);
+                                if (detected && detected.length > 0) {
+                                    return resolve(true);
+                                }
+                            } catch (e) {}
+                        }
+                        
+                        const c = document.createElement('canvas');
+                        const ctx = c.getContext('2d', { willReadFrequently: true });
+                        const maxDim = 200;
+                        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+                        c.width = Math.round(img.width * scale);
+                        c.height = Math.round(img.height * scale);
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        
+                        const imgData = ctx.getImageData(0, 0, c.width, c.height);
+                        const d = imgData.data;
+                        let skinPixels = 0;
+                        const totalPixels = c.width * c.height;
+                        
+                        for (let i = 0; i < d.length; i += 4) {
+                            const r = d[i], g = d[i+1], b = d[i+2];
+                            const y = 0.299 * r + 0.587 * g + 0.114 * b;
+                            const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+                            const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+                            if (cb >= 77 && cb <= 127 && cr >= 133 && cr <= 173 && y >= 40) {
+                                skinPixels++;
+                            }
+                        }
+                        
+                        const skinRatio = skinPixels / totalPixels;
+                        resolve(skinRatio >= 0.12 && skinRatio <= 0.80);
+                    } catch (e) {
+                        resolve(false);
+                    }
+                };
+                img.onerror = () => resolve(false);
+                img.src = dataUrl;
+            });
         }
         
         function renderFileList() {
@@ -2548,9 +2664,21 @@ p.subtitle {
                 el.className = 'file-item';
                 
                 let iconHtml = '';
-                if (item.status === 'success') iconHtml = '<i data-lucide="check-circle" style="color:var(--success);width:16px;"></i>';
-                else if (item.status === 'error') iconHtml = '<i data-lucide="x-circle" style="color:var(--danger);width:16px;"></i>';
-                else if (item.status === 'uploading') iconHtml = '<i data-lucide="loader" style="color:var(--cyan);width:16px;" class="lucide-spin"></i>';
+                if (item.enrollStatus === 'uploading') {
+                    iconHtml = '<i data-lucide="loader" class="lucide-spin status-icon-loading" style="width:16px;height:16px;" title="Enrolling..."></i>';
+                } else if (item.enrollStatus === 'success') {
+                    iconHtml = '<i data-lucide="check-circle-2" class="status-icon-valid" style="width:16px;height:16px;" title="Enrolled successfully"></i>';
+                } else if (item.enrollStatus === 'error') {
+                    iconHtml = '<i data-lucide="x-circle" class="status-icon-invalid" style="width:16px;height:16px;" title="Enrollment failed"></i>';
+                } else if (item.validationStatus === 'validating') {
+                    iconHtml = '<i data-lucide="loader" class="lucide-spin status-icon-loading" style="width:16px;height:16px;" title="Validating face detection..."></i>';
+                } else if (item.hasFace === true) {
+                    iconHtml = '<i data-lucide="check-circle-2" class="status-icon-valid" style="width:16px;height:16px;" title="Valid face detected"></i>';
+                } else if (item.hasFace === false) {
+                    iconHtml = '<i data-lucide="x-circle" class="status-icon-invalid" style="width:16px;height:16px;" title="No valid face detected"></i>';
+                } else {
+                    iconHtml = '<i data-lucide="loader" class="lucide-spin status-icon-loading" style="width:16px;height:16px;"></i>';
+                }
                 
                 const safeId = (item.studentId || '').replace(/"/g, '&quot;');
                 const safeName = (item.studentName || '').replace(/"/g, '&quot;');
@@ -2561,7 +2689,7 @@ p.subtitle {
                         <input type="text" placeholder="ID" value="${safeId}" oninput="updateFileData('${item.id}', 'studentId', this.value)">
                         <input type="text" placeholder="Name" value="${safeName}" oninput="updateFileData('${item.id}', 'studentName', this.value)">
                     </div>
-                    <div id="status-${item.id}">${iconHtml}</div>
+                    <div id="status-${item.id}" class="file-item-status">${iconHtml}</div>
                     <button type="button" class="file-remove-btn" onclick="removeBatchFile('${item.id}')" aria-label="Remove student" title="Remove student">
                         <i data-lucide="x" style="width:14px;height:14px;stroke-width:2.5;"></i>
                     </button>
@@ -2588,8 +2716,8 @@ p.subtitle {
                 batchState.totalCount = 0;
             } else {
                 batchState.totalCount = selectedFilesData.length;
-                batchState.isValid = selectedFilesData.every(x => Boolean(x.dataUrl));
-                const allSucceeded = selectedFilesData.every(x => x.status === 'success');
+                batchState.isValid = selectedFilesData.every(x => x.validationStatus !== 'validating');
+                const allSucceeded = selectedFilesData.every(x => x.enrollStatus === 'success');
                 if (allSucceeded) {
                     batchState.enrollSuccess = true;
                     batchState.enrollError = null;
@@ -2626,14 +2754,14 @@ p.subtitle {
             
             for (let i = 0; i < selectedFilesData.length; i++) {
                 const item = selectedFilesData[i];
-                if (item.status === 'success') {
+                if (item.enrollStatus === 'success') {
                     successCount++;
                     batchState.processedCount++;
                     continue;
                 }
                 
-                if (!item.studentId || !item.studentName) {
-                    item.status = 'error';
+                if (!item.studentId || !item.studentName || item.hasFace === false) {
+                    item.enrollStatus = 'error';
                     failureCount++;
                     batchState.processedCount++;
                     renderFileList();
@@ -2641,7 +2769,7 @@ p.subtitle {
                     continue;
                 }
                 
-                item.status = 'uploading';
+                item.enrollStatus = 'uploading';
                 renderFileList();
                 
                 try {
@@ -2656,14 +2784,14 @@ p.subtitle {
                     });
                     
                     if (response.ok) {
-                        item.status = 'success';
+                        item.enrollStatus = 'success';
                         successCount++;
                     } else {
-                        item.status = 'error';
+                        item.enrollStatus = 'error';
                         failureCount++;
                     }
                 } catch (e) {
-                    item.status = 'error';
+                    item.enrollStatus = 'error';
                     failureCount++;
                 }
                 batchState.processedCount++;

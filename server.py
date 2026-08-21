@@ -1747,6 +1747,44 @@ def _decode_b64_image(image_b64):
     nparr = np.frombuffer(base64.b64decode(image_b64), np.uint8)
     return cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
+@app.route('/api/validate_face', methods=['POST'])
+def validate_face():
+    """Validates if an uploaded candidate image contains a detectable human face."""
+    try:
+        data = request.json or {}
+        image_b64 = data.get('image') or ''
+        if not image_b64:
+            return jsonify({"valid": False, "error": "No image provided"}), 400
+
+        frame = _decode_b64_image(image_b64)
+        if frame is None:
+            return jsonify({"valid": False, "error": "Unreadable image format"}), 200
+
+        # Run face detection using the project's existing SCRFD detector
+        faces = face_detector.detect(face_recog.enhance_lowlight(frame), thresh=0.45)
+        if not faces:
+            faces = face_detector.detect(frame, thresh=0.35)
+
+        if not faces:
+            return jsonify({
+                "valid": False,
+                "faces_count": 0,
+                "error": "No face detected"
+            }), 200
+
+        f = faces[0]
+        ok, reason, _m = face_recog.face_quality(frame, f["bbox"])
+
+        return jsonify({
+            "valid": True,
+            "faces_count": len(faces),
+            "quality": "ok" if ok else reason,
+            "bbox": [float(v) for v in f["bbox"][:4]]
+        }), 200
+    except Exception as e:
+        print(f"Error validating face: {e}")
+        return jsonify({"valid": False, "error": str(e)}), 200
+
 @app.route('/api/register', methods=['POST'])
 def register():
     """Multi-template biometric enrollment with institutional context."""
