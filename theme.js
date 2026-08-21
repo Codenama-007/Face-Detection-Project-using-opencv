@@ -106,10 +106,10 @@
                 }
             });
 
-            // Automatically dismiss smoothly after 3.5 seconds
+            // Automatically dismiss smoothly after 2.4 seconds (strictly 2–3 seconds)
             themeNotificationTimer = setTimeout(() => {
                 hideThemeNotification();
-            }, 3500);
+            }, 2400);
         } catch (e) {
             console.warn('Theme notification error:', e);
         }
@@ -123,7 +123,7 @@
                 if (themeNotificationEl && themeNotificationEl.classList.contains('closing')) {
                     themeNotificationEl.classList.remove('closing');
                 }
-            }, 350);
+            }, 250);
         }
     }
 
