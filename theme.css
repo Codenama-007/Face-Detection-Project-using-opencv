@@ -234,6 +234,9 @@ html.theme-transitioning .stage-tracker,
 html.theme-transitioning .timeline-wrapper,
 html.theme-transitioning .login-card,
 html.theme-transitioning .setup-card,
+html.theme-transitioning .how-it-works,
+html.theme-transitioning .hiw-step-card,
+html.theme-transitioning .footer,
 html.theme-transitioning input,
 html.theme-transitioning select,
 html.theme-transitioning textarea,
@@ -286,17 +289,17 @@ html.theme-transitioning div {
    5. LIGHT MODE COMPREHENSIVE TEXT VISIBILITY & CONTRAST OVERRIDES
    ═════════════════════════════════════════════════════════════════════ */
 
-/* ── Base Body & Surfaces ── */
+/* ── Base Body & Atmosphere ── */
 html[data-theme="light"] body {
     background-color: var(--bg-primary);
     color: #0f172a;
 }
 
 html[data-theme="light"] body::before {
-    opacity: 0.12;
+    opacity: 0.10;
 }
 
-/* ── Headings, Titles & Brand Names ── */
+/* ── All Headings, Titles & Brand Names ── */
 html[data-theme="light"] h1,
 html[data-theme="light"] h2,
 html[data-theme="light"] h3,
@@ -322,6 +325,7 @@ html[data-theme="light"] .hiw-step-card h3,
 html[data-theme="light"] .feature-card h3,
 html[data-theme="light"] .rule-content h4,
 html[data-theme="light"] .profile-meta h3,
+html[data-theme="light"] .showcase-content h3,
 html[data-theme="light"] .quote,
 html[data-theme="light"] .logo,
 html[data-theme="light"] .brand-title,
@@ -329,13 +333,14 @@ html[data-theme="light"] .h-brand-name,
 html[data-theme="light"] .student-name,
 html[data-theme="light"] .sup-name,
 html[data-theme="light"] .trust-rating-label,
+html[data-theme="light"] .footer-links-group h4,
 html[data-theme="light"] #adminName,
 html[data-theme="light"] #navStudentName,
 html[data-theme="light"] #supNameDisplay {
     color: #0f172a !important;
 }
 
-/* ── Subtitles, Descriptions, Leads & Paragraphs ── */
+/* ── All Subtitles, Descriptions, Leads & Paragraphs ── */
 html[data-theme="light"] p,
 html[data-theme="light"] .hero-lead,
 html[data-theme="light"] .hero-subtitle,
@@ -353,6 +358,7 @@ html[data-theme="light"] .hiw-step-card p,
 html[data-theme="light"] .feature-card p,
 html[data-theme="light"] .rule-content p,
 html[data-theme="light"] .profile-meta p,
+html[data-theme="light"] .showcase-content p,
 html[data-theme="light"] .text-secondary,
 html[data-theme="light"] .text-muted,
 html[data-theme="light"] .summary-sub,
@@ -367,6 +373,7 @@ html[data-theme="light"] .footer-desc {
 html[data-theme="light"] .nav-links a,
 html[data-theme="light"] .tab-link,
 html[data-theme="light"] .footer-links a,
+html[data-theme="light"] .footer-links-group a,
 html[data-theme="light"] .back-btn,
 html[data-theme="light"] .step-item,
 html[data-theme="light"] .brand-sub,
@@ -378,6 +385,7 @@ html[data-theme="light"] .mobile-menu-btn {
 html[data-theme="light"] .nav-links a:hover,
 html[data-theme="light"] .tab-link.active,
 html[data-theme="light"] .footer-links a:hover,
+html[data-theme="light"] .footer-links-group a:hover,
 html[data-theme="light"] .back-btn:hover {
     color: #0284c7 !important;
 }
@@ -410,13 +418,197 @@ html[data-theme="light"] .glass-card,
 html[data-theme="light"] .auth-card,
 html[data-theme="light"] .step-card,
 html[data-theme="light"] .feature-card,
-html[data-theme="light"] .hiw-step-card,
+html[data-theme="light"] .showcase-card,
+html[data-theme="light"] .feat-highlight-card,
+html[data-theme="light"] .cap-module,
+html[data-theme="light"] .floating-card,
 html[data-theme="light"] .summary-box,
-html[data-theme="light"] .rule-item {
+html[data-theme="light"] .summary-card,
+html[data-theme="light"] .rule-item,
+html[data-theme="light"] .playback-controls-deck,
+html[data-theme="light"] .metric-box {
     background: #ffffff !important;
     border-color: rgba(15, 23, 42, 0.12) !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03) !important;
     color: #0f172a !important;
+}
+
+/* ── HOW IT WORKS / SECURITY PIPELINE SECTION ── */
+html[data-theme="light"] .how-it-works {
+    background: #f8fafc !important;
+    border-top: 1px solid rgba(15, 23, 42, 0.10) !important;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-theme="light"] .hiw-label {
+    color: #059669 !important;
+    background: rgba(5, 150, 105, 0.10) !important;
+    border-color: rgba(5, 150, 105, 0.25) !important;
+}
+
+html[data-theme="light"] .hiw-step-card {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .hiw-step.hiw-current .hiw-step-card {
+    background: #ffffff !important;
+    border-color: rgba(2, 132, 199, 0.50) !important;
+    box-shadow: 0 12px 32px rgba(2, 132, 199, 0.12), 0 0 20px rgba(2, 132, 199, 0.08) !important;
+}
+
+html[data-theme="light"] .hiw-step.hiw-current .hiw-step-card::before {
+    background: linear-gradient(90deg, transparent, rgba(2, 132, 199, 0.6), transparent) !important;
+}
+
+html[data-theme="light"] .hiw-step-card h3 {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .hiw-step-card p {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .hiw-card-tag {
+    color: #0284c7 !important;
+}
+
+html[data-theme="light"] .hiw-step.hiw-current .hiw-card-tag {
+    color: #0284c7 !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="light"] .hiw-node-ring {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.18) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .hiw-node-icon {
+    color: #0284c7 !important;
+}
+
+html[data-theme="light"] .hiw-step.hiw-visible .hiw-node-ring {
+    background: #ffffff !important;
+    border-color: rgba(2, 132, 199, 0.60) !important;
+    box-shadow: 0 0 0 6px rgba(2, 132, 199, 0.12) !important;
+}
+
+html[data-theme="light"] .hiw-connector-track {
+    background: rgba(15, 23, 42, 0.12) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="light"] .hiw-step-num,
+html[data-theme="light"] .hiw-step-num-mobile {
+    color: #64748b !important;
+}
+
+html[data-theme="light"] .hiw-step.hiw-visible .hiw-step-num {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .hiw-step.hiw-current .hiw-step-num,
+html[data-theme="light"] .hiw-step.hiw-current .hiw-step-num-mobile {
+    color: #0284c7 !important;
+    text-shadow: none !important;
+}
+
+html[data-theme="light"] .hiw-card-status {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .hiw-step.hiw-visible .hiw-card-status {
+    background: rgba(2, 132, 199, 0.08) !important;
+    color: #0284c7 !important;
+    border-color: rgba(2, 132, 199, 0.22) !important;
+}
+
+html[data-theme="light"] .hiw-step.hiw-visible .hiw-status-final {
+    background: rgba(5, 150, 105, 0.08) !important;
+    color: #059669 !important;
+    border-color: rgba(5, 150, 105, 0.22) !important;
+}
+
+/* ── FOOTER & CALL TO ACTION ── */
+html[data-theme="light"] .footer,
+html[data-theme="light"] .glass-footer {
+    background: #ffffff !important;
+    border-top: 1px solid rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .footer-brand .logo {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .footer-desc {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .footer-links-group h4 {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+html[data-theme="light"] .footer-links-group a,
+html[data-theme="light"] .footer-links a {
+    color: #475569 !important;
+}
+
+html[data-theme="light"] .footer-links-group a:hover,
+html[data-theme="light"] .footer-links a:hover {
+    color: #0284c7 !important;
+}
+
+html[data-theme="light"] .footer-bottom,
+html[data-theme="light"] .footer-meta {
+    color: #64748b !important;
+    border-top: 1px solid rgba(15, 23, 42, 0.10) !important;
+}
+
+html[data-theme="light"] .cta-box {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06) !important;
+}
+
+html[data-theme="light"] .cta-box h2 {
+    color: #0f172a !important;
+}
+
+html[data-theme="light"] .cta-box p {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .cta-glow {
+    background: radial-gradient(circle, rgba(2, 132, 199, 0.12), transparent 70%) !important;
+}
+
+/* ── WHY INTEGRITY MATTERS & SHOWCASE ── */
+html[data-theme="light"] .matters-list li {
+    color: #1e293b !important;
+}
+
+html[data-theme="light"] .floating-card .card-header {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+
+html[data-theme="light"] .floating-card .card-body {
+    color: #334155 !important;
+}
+
+html[data-theme="light"] .showcase-overlay {
+    background: rgba(255, 255, 255, 0.85) !important;
+    color: #0284c7 !important;
+}
+
+html[data-theme="light"] .showcase-overlay i {
+    color: #0284c7 !important;
 }
 
 /* ── Form Labels, Inputs, Selects & Placeholders ── */
@@ -436,6 +628,7 @@ html[data-theme="light"] textarea,
 html[data-theme="light"] .form-input,
 html[data-theme="light"] .form-select,
 html[data-theme="light"] .inst-select,
+html[data-theme="light"] .select-glass,
 html[data-theme="light"] .input-group input,
 html[data-theme="light"] .form-group input,
 html[data-theme="light"] .form-group select {
@@ -486,6 +679,12 @@ html[data-theme="light"] .session-status {
 }
 
 html[data-theme="light"] .badge-hero {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.25) !important;
+    color: #0284c7 !important;
+}
+
+html[data-theme="light"] .feat-label {
     background: rgba(2, 132, 199, 0.08) !important;
     border-color: rgba(2, 132, 199, 0.25) !important;
     color: #0284c7 !important;
@@ -563,6 +762,12 @@ html[data-theme="light"] .role-tab-btn.active {
     color: #ffffff !important;
 }
 
+html[data-theme="light"] .btn-hello {
+    background: #f8fafc !important;
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    color: #0f172a !important;
+}
+
 /* ── Stage Tracker, Timelines & Tooltips ── */
 html[data-theme="light"] .timeline-wrapper,
 html[data-theme="light"] .stage-tracker,
@@ -587,8 +792,7 @@ html[data-theme="light"] .tmb-pill {
 
 html[data-theme="light"] .stage-label,
 html[data-theme="light"] .stage-num,
-html[data-theme="light"] .step-number,
-html[data-theme="light"] .hiw-step-num {
+html[data-theme="light"] .step-number {
     color: #475569 !important;
 }
 
@@ -671,14 +875,16 @@ html[data-theme="light"] .summary-value {
     font-weight: 800 !important;
 }
 
-html[data-theme="light"] table th {
+html[data-theme="light"] table th,
+html[data-theme="light"] .report-table th {
     background: #f8fafc !important;
     color: #1e293b !important;
     border-color: rgba(15, 23, 42, 0.12) !important;
     font-weight: 700 !important;
 }
 
-html[data-theme="light"] table td {
+html[data-theme="light"] table td,
+html[data-theme="light"] .report-table td {
     border-color: rgba(15, 23, 42, 0.08) !important;
     color: #0f172a !important;
 }
@@ -722,6 +928,11 @@ html[data-theme="light"] .mockup-bar-label {
     font-weight: 700 !important;
 }
 
+html[data-theme="light"] .ai-reticle-canvas {
+    background: #f8fafc !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
 html[data-theme="light"] #particles-bg {
     opacity: 0.15;
 }
@@ -733,11 +944,3 @@ html[data-theme="light"] #particles-bg {
     html.theme-transitioning * {
         transition: none !important;
     }
-    .theme-ripple-overlay {
-        display: none !important;
-    }
-    .theme-toggle-thumb,
-    .theme-thumb-icon {
-        transition: none !important;
-    }
-}
