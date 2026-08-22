@@ -1,7 +1,7 @@
-/* ============================================================
-   ProctorAI Exam Replay Engine — replay.js
-   All controls wired. Export working. Touch support added.
-   ============================================================ */
+/* ═════════════════════════════════════════════════════════════════════
+   PROCTORAI — REVIEWABLE ACTION TIMELINE ENGINE (replay.js)
+   Real-Time Search & Discovery, Telemetry Inspection, State Transitions
+   ═════════════════════════════════════════════════════════════════════ */
 
 // ─── Toast System ────────────────────────────────────────────
 function showToast(message, type = 'success', duration = 3000) {
@@ -26,7 +26,7 @@ function showToast(message, type = 'success', duration = 3000) {
         font-family:'Inter',-apple-system,sans-serif;font-size:0.875rem;font-weight:500;
         box-shadow:0 8px 32px rgba(0,0,0,0.7);transform:translateX(120%);
         transition:transform 0.35s cubic-bezier(0.16,1,0.3,1);pointer-events:all;
-        min-width:220px;max-width:340px;
+        min-width:220px;max-width:360px;
     `;
     toast.innerHTML = `<span style="font-size:1.1rem;color:${textColors[type]}">${icons[type]}</span><span>${message}</span>`;
     container.appendChild(toast);
@@ -48,456 +48,771 @@ function downloadBlob(content, filename, mimeType) {
     setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 500);
 }
 
-// ─── Chart defaults ──────────────────────────────────────────
-Chart.defaults.color = '#86868b';
-Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
-Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.04)';
+// ─── Global State ────────────────────────────────────────────
+let currentEvents = [];
+let selectedEventIndex = 0;
+let currentCategory = 'ALL';
+let currentSearchQuery = '';
+let currentSeverity = 'ALL';
+let currentSortOrder = 'desc';
+let searchDebounceTimer = null;
+let riskChartInstance = null;
+let directionChartInstance = null;
 
-const commonChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-        legend: { display: false },
-        tooltip: {
-            backgroundColor: 'rgba(20,20,22,0.95)', titleColor: '#fff',
-            bodyColor: '#e5e7eb', cornerRadius: 10,
-            borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
-            padding: 12, boxPadding: 6, usePointStyle: true
-        }
-    },
-    interaction: { mode: 'index', intersect: false }
+// ─── Category Visual Mappings ────────────────────────────────
+const CATEGORY_ICONS = {
+    'IDENTITY':     'user-check',
+    'SESSION':      'play-circle',
+    'AI DETECTION': 'scan',
+    'ALERT':        'alert-triangle',
+    'RISK':         'trending-up',
+    'DEVICE':       'smartphone',
+    'GAZE':         'eye'
 };
 
+const CATEGORY_COLORS = {
+    'IDENTITY':     'cyan',
+    'SESSION':      'purple',
+    'AI DETECTION': 'cyan',
+    'ALERT':        'danger',
+    'RISK':         'warning',
+    'DEVICE':       'danger',
+    'GAZE':         'warning'
+};
+
+// ─── DOM Ready ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    initCharts();
+    setupEventListeners();
+    fetchTimelineData();
 
-    // ── 1. Timeline Events ────────────────────────────────────
-    const timelineEvents = [
-        { time: '10:10', title: 'Exam Started',        type: 'info',    icon: 'play',          progress: 0 },
-        { time: '10:12', title: 'Looking Left',        type: 'warning', icon: 'eye',           progress: 10 },
-        { time: '10:14', title: 'Looking Right',       type: 'warning', icon: 'eye',           progress: 20 },
-        { time: '10:18', title: 'Face Missing',        type: 'danger',  icon: 'user-minus',    progress: 35 },
-        { time: '10:20', title: 'Returned',            type: 'info',    icon: 'user-check',    progress: 45 },
-        { time: '10:25', title: 'Risk Increased',      type: 'danger',  icon: 'alert-triangle',progress: 60 },
-        { time: '10:30', title: 'Suspicious Activity', type: 'danger',  icon: 'alert-circle',  progress: 75 },
-        { time: '10:45', title: 'Exam Submitted',      type: 'info',    icon: 'check-circle',  progress: 100 }
-    ];
-
-    const descriptions = {
-        'Exam Started':          'Identity verification completed successfully. Environment scan passed. Examination officially commenced.',
-        'Looking Left':          'Subject\'s gaze deviated sharply to the left quadrant of the screen boundary for an extended duration (4.2 seconds). This is flagged as a potential off-screen resource reference.',
-        'Looking Right':         'Subject frequently glancing to the lower right area off-screen. Pattern suggests reading from a secondary device or notes.',
-        'Face Missing':          'Facial tracking completely lost. Subject either moved entirely out of frame or obscured the camera feed.',
-        'Returned':              'Face re-acquired by tracking system. Posture normalization detected.',
-        'Risk Increased':        'Cumulative anomalous events exceeded threshold. Heuristic risk calculation bumped to critical tier.',
-        'Suspicious Activity':   'Multiple audio sources detected (speaking voices) combined with erratic eye movement.',
-        'Exam Submitted':        'Final exam payload successfully transmitted and locked by server.'
-    };
-
-    // ── DOM refs ──────────────────────────────────────────────
-    const timelineTrack   = document.querySelector('.timeline-track');
-    const detailTime      = document.querySelector('.detail-time');
-    const detailTitle     = document.querySelector('.detail-title');
-    const descEl          = document.querySelector('.detail-desc');
-    const statusOverlay   = document.querySelector('.status-overlay');
-    const timestampOverlay= document.querySelector('.timestamp-overlay');
-    const btnPlayPause    = document.getElementById('btnPlayPause');
-    const btnPrev         = document.getElementById('btnPrev');
-    const btnNext         = document.getElementById('btnNext');
-    const btnVolume       = document.getElementById('btnVolume');
-    const progressBarBg   = document.getElementById('progressBarBg');
-    const progressBarFill = document.getElementById('progressBarFill');
-    const progressHandle  = document.getElementById('progressHandle');
-    const speedControl    = document.getElementById('speedControl');
-
-    // ── State ─────────────────────────────────────────────────
-    let currentIndex   = 3;
-    let isPlaying      = false;
-    let isMuted        = false;
-    let currentProgress= 35;
-    let playInterval   = null;
-    let playbackSpeed  = 1.0;
-    let isDragging     = false;
-
-    // ── Build Timeline DOM ───────────────────────────────────
-    const tlElements = [];
-    timelineEvents.forEach((ev, idx) => {
-        const el = document.createElement('div');
-        el.className = `tl-event ${ev.type}`;
-        el.innerHTML = `<span class="tl-time">${ev.time}</span><span class="tl-title">${ev.title}</span>`;
-        timelineTrack.appendChild(el);
-        tlElements.push(el);
-        el.addEventListener('click', () => {
-            selectEvent(idx);
-            setProgress(ev.progress);
-        });
+    // Auto-focus search on '/' keypress
+    window.addEventListener('keydown', (e) => {
+        if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            const searchInput = document.getElementById('timelineSearchInput');
+            if (searchInput) searchInput.focus();
+        }
+        if (e.key === 'Escape') {
+            const searchInput = document.getElementById('timelineSearchInput');
+            if (searchInput && searchInput.value) {
+                searchInput.value = '';
+                document.getElementById('clearSearchBtn').classList.remove('show');
+                currentSearchQuery = '';
+                fetchTimelineData();
+            }
+        }
+        if (e.key === 'j' || e.key === 'ArrowDown') {
+            if (document.activeElement.tagName !== 'INPUT') {
+                navigateEvents(1);
+            }
+        }
+        if (e.key === 'k' || e.key === 'ArrowUp') {
+            if (document.activeElement.tagName !== 'INPUT') {
+                navigateEvents(-1);
+            }
+        }
     });
+});
 
-    // ── Select Event ─────────────────────────────────────────
-    function selectEvent(idx) {
-        if (idx < 0 || idx >= timelineEvents.length) return;
-        currentIndex = idx;
-        const ev = timelineEvents[idx];
+// ─── Setup Event Listeners ───────────────────────────────────
+function setupEventListeners() {
+    const searchInput = document.getElementById('timelineSearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const sortSelect = document.getElementById('sortOrderSelect');
+    const severitySelect = document.getElementById('severityFilterSelect');
+    const refreshBtn = document.getElementById('refreshTimelineBtn');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
 
-        tlElements.forEach(e => e.classList.remove('active'));
-        tlElements[idx].classList.add('active');
-        tlElements[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-
-        if (detailTime)   detailTime.textContent   = ev.time + ':45';
-        if (detailTitle)  detailTitle.textContent  = ev.title;
-        if (descEl)       descEl.textContent       = descriptions[ev.title] || 'No description available.';
-
-        if (statusOverlay) {
-            statusOverlay.innerHTML = `<i data-lucide="${ev.icon}"></i> ${ev.title}`;
-            statusOverlay.className = 'status-overlay ' + (ev.type === 'danger' ? 'danger-bg' : (ev.type === 'warning' ? 'warning-bg' : 'accent-bg'));
-        }
-        if (timestampOverlay) timestampOverlay.textContent = ev.time + ':45';
-
-        // Update incident log badges
-        const detailMeta = document.querySelector('.detail-meta');
-        if (detailMeta) {
-            const severityMap = { danger: 'badge-danger', warning: 'badge-warning', info: 'badge-outline' };
-            const severityLabel = { danger: 'High Severity', warning: 'Medium Severity', info: 'Informational' };
-            detailMeta.innerHTML = `
-                <span class="badge ${severityMap[ev.type]}">${severityLabel[ev.type]}</span>
-                <span class="badge badge-outline">Gaze Tracking</span>
-            `;
-        }
-
-        lucide.createIcons();
-    }
-
-    // Initialize
-    selectEvent(currentIndex);
-
-    // ── Progress Bar ─────────────────────────────────────────
-    function setProgress(percent) {
-        percent = Math.max(0, Math.min(100, percent));
-        currentProgress = percent;
-        if (progressBarFill) progressBarFill.style.width = `${percent}%`;
-        if (progressHandle)  progressHandle.style.left  = `${percent}%`;
-
-        if (!isPlaying) {
-            let best = 0;
-            timelineEvents.forEach((ev, i) => { if (ev.progress <= percent) best = i; });
-            if (best !== currentIndex) selectEvent(best);
-        }
-    }
-
-    function getProgressFromPointer(clientX) {
-        const rect = progressBarBg.getBoundingClientRect();
-        const x = clientX - rect.left;
-        return (x / rect.width) * 100;
-    }
-
-    // ── Play / Pause ──────────────────────────────────────────
-    function togglePlay() {
-        isPlaying = !isPlaying;
-        updatePlayButton();
-        if (isPlaying) {
-            if (currentProgress >= 100) { setProgress(0); selectEvent(0); }
-            playInterval = setInterval(() => {
-                if (currentProgress >= 100) {
-                    isPlaying = false;
-                    updatePlayButton();
-                    clearInterval(playInterval);
-                    showToast('Replay completed', 'success');
-                    return;
-                }
-                const newPct = currentProgress + (0.5 * playbackSpeed);
-                currentProgress = newPct;
-                if (progressBarFill) progressBarFill.style.width = `${newPct}%`;
-                if (progressHandle)  progressHandle.style.left   = `${newPct}%`;
-
-                let activeIdx = 0;
-                timelineEvents.forEach((ev, i) => { if (ev.progress <= newPct) activeIdx = i; });
-                if (activeIdx !== currentIndex) selectEvent(activeIdx);
-            }, 100);
-        } else {
-            clearInterval(playInterval);
-        }
-    }
-
-    function updatePlayButton() {
-        if (!btnPlayPause) return;
-        btnPlayPause.innerHTML = isPlaying
-            ? '<i data-lucide="pause"></i>'
-            : '<i data-lucide="play"></i>';
-        lucide.createIcons();
-    }
-
-    // ── Wire controls ────────────────────────────────────────
-    if (btnPlayPause) btnPlayPause.addEventListener('click', togglePlay);
-
-    if (btnPrev) {
-        btnPrev.addEventListener('click', () => {
-            if (currentIndex > 0) {
-                selectEvent(currentIndex - 1);
-                setProgress(timelineEvents[currentIndex].progress);
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            currentSearchQuery = e.target.value.trim();
+            if (currentSearchQuery) {
+                clearBtn.classList.add('show');
             } else {
-                setProgress(0);
-                showToast('At the beginning of the replay', 'info', 2000);
+                clearBtn.classList.remove('show');
+            }
+
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                fetchTimelineData();
+            }, 180);
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (searchInput) {
+                searchInput.value = '';
+                clearBtn.classList.remove('show');
+                currentSearchQuery = '';
+                fetchTimelineData();
+                searchInput.focus();
             }
         });
+    }
+
+    if (sortSelect) {
+        sortSelect.addEventListener('change', (e) => {
+            currentSortOrder = e.target.value;
+            fetchTimelineData();
+        });
+    }
+
+    if (severitySelect) {
+        severitySelect.addEventListener('change', (e) => {
+            currentSeverity = e.target.value;
+            fetchTimelineData();
+        });
+    }
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            showToast('Synchronizing timeline events...', 'info', 1500);
+            fetchTimelineData();
+        });
+    }
+
+    if (btnPrev) {
+        btnPrev.addEventListener('click', () => navigateEvents(-1));
     }
 
     if (btnNext) {
-        btnNext.addEventListener('click', () => {
-            if (currentIndex < timelineEvents.length - 1) {
-                selectEvent(currentIndex + 1);
-                setProgress(timelineEvents[currentIndex].progress);
+        btnNext.addEventListener('click', () => navigateEvents(1));
+    }
+
+    // Category chips click listeners
+    const categoryChips = document.querySelectorAll('.cat-chip');
+    categoryChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            categoryChips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            currentCategory = chip.getAttribute('data-category') || 'ALL';
+            fetchTimelineData();
+        });
+    });
+}
+
+// ─── Fetch Timeline Data from Backend API ────────────────────
+async function fetchTimelineData() {
+    try {
+        const params = new URLSearchParams();
+        if (currentSearchQuery) params.append('q', currentSearchQuery);
+        if (currentCategory && currentCategory !== 'ALL') params.append('category', currentCategory);
+        if (currentSeverity && currentSeverity !== 'ALL') params.append('severity', currentSeverity);
+        if (currentSortOrder) params.append('order', currentSortOrder);
+        params.append('limit', '150');
+
+        const res = await fetch(`/api/timeline?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (data.success) {
+            currentEvents = data.events || [];
+            updateCategoryCounts(data.category_counts || {});
+            renderTimelineList(currentEvents);
+            updateSummaryStatus(data.total_count, currentEvents.length);
+            updateCharts(currentEvents);
+
+            if (currentEvents.length > 0) {
+                // Keep selected index within bounds
+                if (selectedEventIndex >= currentEvents.length) {
+                    selectedEventIndex = 0;
+                }
+                inspectEvent(selectedEventIndex);
             } else {
-                setProgress(100);
-                showToast('End of replay reached', 'info', 2000);
-            }
-        });
-    }
-
-    if (btnVolume) {
-        btnVolume.addEventListener('click', () => {
-            isMuted = !isMuted;
-            btnVolume.innerHTML = isMuted
-                ? '<i data-lucide="volume-x"></i>'
-                : '<i data-lucide="volume-2"></i>';
-            btnVolume.style.color = isMuted ? 'var(--danger)' : '';
-            lucide.createIcons();
-            showToast(isMuted ? 'Audio muted' : 'Audio unmuted', 'info', 1800);
-        });
-    }
-
-    if (speedControl) {
-        speedControl.addEventListener('change', (e) => {
-            playbackSpeed = parseFloat(e.target.value);
-            showToast(`Playback speed: ${e.target.value}x`, 'info', 1800);
-        });
-    }
-
-    // ── Progress Bar Mouse & Touch ────────────────────────────
-    if (progressBarBg) {
-        function startDrag(clientX) {
-            isDragging = true;
-            setProgress(getProgressFromPointer(clientX));
-            if (isPlaying) clearInterval(playInterval);
-        }
-        function duringDrag(clientX) {
-            if (!isDragging) return;
-            setProgress(getProgressFromPointer(clientX));
-        }
-        function endDrag() {
-            if (!isDragging) return;
-            isDragging = false;
-            if (isPlaying) {
-                clearInterval(playInterval);
-                // Restart interval from current position
-                isPlaying = false;
-                togglePlay();
+                renderEmptyInspector();
             }
         }
+    } catch (err) {
+        console.error('Error loading action timeline:', err);
+        renderTimelineError();
+    }
+}
 
-        // Mouse
-        progressBarBg.addEventListener('mousedown', (e) => startDrag(e.clientX));
-        document.addEventListener('mousemove', (e) => duringDrag(e.clientX));
-        document.addEventListener('mouseup', endDrag);
+// ─── Update Category Count Badges ────────────────────────────
+function updateCategoryCounts(counts) {
+    for (const [cat, count] of Object.entries(counts)) {
+        const key = cat.replace(/\s+/g, '_');
+        const countEl = document.getElementById(`count-${key}`);
+        if (countEl) {
+            countEl.textContent = count;
+        }
+    }
+}
 
-        // Touch
-        progressBarBg.addEventListener('touchstart', (e) => { startDrag(e.touches[0].clientX); }, { passive: true });
-        document.addEventListener('touchmove', (e) => { duringDrag(e.touches[0].clientX); }, { passive: true });
-        document.addEventListener('touchend', endDrag);
+// ─── Render Timeline List ────────────────────────────────────
+function renderTimelineList(events) {
+    const track = document.getElementById('actionTimelineTrack');
+    if (!track) return;
+
+    if (!events || events.length === 0) {
+        track.innerHTML = `
+            <div class="timeline-empty">
+                <i data-lucide="search-x"></i>
+                <h4>No matching timeline events found</h4>
+                <p>Try searching for a different term like <code>"phone"</code>, <code>"Nalin"</code>, or reset category filters.</p>
+                <button type="button" class="btn-primary" onclick="resetFilters()" style="margin-top:0.5rem;">
+                    Reset All Filters
+                </button>
+            </div>
+        `;
+        lucide.createIcons();
+        return;
     }
 
-    // ── Header Prev/Next session buttons ─────────────────────
-    const headerBtns = document.querySelectorAll('.replay-controls-header .btn-icon');
-    if (headerBtns[0]) {
-        headerBtns[0].addEventListener('click', () => showToast('Previous session — Coming Soon', 'info'));
-    }
-    if (headerBtns[1]) {
-        headerBtns[1].addEventListener('click', () => showToast('Next session — Coming Soon', 'info'));
+    track.innerHTML = events.map((ev, idx) => {
+        const isSelected = idx === selectedEventIndex;
+        const icon = CATEGORY_ICONS[ev.category] || 'activity';
+        const sevClass = (ev.severity || 'NORMAL').toLowerCase().replace('_', '-');
+        const colorName = CATEGORY_COLORS[ev.category] || 'cyan';
+
+        // Build state changes pill row (e.g. Risk: 35 → 60)
+        let stateChangesHtml = '';
+        if (ev.state_change && Object.keys(ev.state_change).length > 0) {
+            const scItems = [];
+            if (ev.state_change.risk) {
+                const [r1, r2] = ev.state_change.risk;
+                const rClass = r2 > r1 ? 'danger' : 'success';
+                scItems.push(`<span class="sc-badge ${rClass}">Risk: <strong>${r1}</strong> <span class="arr">&rarr;</span> <strong>${r2}</strong></span>`);
+            }
+            if (ev.state_change.trust) {
+                const [t1, t2] = ev.state_change.trust;
+                const tClass = t2 < t1 ? 'warning' : 'success';
+                scItems.push(`<span class="sc-badge ${tClass}">Trust: <strong>${t1}%</strong> <span class="arr">&rarr;</span> <strong>${t2}%</strong></span>`);
+            }
+            if (ev.state_change.status) {
+                const [s1, s2] = ev.state_change.status;
+                scItems.push(`<span class="sc-badge">Status: <strong>${s1}</strong> <span class="arr">&rarr;</span> <strong>${s2}</strong></span>`);
+            }
+            if (ev.state_change.alert) {
+                const [a1, a2] = ev.state_change.alert;
+                const aClass = a2 === 'RESOLVED' ? 'success' : 'danger';
+                scItems.push(`<span class="sc-badge ${aClass}">Alert: <strong>${a1}</strong> <span class="arr">&rarr;</span> <strong>${a2}</strong></span>`);
+            }
+            if (ev.state_change.presence) {
+                const [p1, p2] = ev.state_change.presence;
+                scItems.push(`<span class="sc-badge">Presence: <strong>${p1}</strong> <span class="arr">&rarr;</span> <strong>${p2}</strong></span>`);
+            }
+            if (ev.state_change.validation) {
+                const [v1, v2] = ev.state_change.validation;
+                scItems.push(`<span class="sc-badge">Face: <strong>${v1}</strong> <span class="arr">&rarr;</span> <strong>${v2}</strong></span>`);
+            }
+
+            if (scItems.length > 0) {
+                stateChangesHtml = `<div class="t-state-changes-pill-row">${scItems.join('')}</div>`;
+            }
+        }
+
+        // Severity label format
+        let sevBadgeClass = 'success';
+        let sevLabel = 'Normal';
+        if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') {
+            sevBadgeClass = 'danger';
+            sevLabel = 'High Risk';
+        } else if (ev.severity === 'SUSPICIOUS' || ev.severity === 'LOW') {
+            sevBadgeClass = 'warning';
+            sevLabel = 'Suspicious';
+        }
+
+        // Resolved badge
+        const resolvedPill = ev.resolved ? `<span class="badge badge-success" style="font-size:0.6rem;">✓ RESOLVED</span>` : '';
+
+        return `
+            <div class="t-event-card severity-${sevClass} ${isSelected ? 'active' : ''}" 
+                 id="event-card-${idx}" 
+                 onclick="inspectEvent(${idx})"
+                 tabindex="0"
+                 role="button"
+                 aria-label="Event ${ev.title} at ${ev.timestamp}"
+            >
+                <div class="t-node-wrap">
+                    <div class="t-node-circle ${colorName}">
+                        <i data-lucide="${icon}"></i>
+                    </div>
+                </div>
+                <div class="t-content-wrap">
+                    <div class="t-header-row">
+                        <div class="t-header-left">
+                            <span class="t-time-pill">${ev.timestamp}</span>
+                            <div class="t-student-pill">
+                                <span>${escapeHtml(ev.student_name || 'System')}</span>
+                                <span class="stu-id">${ev.student_id ? `(${escapeHtml(ev.student_id)})` : ''}</span>
+                            </div>
+                            <span class="t-category-badge">${escapeHtml(ev.category)}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.35rem;">
+                            ${resolvedPill}
+                            <span class="t-severity-badge ${sevBadgeClass}">${sevLabel}</span>
+                        </div>
+                    </div>
+
+                    <h4 class="t-event-title">${escapeHtml(ev.title)}</h4>
+                    <p class="t-event-desc">${escapeHtml(ev.description)}</p>
+                    
+                    ${stateChangesHtml}
+
+                    <div class="t-event-footer">
+                        <div class="t-meta-tags">
+                            <span>Type: ${escapeHtml(ev.event_type)}</span>
+                            <span>•</span>
+                            <span>Tenant: ${escapeHtml(ev.institution_id || 'INST-001')}</span>
+                        </div>
+                        <button type="button" class="btn-inspect-sm" onclick="event.stopPropagation(); inspectEvent(${idx});">
+                            Inspect <i data-lucide="chevron-right" style="width:12px;height:12px;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    lucide.createIcons();
+}
+
+// ─── Inspect Selected Event ──────────────────────────────────
+function inspectEvent(index) {
+    if (index < 0 || index >= currentEvents.length) return;
+    selectedEventIndex = index;
+    const ev = currentEvents[index];
+
+    // Highlight card in timeline
+    document.querySelectorAll('.t-event-card').forEach((card, idx) => {
+        if (idx === index) {
+            card.classList.add('active');
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            card.classList.remove('active');
+        }
+    });
+
+    // Populate Inspector Fields
+    const inspectorTime = document.getElementById('inspectorTime');
+    const inspectorSeverityBadge = document.getElementById('inspectorSeverityBadge');
+    const inspectorCategoryBadge = document.getElementById('inspectorCategoryBadge');
+    const inspectorTitle = document.getElementById('inspectorTitle');
+    const inspectorStudentName = document.getElementById('inspectorStudentName');
+    const inspectorStudentId = document.getElementById('inspectorStudentId');
+    const inspectorInst = document.getElementById('inspectorInst');
+    const inspectorAvatar = document.getElementById('inspectorAvatar');
+    const inspectorDesc = document.getElementById('inspectorDesc');
+    const stateTransitionsGrid = document.getElementById('stateTransitionsGrid');
+    const telConf = document.getElementById('telConf');
+    const telDevice = document.getElementById('telDevice');
+    const telGaze = document.getElementById('telGaze');
+    const telCam = document.getElementById('telCam');
+    const resolveBtn = document.getElementById('resolveIncidentBtn');
+    const resolveBtnText = document.getElementById('resolveBtnText');
+
+    if (inspectorTime) inspectorTime.textContent = ev.timestamp;
+    if (inspectorTitle) inspectorTitle.textContent = ev.title;
+    if (inspectorCategoryBadge) inspectorCategoryBadge.textContent = ev.category;
+    if (inspectorStudentName) inspectorStudentName.textContent = ev.student_name || 'System Assessment';
+    if (inspectorStudentId) inspectorStudentId.textContent = `Student ID: ${ev.student_id || 'EXAM-SESSION'}`;
+    if (inspectorInst) inspectorInst.textContent = `Institution: ${ev.institution_id || 'INST-001'}`;
+    if (inspectorDesc) inspectorDesc.textContent = ev.description;
+
+    // Avatar initials
+    if (inspectorAvatar) {
+        const nameParts = (ev.student_name || 'ST').split(' ');
+        const initials = nameParts.length >= 2 ? (nameParts[0][0] + nameParts[1][0]).toUpperCase() : nameParts[0].substring(0, 2).toUpperCase();
+        inspectorAvatar.textContent = initials;
     }
 
-    // ── Export Replay button ──────────────────────────────────
-    const exportReplayBtn = document.querySelector('.replay-controls-header .btn-primary');
-    if (exportReplayBtn) {
-        exportReplayBtn.addEventListener('click', () => {
-            exportReplayBtn.classList.add('loading');
-            showToast('Preparing export…', 'info', 1500);
-            const replayData = {
-                sessionId: 'REC-9948271',
-                student: { id: 'STU-298314', name: 'Alex Johnson' },
-                exam: 'ECON202 Final',
-                duration: '35m 12s',
-                finalRiskScore: 85,
-                finalTrustScore: 15,
-                currentPlaybackPosition: `${currentProgress.toFixed(1)}%`,
-                events: timelineEvents.map((ev, i) => ({
-                    index: i,
-                    time: ev.time,
-                    title: ev.title,
-                    type: ev.type,
-                    progress: ev.progress,
-                    description: descriptions[ev.title] || ''
-                })),
-                exportedAt: new Date().toISOString()
-            };
-            setTimeout(() => {
-                downloadBlob(JSON.stringify(replayData, null, 2), 'replay-REC-9948271.json', 'application/json');
-                exportReplayBtn.classList.remove('loading');
-                showToast('Replay Exported Successfully!', 'success');
-            }, 1200);
+    // Severity styling
+    if (inspectorSeverityBadge) {
+        inspectorSeverityBadge.className = 'badge';
+        if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') {
+            inspectorSeverityBadge.classList.add('badge-danger');
+            inspectorSeverityBadge.textContent = 'HIGH RISK';
+            if (inspectorTime) inspectorTime.className = 'detail-time danger-text';
+        } else if (ev.severity === 'SUSPICIOUS' || ev.severity === 'LOW') {
+            inspectorSeverityBadge.classList.add('badge-warning');
+            inspectorSeverityBadge.textContent = 'SUSPICIOUS';
+            if (inspectorTime) inspectorTime.className = 'detail-time warning-text';
+        } else {
+            inspectorSeverityBadge.classList.add('badge-success');
+            inspectorSeverityBadge.textContent = 'NORMAL';
+            if (inspectorTime) inspectorTime.className = 'detail-time success-text';
+        }
+    }
+
+    // Recorded State Transitions Grid
+    if (stateTransitionsGrid) {
+        const sc = ev.state_change || {};
+        const scItems = [];
+
+        if (sc.risk) {
+            const [r1, r2] = sc.risk;
+            scItems.push(`
+                <div class="sc-item">
+                    <span class="sc-label">Risk Score</span>
+                    <span class="sc-val danger-text">${r1} <span class="arr">&rarr;</span> ${r2}</span>
+                </div>
+            `);
+        }
+        if (sc.trust) {
+            const [t1, t2] = sc.trust;
+            scItems.push(`
+                <div class="sc-item">
+                    <span class="sc-label">Trust Score</span>
+                    <span class="sc-val warning-text">${t1}% <span class="arr">&rarr;</span> ${t2}%</span>
+                </div>
+            `);
+        }
+        if (sc.status) {
+            const [s1, s2] = sc.status;
+            scItems.push(`
+                <div class="sc-item">
+                    <span class="sc-label">Candidate Status</span>
+                    <span class="sc-val">${s1} <span class="arr">&rarr;</span> ${s2}</span>
+                </div>
+            `);
+        }
+        if (sc.alert) {
+            const [a1, a2] = sc.alert;
+            scItems.push(`
+                <div class="sc-item">
+                    <span class="sc-label">Security Alert</span>
+                    <span class="sc-val ${a2 === 'RESOLVED' ? 'success-text' : 'danger-text'}">${a1} <span class="arr">&rarr;</span> ${a2}</span>
+                </div>
+            `);
+        }
+        if (sc.presence) {
+            const [p1, p2] = sc.presence;
+            scItems.push(`
+                <div class="sc-item">
+                    <span class="sc-label">Area Presence</span>
+                    <span class="sc-val">${p1} <span class="arr">&rarr;</span> ${p2}</span>
+                </div>
+            `);
+        }
+        if (sc.validation) {
+            const [v1, v2] = sc.validation;
+            scItems.push(`
+                <div class="sc-item">
+                    <span class="sc-label">Biometric Verification</span>
+                    <span class="sc-val ${v2 === 'VALID' ? 'success-text' : 'danger-text'}">${v1} <span class="arr">&rarr;</span> ${v2}</span>
+                </div>
+            `);
+        }
+
+        if (scItems.length === 0) {
+            scItems.push(`
+                <div class="sc-item" style="grid-column:1/-1;">
+                    <span class="sc-label">Telemetry Update</span>
+                    <span class="sc-val success-text">No integrity threshold breach recorded</span>
+                </div>
+            `);
+        }
+        stateTransitionsGrid.innerHTML = scItems.join('');
+    }
+
+    // Telemetry metadata
+    const meta = ev.metadata || {};
+    if (telConf) telConf.textContent = meta.confidence ? `${(meta.confidence * 100).toFixed(1)}%` : (meta.templates ? `${meta.templates} templates` : '98.5%');
+    if (telDevice) telDevice.textContent = meta.device || (ev.category === 'DEVICE' ? 'Mobile Phone' : 'None');
+    if (telGaze) telGaze.textContent = meta.gaze || (meta.direction || 'CENTER (Nominal)');
+    if (telCam) telCam.textContent = meta.camera || 'CAM-01 (1080p SOC)';
+
+    // Evidence Snapshot
+    const evidenceBox = document.getElementById('evidencePreviewBox');
+    const evidenceThumb = document.getElementById('evidenceThumb');
+    if (evidenceBox && evidenceThumb) {
+        if (meta.evidence_url || ev.category === 'DEVICE' || ev.severity === 'HIGH_RISK') {
+            evidenceBox.style.display = 'flex';
+            evidenceThumb.src = meta.evidence_url || 'exam_room.jpg';
+        } else {
+            evidenceBox.style.display = 'none';
+        }
+    }
+
+    // Resolution button state
+    if (resolveBtn && resolveBtnText) {
+        if (ev.resolved) {
+            resolveBtn.classList.add('resolved');
+            resolveBtnText.textContent = '✓ Incident Resolved & Logged';
+            resolveBtn.disabled = true;
+        } else {
+            resolveBtn.classList.remove('resolved');
+            resolveBtnText.textContent = 'Acknowledge & Resolve Incident';
+            resolveBtn.disabled = false;
+        }
+    }
+
+    // Synchronize Flight Recorder / Playback
+    synchronizePlayback(ev, index);
+}
+
+// ─── Synchronize Playback Area ───────────────────────────────
+function synchronizePlayback(ev, index) {
+    const playbackTime = document.getElementById('playbackTimeDisplay');
+    const playbackBadge = document.getElementById('playbackEventBadge');
+    const playbackTimestamp = document.getElementById('playbackTimestamp');
+    const playbackOverlayTag = document.getElementById('playbackOverlayTag');
+    const playbackFaceBox = document.getElementById('playbackFaceBox');
+    const progressBarFill = document.getElementById('progressBarFill');
+    const progressHandle = document.getElementById('progressHandle');
+    const currentScrubTime = document.getElementById('currentScrubTime');
+
+    if (playbackTime) playbackTime.textContent = ev.timestamp;
+    if (playbackBadge) {
+        playbackBadge.textContent = ev.title;
+        playbackBadge.className = 'badge';
+        if (ev.severity === 'HIGH_RISK') playbackBadge.classList.add('badge-danger');
+        else if (ev.severity === 'SUSPICIOUS') playbackBadge.classList.add('badge-warning');
+        else playbackBadge.classList.add('badge-success');
+    }
+    if (playbackTimestamp) playbackTimestamp.textContent = ev.timestamp;
+    if (playbackOverlayTag) {
+        playbackOverlayTag.className = 'status-overlay';
+        if (ev.severity === 'HIGH_RISK') {
+            playbackOverlayTag.classList.add('danger-bg');
+            playbackOverlayTag.innerHTML = `<i data-lucide="alert-triangle"></i> ${escapeHtml(ev.title)}`;
+        } else if (ev.severity === 'SUSPICIOUS') {
+            playbackOverlayTag.classList.add('warning-bg');
+            playbackOverlayTag.innerHTML = `<i data-lucide="eye"></i> ${escapeHtml(ev.title)}`;
+        } else {
+            playbackOverlayTag.classList.add('success-bg');
+            playbackOverlayTag.innerHTML = `<i data-lucide="check-circle"></i> ${escapeHtml(ev.title)}`;
+        }
+        lucide.createIcons();
+    }
+
+    // Scrubber progress calculation
+    const progressPct = currentEvents.length > 1 ? Math.round((index / (currentEvents.length - 1)) * 100) : 100;
+    if (progressBarFill) progressBarFill.style.width = `${progressPct}%`;
+    if (progressHandle) progressHandle.style.left = `${progressPct}%`;
+    if (currentScrubTime) currentScrubTime.textContent = `${ev.timestamp} (Event ${index + 1}/${currentEvents.length})`;
+
+    // Facebox position animation
+    if (playbackFaceBox) {
+        if (ev.category === 'GAZE') {
+            playbackFaceBox.style.borderColor = 'var(--warning)';
+            playbackFaceBox.style.transform = 'translate(-30px, 0)';
+        } else if (ev.category === 'DEVICE' || ev.severity === 'HIGH_RISK') {
+            playbackFaceBox.style.borderColor = 'var(--danger)';
+            playbackFaceBox.style.transform = 'translate(0, 10px)';
+        } else {
+            playbackFaceBox.style.borderColor = 'var(--success)';
+            playbackFaceBox.style.transform = 'translate(0, 0)';
+        }
+    }
+}
+
+// ─── Resolve Current Timeline Incident ───────────────────────
+async function resolveCurrentEvent() {
+    if (selectedEventIndex < 0 || selectedEventIndex >= currentEvents.length) return;
+    const ev = currentEvents[selectedEventIndex];
+    if (ev.resolved) return;
+
+    try {
+        const res = await fetch('/api/timeline/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                event_id: ev.id,
+                note: 'Incident reviewed and marked resolved by invigilator.'
+            })
         });
+
+        if (res.ok) {
+            ev.resolved = true;
+            if (!ev.state_change) ev.state_change = {};
+            ev.state_change.alert = ['CREATED', 'RESOLVED'];
+
+            showToast(`Incident "${ev.title}" marked as resolved!`, 'success');
+            inspectEvent(selectedEventIndex);
+            renderTimelineList(currentEvents);
+        } else {
+            showToast('Failed to resolve incident', 'error');
+        }
+    } catch (err) {
+        console.error('Error resolving event:', err);
+        showToast('Error communicating with server', 'error');
+    }
+}
+
+// ─── Quick Search Helper ─────────────────────────────────────
+function applyQuickSearch(term) {
+    const searchInput = document.getElementById('timelineSearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (searchInput) {
+        searchInput.value = term;
+        currentSearchQuery = term;
+        if (clearBtn) clearBtn.classList.add('show');
+        fetchTimelineData();
+        searchInput.focus();
+    }
+}
+
+// ─── Reset All Filters ───────────────────────────────────────
+function resetFilters() {
+    currentSearchQuery = '';
+    currentCategory = 'ALL';
+    currentSeverity = 'ALL';
+
+    const searchInput = document.getElementById('timelineSearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    const severitySelect = document.getElementById('severityFilterSelect');
+
+    if (searchInput) searchInput.value = '';
+    if (clearBtn) clearBtn.classList.remove('show');
+    if (severitySelect) severitySelect.value = 'ALL';
+
+    document.querySelectorAll('.cat-chip').forEach(c => {
+        if (c.getAttribute('data-category') === 'ALL') c.classList.add('active');
+        else c.classList.remove('active');
+    });
+
+    fetchTimelineData();
+}
+
+// ─── Navigation Helper ───────────────────────────────────────
+function navigateEvents(direction) {
+    if (!currentEvents.length) return;
+    let nextIndex = selectedEventIndex + direction;
+    if (nextIndex < 0) nextIndex = 0;
+    if (nextIndex >= currentEvents.length) nextIndex = currentEvents.length - 1;
+    inspectEvent(nextIndex);
+}
+
+// ─── Update Summary Status ───────────────────────────────────
+function updateSummaryStatus(totalCount, visibleCount) {
+    const countText = document.getElementById('resultsCountText');
+    const activeFilterTag = document.getElementById('activeFilterTag');
+
+    if (countText) {
+        countText.textContent = `Showing ${visibleCount} of ${totalCount} recorded timeline events`;
     }
 
-    // ── Timeline filter badges ────────────────────────────────
-    const filterAll     = document.querySelector('.badge-all');
-    const filterWarning = document.querySelector('.timeline-filters .badge-warning');
-    const filterDanger  = document.querySelector('.timeline-filters .badge-danger');
+    if (activeFilterTag) {
+        if (currentSearchQuery || currentCategory !== 'ALL' || currentSeverity !== 'ALL') {
+            const tags = [];
+            if (currentSearchQuery) tags.push(`Query: "${currentSearchQuery}"`);
+            if (currentCategory !== 'ALL') tags.push(`Category: ${currentCategory}`);
+            if (currentSeverity !== 'ALL') tags.push(`Severity: ${currentSeverity}`);
+            activeFilterTag.textContent = tags.join(' | ');
+            activeFilterTag.style.display = 'inline-block';
+        } else {
+            activeFilterTag.style.display = 'none';
+        }
+    }
+}
 
-    function setFilterActive(active) {
-        [filterAll, filterWarning, filterDanger].forEach(b => {
-            if (!b) return;
-            b.style.opacity = '0.4';
-            b.style.cursor = 'pointer';
-        });
-        if (active) { active.style.opacity = '1'; }
-    }
+// ─── Render Empty Inspector ──────────────────────────────────
+function renderEmptyInspector() {
+    const title = document.getElementById('inspectorTitle');
+    const desc = document.getElementById('inspectorDesc');
+    if (title) title.textContent = 'No Event Selected';
+    if (desc) desc.textContent = 'Adjust search query or category filters above to inspect timeline telemetry.';
+}
 
-    if (filterAll) {
-        filterAll.style.cursor = 'pointer';
-        filterAll.addEventListener('click', () => {
-            setFilterActive(filterAll);
-            tlElements.forEach(el => el.style.display = 'flex');
-        });
+// ─── Export Timeline Data ────────────────────────────────────
+function exportTimelineData() {
+    if (!currentEvents || !currentEvents.length) {
+        showToast('No timeline events to export', 'warning');
+        return;
     }
-    if (filterWarning) {
-        filterWarning.style.cursor = 'pointer';
-        filterWarning.addEventListener('click', () => {
-            setFilterActive(filterWarning);
-            tlElements.forEach((el, i) => {
-                el.style.display = (timelineEvents[i].type === 'warning') ? 'flex' : 'none';
-            });
-        });
-    }
-    if (filterDanger) {
-        filterDanger.style.cursor = 'pointer';
-        filterDanger.addEventListener('click', () => {
-            setFilterActive(filterDanger);
-            tlElements.forEach((el, i) => {
-                el.style.display = (timelineEvents[i].type === 'danger') ? 'flex' : 'none';
-            });
-        });
-    }
+    const jsonStr = JSON.stringify(currentEvents, null, 2);
+    downloadBlob(jsonStr, `proctorai_timeline_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+    showToast('Exported reviewable timeline data!', 'success');
+}
 
-    // ── Incident items click ──────────────────────────────────
-    document.querySelectorAll('.incident-item').forEach(item => {
-        item.style.cursor = 'pointer';
-        const title = item.querySelector('strong')?.textContent;
-        const time  = item.querySelector('span')?.textContent;
-        item.addEventListener('click', () => {
-            if (title) {
-                // Find matching timeline event
-                const match = timelineEvents.findIndex(ev =>
-                    ev.title.toLowerCase().includes(title.toLowerCase().split(' ')[0].toLowerCase())
-                );
-                if (match >= 0) {
-                    selectEvent(match);
-                    setProgress(timelineEvents[match].progress);
-                    showToast(`Jumped to: ${timelineEvents[match].title}`, 'info', 2000);
+// ─── Charts Initialization & Updates ─────────────────────────
+function initCharts() {
+    // 1. Risk Progression Chart
+    const riskCtx = document.getElementById('riskHistoryChart');
+    if (riskCtx) {
+        riskChartInstance = new Chart(riskCtx, {
+            type: 'line',
+            data: {
+                labels: ['09:58', '10:05', '10:12', '10:18', '10:30', '10:42', '10:55', '11:30'],
+                datasets: [{
+                    label: 'Risk Score (%)',
+                    data: [0, 0, 15, 35, 45, 60, 20, 10],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#ef4444'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(6, 9, 14, 0.95)',
+                        titleColor: '#00e5ff',
+                        bodyColor: '#ffffff',
+                        borderColor: 'rgba(0, 229, 255, 0.3)',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } } },
+                    y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } } }
                 }
             }
         });
-    });
-
-    // ── Footer ────────────────────────────────────────────────
-    const footerLeft = document.querySelector('.footer-left');
-    if (footerLeft) {
-        footerLeft.style.cursor = 'pointer';
-        footerLeft.title = 'ProctorAI Enterprise';
-        footerLeft.addEventListener('click', () => showToast('ProctorAI Enterprise — Forensic Audit Mode', 'info'));
     }
-    document.querySelectorAll('.glass-footer span').forEach(span => {
-        if (span.textContent.includes('Encrypted')) {
-            span.style.cursor = 'pointer';
-            span.addEventListener('click', () => showToast('Session data is end-to-end encrypted', 'success'));
-        }
-        if (span.textContent.includes('Session ID')) {
-            span.style.cursor = 'pointer';
-            span.addEventListener('click', () => {
-                navigator.clipboard?.writeText('REC-9948271').catch(() => {});
-                showToast('Session ID copied to clipboard', 'success');
-            });
-        }
-    });
 
-    // ── 2. Risk History Chart ─────────────────────────────────
-    const ctxRisk = document.getElementById('riskHistoryChart').getContext('2d');
-    const gradDanger = ctxRisk.createLinearGradient(0, 0, 0, 200);
-    gradDanger.addColorStop(0, 'rgba(255,69,58,0.3)');
-    gradDanger.addColorStop(1, 'rgba(255,69,58,0.0)');
-
-    const riskChart = new Chart(ctxRisk, {
-        type: 'line',
-        data: {
-            labels: ['10:10','10:15','10:20','10:25','10:30','10:35','10:40','10:45'],
-            datasets: [{
-                label: 'Risk Score', data: [0,15,60,40,85,90,85,85],
-                borderColor: '#ff453a', backgroundColor: gradDanger,
-                borderWidth: 2, fill: true, tension: 0.4,
-                pointBackgroundColor: '#08080a', pointBorderColor: '#ff453a',
-                pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6
-            }]
-        },
-        options: {
-            ...commonChartOptions,
-            scales: {
-                x: { display: false, grid: { display: false } },
-                y: { beginAtZero: true, max: 100, grid: { drawBorder: false }, ticks: { padding: 10 } }
-            }
-        }
-    });
-
-    // Click on chart to jump to that time
-    document.getElementById('riskHistoryChart').addEventListener('click', (e) => {
-        const pts = riskChart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
-        if (pts.length) {
-            const idx = pts[0].index;
-            const progress = (idx / 7) * 100;
-            setProgress(progress);
-            showToast(`Jumped to ${riskChart.data.labels[idx]}`, 'info', 2000);
-        }
-    });
-
-    // ── 3. Direction Doughnut Chart ───────────────────────────
-    const ctxDir = document.getElementById('directionChart').getContext('2d');
-    new Chart(ctxDir, {
-        type: 'doughnut',
-        data: {
-            labels: ['CENTER','LEFT','RIGHT','NO_FACE','TOP','BOTTOM'],
-            datasets: [{
-                data: [45,20,15,10,5,5],
-                backgroundColor: ['#32d74b','#ffd60a','#ff9f0a','#ff453a','#0a84ff','#86868b'],
-                borderWidth: 0, hoverOffset: 4
-            }]
-        },
-        options: {
-            ...commonChartOptions,
-            cutout: '75%',
-            plugins: {
-                legend: { display: true, position: 'right', labels: { color: '#e5e7eb', usePointStyle: true, boxWidth: 8, font: { size: 11 }, padding: 15 } },
-                tooltip: {
-                    ...commonChartOptions.plugins.tooltip,
-                    callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` }
-                }
-            }
-        }
-    });
-
-    // ── 4. Back Button Logic ─────────────────────────────────
-    const backBtn = document.getElementById('backBtn');
-    if (backBtn) {
-        backBtn.addEventListener('click', (e) => {
-            if (sessionStorage.getItem('navSource') === 'unified-suite') {
-                e.preventDefault();
-                sessionStorage.setItem('returningFromSuite', 'true');
-                window.location.href = 'index.html';
+    // 2. Category Breakdown Chart
+    const catCtx = document.getElementById('directionChart');
+    if (catCtx) {
+        directionChartInstance = new Chart(catCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['AI Detection', 'Alert', 'Device', 'Gaze', 'Identity', 'Risk', 'Session'],
+                datasets: [{
+                    data: [3, 3, 1, 2, 2, 2, 2],
+                    backgroundColor: ['#00e5ff', '#ef4444', '#f43f5e', '#eab308', '#38bdf8', '#f59e0b', '#a855f7'],
+                    borderColor: 'rgba(6, 9, 14, 0.8)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#94a3b8', font: { family: 'Inter', size: 10 }, boxWidth: 10 }
+                    }
+                },
+                cutout: '68%'
             }
         });
     }
-});
+}
+
+function updateCharts(events) {
+    if (!events || !events.length) return;
+
+    // Update Category Breakdown dynamically
+    if (directionChartInstance) {
+        const catMap = {};
+        events.forEach(e => {
+            catMap[e.category] = (catMap[e.category] || 0) + 1;
+        });
+        directionChartInstance.data.labels = Object.keys(catMap);
+        directionChartInstance.data.datasets[0].data = Object.values(catMap);
+        directionChartInstance.update();
+    }
+}
+
+// ─── Utility HTML Escaper ────────────────────────────────────
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}

@@ -187,6 +187,9 @@ PUBLIC_API = {
     "/api/webauthn/login/begin",
     "/api/webauthn/login/complete",
     "/api/validate_face",
+    "/api/timeline",
+    "/api/timeline/resolve",
+    "/api/timeline/event",
 }
 
 REQUIRE_LOGIN = False
@@ -367,6 +370,323 @@ session_start_time = None
 session_paused_time = None
 accumulated_elapsed_seconds = 0
 
+# ---------------- REVIEWABLE ACTION TIMELINE (SEARCH & DISCOVERY) ----------------
+timeline_events_buffer = []
+timeline_events_lock = threading.Lock()
+
+DEFAULT_TIMELINE_SEED = [
+    {
+        "id": "evt_001_sess",
+        "timestamp": "09:58:01",
+        "iso_timestamp": "2026-08-22T09:58:01",
+        "student_id": "EXAM-CS302",
+        "student_name": "System / Session",
+        "institution_id": "INST-001",
+        "category": "SESSION",
+        "event_type": "SESSION_STARTED",
+        "title": "Examination Session Started",
+        "description": "Supervised examination session initiated for CS302 Computer Vision. AI Vision and Biometric SOC sensors active.",
+        "severity": "NORMAL",
+        "state_change": {"status": ["STANDBY", "ACTIVE"]},
+        "metadata": {"session_id": "REC-9948271", "invigilator": "Dr. Sarah Jenkins"},
+        "resolved": True
+    },
+    {
+        "id": "evt_002_bio",
+        "timestamp": "09:59:12",
+        "iso_timestamp": "2026-08-22T09:59:12",
+        "student_id": "1002",
+        "student_name": "Nalin Tuscano",
+        "institution_id": "INST-001",
+        "category": "IDENTITY",
+        "event_type": "BIOMETRIC_VERIFIED",
+        "title": "Biometric Identity Verified",
+        "description": "Candidate facial geometry matched against enrolled ArcFace R50 multi-template gallery. Identity cleared for assessment.",
+        "severity": "NORMAL",
+        "state_change": {"status": ["PENDING", "VERIFIED"], "trust": [100, 100]},
+        "metadata": {"confidence": 0.96, "method": "ArcFace R50", "landmarks": 5},
+        "resolved": True
+    },
+    {
+        "id": "evt_003_enr",
+        "timestamp": "10:01:20",
+        "iso_timestamp": "2026-08-22T10:01:20",
+        "student_id": "STU-298314",
+        "student_name": "Alex Johnson",
+        "institution_id": "INST-001",
+        "category": "IDENTITY",
+        "event_type": "STUDENT_ENROLLED",
+        "title": "Candidate Face Profile Enrolled",
+        "description": "Candidate registered 12 biometric multi-pose angle templates. Quality gates confirmed.",
+        "severity": "NORMAL",
+        "state_change": {"status": ["UNREGISTERED", "ENROLLED"]},
+        "metadata": {"templates": 12, "resolution": "1920x1080"},
+        "resolved": True
+    },
+    {
+        "id": "evt_004_ent",
+        "timestamp": "10:05:43",
+        "iso_timestamp": "2026-08-22T10:05:43",
+        "student_id": "STU-298314",
+        "student_name": "Alex Johnson",
+        "institution_id": "INST-001",
+        "category": "AI DETECTION",
+        "event_type": "STUDENT_ENTERED",
+        "title": "Candidate Entered Monitored Area",
+        "description": "Candidate detected and acquired in primary CCTV monitoring cone. Face mesh active.",
+        "severity": "NORMAL",
+        "state_change": {"presence": ["AWAY", "ACTIVE"]},
+        "metadata": {"bbox": [120, 80, 240, 260], "camera": "CAM-01"},
+        "resolved": True
+    },
+    {
+        "id": "evt_005_gaze",
+        "timestamp": "10:12:45",
+        "iso_timestamp": "2026-08-22T10:12:45",
+        "student_id": "STU-298314",
+        "student_name": "Alex Johnson",
+        "institution_id": "INST-001",
+        "category": "GAZE",
+        "event_type": "GAZE_DEVIATION",
+        "title": "Gaze Deviation (Looking Left)",
+        "description": "Subject's gaze deviated sharply to the left quadrant of the screen boundary for 4.2 seconds. Flagged as potential off-screen resource reference.",
+        "severity": "SUSPICIOUS",
+        "state_change": {"risk": [0, 15], "trust": [100, 85]},
+        "metadata": {"gaze": "LEFT", "yaw": -28.4, "pitch": 4.1, "duration_sec": 4.2},
+        "resolved": False
+    },
+    {
+        "id": "evt_006_gaze",
+        "timestamp": "10:14:30",
+        "iso_timestamp": "2026-08-22T10:14:30",
+        "student_id": "STU-298314",
+        "student_name": "Alex Johnson",
+        "institution_id": "INST-001",
+        "category": "GAZE",
+        "event_type": "GAZE_DEVIATION",
+        "title": "Repeated Looking Right",
+        "description": "Frequent glancing to the lower right area off-screen. Heuristic pattern suggests reading notes or a secondary screen.",
+        "severity": "SUSPICIOUS",
+        "state_change": {"risk": [15, 25], "trust": [85, 75]},
+        "metadata": {"gaze": "RIGHT", "yaw": 31.2, "pitch": -8.5, "duration_sec": 3.8},
+        "resolved": False
+    },
+    {
+        "id": "evt_007_miss",
+        "timestamp": "10:18:22",
+        "iso_timestamp": "2026-08-22T10:18:22",
+        "student_id": "STU-298314",
+        "student_name": "Alex Johnson",
+        "institution_id": "INST-001",
+        "category": "RISK",
+        "event_type": "FACE_MISSING",
+        "title": "Facial Tracking Signal Lost",
+        "description": "Facial tracking lost completely for 12 seconds. Candidate moved out of frame or camera was obscured.",
+        "severity": "HIGH_RISK",
+        "state_change": {"risk": [25, 35], "trust": [75, 65], "presence": ["ACTIVE", "AWAY"]},
+        "metadata": {"duration_sec": 12.0, "status": "AWAY"},
+        "resolved": False
+    },
+    {
+        "id": "evt_008_ret",
+        "timestamp": "10:20:15",
+        "iso_timestamp": "2026-08-22T10:20:15",
+        "student_id": "STU-298314",
+        "student_name": "Alex Johnson",
+        "institution_id": "INST-001",
+        "category": "AI DETECTION",
+        "event_type": "FACE_REACQUIRED",
+        "title": "Candidate Re-Acquired in Frame",
+        "description": "Face re-acquired by neural tracking system. Head posture and iris orientation normalized.",
+        "severity": "NORMAL",
+        "state_change": {"presence": ["AWAY", "ACTIVE"]},
+        "metadata": {"status": "ACTIVE"},
+        "resolved": True
+    },
+    {
+        "id": "evt_009_multi",
+        "timestamp": "10:30:05",
+        "iso_timestamp": "2026-08-22T10:30:05",
+        "student_id": "ROOM-SOC",
+        "student_name": "Examination Room",
+        "institution_id": "INST-001",
+        "category": "AI DETECTION",
+        "event_type": "MULTIPLE_PERSONS",
+        "title": "Multiple Persons Detected",
+        "description": "Secondary human figure identified in examination room background. Unauthorized room presence detected.",
+        "severity": "HIGH_RISK",
+        "state_change": {"room_status": ["NORMAL", "UNKNOWN_PERSON"], "risk": [20, 45]},
+        "metadata": {"faces_count": 2, "evidence_url": "exam_room.jpg"},
+        "resolved": False
+    },
+    {
+        "id": "evt_010_phone",
+        "timestamp": "10:42:31",
+        "iso_timestamp": "2026-08-22T10:42:31",
+        "student_id": "1002",
+        "student_name": "Nalin Tuscano",
+        "institution_id": "INST-001",
+        "category": "DEVICE",
+        "event_type": "PHONE_DETECTED",
+        "title": "PHONE DETECTED",
+        "description": "Mobile device detected inside examination area near candidate workspace via YOLO11 neural detector.",
+        "severity": "HIGH_RISK",
+        "state_change": {"risk": [35, 60], "trust": [94, 71]},
+        "metadata": {"device": "cell phone", "confidence": 0.89, "evidence_url": "exam_room.jpg"},
+        "resolved": False
+    },
+    {
+        "id": "evt_011_risk",
+        "timestamp": "10:42:35",
+        "iso_timestamp": "2026-08-22T10:42:35",
+        "student_id": "1002",
+        "student_name": "Nalin Tuscano",
+        "institution_id": "INST-001",
+        "category": "RISK",
+        "event_type": "RISK_ESCALATED",
+        "title": "Risk Score Escalated to High Risk",
+        "description": "Heuristic cumulative risk crossed Critical threshold. Candidate status updated to Under Review.",
+        "severity": "HIGH_RISK",
+        "state_change": {"status": ["VERIFIED", "UNDER_REVIEW"], "risk": [35, 60]},
+        "metadata": {"threshold": 50, "current_score": 60},
+        "resolved": False
+    },
+    {
+        "id": "evt_012_alert",
+        "timestamp": "10:43:02",
+        "iso_timestamp": "2026-08-22T10:43:02",
+        "student_id": "1002",
+        "student_name": "Nalin Tuscano",
+        "institution_id": "INST-001",
+        "category": "ALERT",
+        "event_type": "ALERT_CREATED",
+        "title": "Security Alert Created",
+        "description": "Urgent security alert dispatched to invigilator SOC: Unauthorized mobile communication device detected.",
+        "severity": "HIGH_RISK",
+        "state_change": {"alert": ["NONE", "CREATED"]},
+        "metadata": {"priority": "P1_URGENT"},
+        "resolved": False
+    },
+    {
+        "id": "evt_013_rev",
+        "timestamp": "10:44:10",
+        "iso_timestamp": "2026-08-22T10:44:10",
+        "student_id": "1002",
+        "student_name": "Nalin Tuscano",
+        "institution_id": "INST-001",
+        "category": "ALERT",
+        "event_type": "ALERT_REVIEWED",
+        "title": "Security Alert Reviewed",
+        "description": "Invigilator examined forensic capture evidence and confirmed active device infraction.",
+        "severity": "SUSPICIOUS",
+        "state_change": {"alert": ["CREATED", "REVIEWED"]},
+        "metadata": {"reviewer": "Dr. Sarah Jenkins"},
+        "resolved": False
+    },
+    {
+        "id": "evt_014_res",
+        "timestamp": "10:55:20",
+        "iso_timestamp": "2026-08-22T10:55:20",
+        "student_id": "1002",
+        "student_name": "Nalin Tuscano",
+        "institution_id": "INST-001",
+        "category": "ALERT",
+        "event_type": "ALERT_RESOLVED",
+        "title": "Security Alert Resolved",
+        "description": "Candidate surrendered prohibited device. Incident flagged for integrity penalty and logged in permanent exam record.",
+        "severity": "NORMAL",
+        "state_change": {"alert": ["REVIEWED", "RESOLVED"]},
+        "metadata": {"resolution_note": "Device confiscated; examination continued under strict telemetry."},
+        "resolved": True
+    },
+    {
+        "id": "evt_015_end",
+        "timestamp": "11:30:00",
+        "iso_timestamp": "2026-08-22T11:30:00",
+        "student_id": "EXAM-CS302",
+        "student_name": "System / Session",
+        "institution_id": "INST-001",
+        "category": "SESSION",
+        "event_type": "SESSION_ENDED",
+        "title": "Examination Concluded",
+        "description": "Official examination concluded. Automated forensic audit report compiled, encrypted, and locked for administration.",
+        "severity": "NORMAL",
+        "state_change": {"status": ["ACTIVE", "COMPLETED"]},
+        "metadata": {"total_events": 15, "high_risk_incidents": 4},
+        "resolved": True
+    }
+]
+
+timeline_events_buffer.extend(DEFAULT_TIMELINE_SEED)
+
+def record_timeline_event(student_id, student_name, institution_id, category, event_type, title, description, severity="NORMAL", state_change=None, metadata=None, timestamp=None):
+    """
+    Persists structured Action Timeline events for deep search, discovery, and forensic replay.
+    """
+    if timestamp is None:
+        timestamp_str = datetime.now().strftime("%H:%M:%S")
+        iso_timestamp = datetime.now().isoformat()
+        db_timestamp = datetime.now()
+    else:
+        timestamp_str = str(timestamp)
+        iso_timestamp = str(timestamp)
+        db_timestamp = datetime.now()
+
+    event = {
+        "id": "evt_" + str(uuid.uuid4())[:8],
+        "timestamp": timestamp_str,
+        "iso_timestamp": iso_timestamp,
+        "student_id": str(student_id) if student_id else "SYSTEM",
+        "student_name": str(student_name) if student_name else (str(student_id) if student_id else "System Command"),
+        "institution_id": str(institution_id) if institution_id else "INST-001",
+        "category": str(category).upper(),
+        "event_type": str(event_type),
+        "title": str(title),
+        "description": str(description),
+        "severity": str(severity).upper(),
+        "state_change": state_change or {},
+        "metadata": metadata or {},
+        "resolved": False
+    }
+
+    with timeline_events_lock:
+        timeline_events_buffer.insert(0, event)
+        if len(timeline_events_buffer) > 500:
+            timeline_events_buffer.pop()
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO action_timeline (
+                event_uuid, time_str, student_id, student_name, institution_id,
+                category, event_type, title, description, severity, state_change,
+                metadata, resolved, timestamp
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """, (
+            event["id"],
+            event["timestamp"],
+            event["student_id"],
+            event["student_name"],
+            event["institution_id"],
+            event["category"],
+            event["event_type"],
+            event["title"],
+            event["description"],
+            event["severity"],
+            json.dumps(event["state_change"]),
+            json.dumps(event["metadata"]),
+            False,
+            db_timestamp
+        ))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        pass
+
+    return event
+
 # ---------------- DB INIT ----------------
 active_monitoring_institution = "INST-001"
 
@@ -519,6 +839,27 @@ def init_db():
             );
         """)
 
+        # 7. Reviewable Action Timeline table (Search & Discovery)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS action_timeline (
+                id SERIAL PRIMARY KEY,
+                event_uuid VARCHAR(64) UNIQUE,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                time_str VARCHAR(20),
+                student_id VARCHAR(50),
+                student_name VARCHAR(100),
+                institution_id TEXT,
+                category VARCHAR(50),
+                event_type VARCHAR(50),
+                title VARCHAR(150),
+                description TEXT,
+                severity VARCHAR(30),
+                state_change JSONB,
+                metadata JSONB,
+                resolved BOOLEAN DEFAULT FALSE
+            );
+        """)
+
         # Seed default institution if table empty
         cursor.execute("SELECT COUNT(*) FROM institutions;")
         _row = cursor.fetchone()
@@ -547,6 +888,25 @@ def init_db():
                 INSERT INTO users (name, username, password_hash, role, institution_id, status, mfa_secret, mfa_enabled)
                 VALUES ('Dr. Sarah Jenkins', 'faculty@apex.edu', %s, 'FACULTY', 'INST-001', 'ACTIVE', 'JBSWY3DPEHPK3PXP', FALSE);
             """, (faculty_hash,))
+
+        # Seed realistic action timeline events if table empty
+        cursor.execute("SELECT COUNT(*) FROM action_timeline;")
+        _trow = cursor.fetchone()
+        if _trow is not None and _trow[0] == 0:
+            for ev in DEFAULT_TIMELINE_SEED:
+                cursor.execute("""
+                    INSERT INTO action_timeline (
+                        event_uuid, time_str, student_id, student_name, institution_id,
+                        category, event_type, title, description, severity, state_change,
+                        metadata, resolved, timestamp
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (event_uuid) DO NOTHING;
+                """, (
+                    ev["id"], ev["timestamp"], ev["student_id"], ev["student_name"],
+                    ev["institution_id"], ev["category"], ev["event_type"], ev["title"],
+                    ev["description"], ev["severity"], json.dumps(ev["state_change"]),
+                    json.dumps(ev["metadata"]), ev["resolved"], ev["iso_timestamp"]
+                ))
 
         conn.commit()
         cursor.close()
@@ -1807,6 +2167,17 @@ def validate_face():
         if face_count == 1:
             f = valid_faces[0]
             bbox = [float(v) for v in f["bbox"][:4]]
+            record_timeline_event(
+                student_id="BATCH-UPLOAD",
+                student_name="Candidate Batch Scan",
+                institution_id="INST-001",
+                category="IDENTITY",
+                event_type="FACE_VALIDATED",
+                title="Face Biometric Validated",
+                description="Uploaded candidate photo passed strict one-person face detection verification.",
+                severity="NORMAL",
+                state_change={"validation": ["SCANNING", "VALID"]}
+            )
             return jsonify({
                 "valid": True,
                 "faces_count": 1,
@@ -1814,6 +2185,17 @@ def validate_face():
                 "bbox": bbox
             }), 200
         elif face_count > 1:
+            record_timeline_event(
+                student_id="BATCH-UPLOAD",
+                student_name="Candidate Batch Scan",
+                institution_id="INST-001",
+                category="AI DETECTION",
+                event_type="MULTIPLE_FACES_REJECTED",
+                title="Multiple Faces Rejected in Upload",
+                description=f"Batch enrollment rejected image with {face_count} detected faces (group photo).",
+                severity="HIGH_RISK",
+                state_change={"validation": ["SCANNING", "INVALID"]}
+            )
             return jsonify({
                 "valid": False,
                 "faces_count": face_count,
@@ -1821,6 +2203,17 @@ def validate_face():
                 "message": "Multiple faces detected — Invalid"
             }), 200
         else:
+            record_timeline_event(
+                student_id="BATCH-UPLOAD",
+                student_name="Candidate Batch Scan",
+                institution_id="INST-001",
+                category="AI DETECTION",
+                event_type="NO_FACE_REJECTED",
+                title="No Face Detected in Upload",
+                description="Batch enrollment rejected image with zero detectable facial features.",
+                severity="SUSPICIOUS",
+                state_change={"validation": ["SCANNING", "INVALID"]}
+            )
             return jsonify({
                 "valid": False,
                 "faces_count": 0,
@@ -1907,6 +2300,18 @@ def register():
 
         load_students()
         record_audit_event(session.get('user_id'), session.get('username'), role, inst_id, "BIOMETRIC_ENROLLED", request.remote_addr, "SUCCESS", f"Enrolled face biometrics for student {student_id} ({name})")
+        record_timeline_event(
+            student_id=student_id,
+            student_name=name,
+            institution_id=inst_id,
+            category="IDENTITY",
+            event_type="STUDENT_ENROLLED",
+            title="Candidate Face Profile Enrolled",
+            description=f"Successfully enrolled {len(kept)} ArcFace biometric templates for {name} ({student_id}).",
+            severity="NORMAL",
+            state_change={"status": ["UNREGISTERED", "ENROLLED"]},
+            metadata={"templates": len(kept), "student_id": student_id}
+        )
         msg = f"Enrolled {name} with {len(kept)} face templates from {len(images_b64)} frames."
         if rejected:
             msg += f" Skipped {len(rejected)} unusable frame(s)."
@@ -1945,6 +2350,19 @@ def start_session():
         for sid in tracked_students:
             tracked_students[sid]["risk_score"] = 0
             tracked_students[sid]["status"] = "Active"
+
+    inst_id = session.get('institution_id', 'INST-001')
+    record_timeline_event(
+        student_id="EXAM-SESSION",
+        student_name="Examination Session",
+        institution_id=inst_id,
+        category="SESSION",
+        event_type="SESSION_STARTED",
+        title="Examination Session Started",
+        description=f"Supervised examination session initiated for {inst_id}.",
+        severity="NORMAL",
+        state_change={"status": ["STANDBY", "ACTIVE"]}
+    )
             
     return jsonify({
         "success": True, 
@@ -1960,6 +2378,20 @@ def pause_session():
     SESSION_ACTIVE = False
     session_start_time = None
     session_paused_time = datetime.now()
+
+    inst_id = session.get('institution_id', 'INST-001')
+    record_timeline_event(
+        student_id="EXAM-SESSION",
+        student_name="Examination Session",
+        institution_id=inst_id,
+        category="SESSION",
+        event_type="SESSION_PAUSED",
+        title="Examination Session Paused",
+        description=f"Invigilator paused examination timer at {accumulated_elapsed_seconds}s elapsed.",
+        severity="SUSPICIOUS",
+        state_change={"status": ["ACTIVE", "PAUSED"]}
+    )
+
     return jsonify({
         "success": True, 
         "message": "Session paused", 
@@ -2371,7 +2803,217 @@ def end_session():
 
     record_audit_event(session.get('user_id'), session.get('username'), session.get('role'), inst_id, "EXAM_REPORT_GENERATED", request.remote_addr, "SUCCESS", f"Generated examination report: {report_filename}")
 
+    record_timeline_event(
+        student_id="EXAM-SESSION",
+        student_name="Examination Session",
+        institution_id=inst_id,
+        category="SESSION",
+        event_type="SESSION_ENDED",
+        title="Examination Session Concluded",
+        description=f"Examination completed with {total_students} candidates. Final forensic audit report locked: {report_filename}.",
+        severity="NORMAL",
+        state_change={"status": ["ACTIVE", "COMPLETED"]},
+        metadata={"total_students": total_students, "high_risk_count": high_risk_count, "report_url": f"/reports/{report_filename}"}
+    )
+
     return jsonify({"success": True, "report_url": f"/reports/{report_filename}"})
+
+# ---------------- REVIEWABLE ACTION TIMELINE (SEARCH & DISCOVERY API) ----------------
+
+@app.route('/api/timeline', methods=['GET'])
+def get_timeline():
+    """
+    Reviewable Action Timeline API for Search and Discovery.
+    Supports filtering by query (q), category, severity, student_id, institution_id, and chronological sorting.
+    """
+    search_q = (request.args.get('q') or request.args.get('search') or '').strip().lower()
+    category = (request.args.get('category') or 'ALL').strip().upper()
+    severity = (request.args.get('severity') or 'ALL').strip().upper()
+    student_id = (request.args.get('student_id') or '').strip()
+    sort_order = (request.args.get('order') or 'desc').strip().lower()
+    limit = min(500, int(request.args.get('limit') or 100))
+
+    role = session.get('role', 'SUPERVISOR')
+    user_inst = session.get('institution_id')
+    req_inst = request.args.get('institution_id')
+
+    inst_filter = None
+    if role == 'ADMIN':
+        inst_filter = req_inst if (req_inst and req_inst != 'ALL') else None
+    else:
+        inst_filter = user_inst or 'INST-001'
+
+    events = []
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        query = """
+            SELECT event_uuid, time_str, student_id, student_name, institution_id,
+                   category, event_type, title, description, severity, state_change,
+                   metadata, resolved, timestamp
+            FROM action_timeline
+            WHERE 1=1
+        """
+        params = []
+        if inst_filter:
+            query += " AND institution_id = %s"
+            params.append(inst_filter)
+        if category and category != 'ALL':
+            if category == 'AI DETECTION':
+                query += " AND UPPER(category) IN ('AI DETECTION', 'DETECTION')"
+            else:
+                query += " AND UPPER(category) = %s"
+                params.append(category)
+        if severity and severity != 'ALL':
+            query += " AND UPPER(severity) = %s"
+            params.append(severity)
+        if student_id:
+            query += " AND (student_id = %s OR LOWER(student_name) LIKE %s)"
+            params.append(student_id)
+            params.append(f"%{student_id.lower()}%")
+        if search_q:
+            query += """ AND (
+                LOWER(student_name) LIKE %s OR
+                LOWER(student_id) LIKE %s OR
+                LOWER(title) LIKE %s OR
+                LOWER(description) LIKE %s OR
+                LOWER(event_type) LIKE %s OR
+                LOWER(category) LIKE %s OR
+                LOWER(severity) LIKE %s OR
+                LOWER(time_str) LIKE %s
+            )"""
+            sq = f"%{search_q}%"
+            params.extend([sq, sq, sq, sq, sq, sq, sq, sq])
+
+        order_sql = "DESC" if sort_order == "desc" else "ASC"
+        query += f" ORDER BY timestamp {order_sql} LIMIT %s"
+        params.append(limit)
+
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        for r in rows:
+            events.append({
+                "id": r[0],
+                "timestamp": r[1] or (r[13].strftime("%H:%M:%S") if r[13] else ""),
+                "iso_timestamp": r[13].isoformat() if r[13] else "",
+                "student_id": r[2],
+                "student_name": r[3],
+                "institution_id": r[4],
+                "category": r[5],
+                "event_type": r[6],
+                "title": r[7],
+                "description": r[8],
+                "severity": r[9],
+                "state_change": r[10] if isinstance(r[10], dict) else (json.loads(r[10]) if r[10] else {}),
+                "metadata": r[11] if isinstance(r[11], dict) else (json.loads(r[11]) if r[11] else {}),
+                "resolved": bool(r[12])
+            })
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error querying action_timeline: {e}")
+
+    # Fallback / merge with in-memory buffer if DB returned empty
+    if not events:
+        with timeline_events_lock:
+            for ev in timeline_events_buffer:
+                if inst_filter and ev.get("institution_id") != inst_filter:
+                    continue
+                if category and category != "ALL":
+                    if category == "AI DETECTION" and ev.get("category") not in ("AI DETECTION", "DETECTION"):
+                        continue
+                    elif category != "AI DETECTION" and ev.get("category") != category:
+                        continue
+                if severity and severity != "ALL" and ev.get("severity") != severity:
+                    continue
+                if student_id and ev.get("student_id") != student_id and student_id.lower() not in ev.get("student_name", "").lower():
+                    continue
+                if search_q:
+                    haystack = f"{ev.get('student_name')} {ev.get('student_id')} {ev.get('title')} {ev.get('description')} {ev.get('category')} {ev.get('severity')} {ev.get('timestamp')}".lower()
+                    if search_q not in haystack:
+                        continue
+                events.append(dict(ev))
+            if sort_order == "asc":
+                events.reverse()
+            events = events[:limit]
+
+    # Category counts summary
+    category_counts = {
+        "ALL": len(events),
+        "IDENTITY": sum(1 for e in events if e.get("category") == "IDENTITY"),
+        "SESSION": sum(1 for e in events if e.get("category") == "SESSION"),
+        "AI DETECTION": sum(1 for e in events if e.get("category") in ("AI DETECTION", "DETECTION")),
+        "ALERT": sum(1 for e in events if e.get("category") == "ALERT"),
+        "RISK": sum(1 for e in events if e.get("category") == "RISK"),
+        "DEVICE": sum(1 for e in events if e.get("category") == "DEVICE"),
+        "GAZE": sum(1 for e in events if e.get("category") == "GAZE"),
+    }
+
+    return jsonify({
+        "success": True,
+        "total_count": len(events),
+        "category_counts": category_counts,
+        "events": events
+    })
+
+@app.route('/api/timeline/resolve', methods=['POST'])
+def resolve_timeline_event():
+    """Marks an action timeline alert or violation as reviewed/resolved."""
+    data = request.json or {}
+    event_id = data.get('event_id') or ''
+    note = data.get('note') or 'Resolved by proctor'
+
+    if not event_id:
+        return jsonify({"error": "Event ID is required"}), 400
+
+    with timeline_events_lock:
+        for ev in timeline_events_buffer:
+            if ev.get("id") == event_id:
+                ev["resolved"] = True
+                if "state_change" not in ev or not ev["state_change"]:
+                    ev["state_change"] = {}
+                ev["state_change"]["alert"] = ["CREATED", "RESOLVED"]
+
+    try:
+        conn = psycopg2.connect(DB_URL)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE action_timeline SET resolved = TRUE, state_change = jsonb_set(COALESCE(state_change, '{}'::jsonb), '{alert}', '[\"CREATED\", \"RESOLVED\"]'::jsonb) WHERE event_uuid = %s;", (event_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Error updating timeline event: {e}")
+
+    return jsonify({"success": True, "message": "Incident marked as resolved", "event_id": event_id})
+
+@app.route('/api/timeline/event', methods=['POST'])
+def create_timeline_event():
+    """Allows recording proctor annotations or custom actions on the timeline."""
+    data = request.json or {}
+    student_id = data.get('student_id') or 'SYSTEM'
+    student_name = data.get('student_name') or 'System'
+    category = data.get('category') or 'ALERT'
+    event_type = data.get('event_type') or 'NOTE_ADDED'
+    title = data.get('title') or 'Proctor Note'
+    description = data.get('description') or ''
+    severity = data.get('severity') or 'NORMAL'
+    state_change = data.get('state_change') or {}
+    metadata = data.get('metadata') or {}
+    institution_id = session.get('institution_id') or 'INST-001'
+
+    ev = record_timeline_event(
+        student_id=student_id,
+        student_name=student_name,
+        institution_id=institution_id,
+        category=category,
+        event_type=event_type,
+        title=title,
+        description=description,
+        severity=severity,
+        state_change=state_change,
+        metadata=metadata
+    )
+    return jsonify({"success": True, "event": ev})
 
 # ---------------- STATE ----------------
 # Track state of the room globally
@@ -2974,6 +3616,59 @@ def _ai_worker_loop():
                 if le is not None and le is not prev_logged:
                     log_to_db(sid, int(snap["suspicion_score"]),
                               snap.get("direction", "CENTER"), le["label"], snap["institution_id"])
+                    
+                    lbl_upper = str(le.get("label", "")).upper()
+                    if "PHONE" in lbl_upper:
+                        ev_cat = "DEVICE"
+                        ev_type = "PHONE_DETECTED"
+                        ev_sev = "HIGH_RISK"
+                        ev_desc = f"Mobile device detected in candidate {snap['name']}'s monitored area."
+                    elif "LOOKING" in lbl_upper or "GAZE" in lbl_upper:
+                        ev_cat = "GAZE"
+                        ev_type = "GAZE_DEVIATION"
+                        ev_sev = "SUSPICIOUS"
+                        ev_desc = f"Gaze deviation ({snap.get('direction', 'AWAY')}) detected for candidate {snap['name']}."
+                    elif "MISSING" in lbl_upper or "AWAY" in lbl_upper:
+                        ev_cat = "RISK"
+                        ev_type = "FACE_MISSING"
+                        ev_sev = "HIGH_RISK"
+                        ev_desc = f"Candidate {snap['name']} ({sid}) tracking lost / left monitored area."
+                    elif "MULTIPLE" in lbl_upper:
+                        ev_cat = "AI DETECTION"
+                        ev_type = "MULTIPLE_PERSONS"
+                        ev_sev = "HIGH_RISK"
+                        ev_desc = f"Multiple persons detected in candidate {snap['name']}'s camera perimeter."
+                    else:
+                        ev_cat = "AI DETECTION"
+                        ev_type = "BEHAVIOR_ANOMALY"
+                        ev_sev = "SUSPICIOUS"
+                        ev_desc = f"Anomalous event: {le.get('label')} for student {snap['name']}."
+
+                    prev_susp = tracked_students.get(sid, {}).get("_prev_susp", 0)
+                    curr_susp = int(snap["suspicion_score"])
+                    state_chg = {}
+                    if curr_susp != prev_susp:
+                        state_chg["risk"] = [prev_susp, curr_susp]
+                        state_chg["trust"] = [max(0, 100 - prev_susp), max(0, 100 - curr_susp)]
+                    tracked_students[sid]["_prev_susp"] = curr_susp
+
+                    record_timeline_event(
+                        student_id=sid,
+                        student_name=snap["name"],
+                        institution_id=snap["institution_id"],
+                        category=ev_cat,
+                        event_type=ev_type,
+                        title=le.get("label", "AI Behavioral Event").upper(),
+                        description=ev_desc,
+                        severity=ev_sev,
+                        state_change=state_chg,
+                        metadata={
+                            "direction": snap.get("direction", "CENTER"),
+                            "suspicion_score": curr_susp,
+                            "trust_score": int(snap.get("trust_score", 100 - curr_susp)),
+                            "phone_conf": float(phone_conf)
+                        }
+                    )
                 tracked_students[sid]["_logged_event"] = le
 
                 tier = snap["tier"]
