@@ -3059,17 +3059,13 @@ def replay_detect_frame():
                 bbox = r["bbox"]
                 conf = r["conf"]
                 dtype = r.get("device_type", "phone")
-                label = "PHONE DETECTED"
-                if dtype == "smartwatch":
-                    label = "SMARTWATCH DETECTED"
-                elif dtype == "earbud":
-                    label = "EARBUD DETECTED"
+                label = r.get("label", f"{dtype.upper()} DETECTED")
 
                 detections.append({
                     "bbox": [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])],
                     "conf": round(float(conf), 3),
                     "device_type": dtype,
-                    "label": f"{label} · {int(conf * 100)}%"
+                    "label": label
                 })
 
         return jsonify({"success": True, "detections": detections, "count": len(detections), "frame_shape": [frame.shape[1], frame.shape[0]]})
@@ -3792,6 +3788,9 @@ def _ai_worker_loop():
         phone_boxes = []
         smartwatch_boxes = []
         earbud_boxes = []
+        laptop_boxes = []
+        book_boxes = []
+        tablet_boxes = []
 
         for d in phone_hits:
             px1, py1, px2, py2 = [int(v) for v in d["bbox"]]
@@ -3805,6 +3804,18 @@ def _ai_worker_loop():
                 earbud_boxes.append((px1, py1, px2, py2, pconf))
                 draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 165, 255), 2,
                                  "EARBUD DETECTED", f"PROHIBITED DEVICE · {pconf:.0%}"))
+            elif dev_type == "laptop":
+                laptop_boxes.append((px1, py1, px2, py2, pconf))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (255, 180, 0), 2,
+                                 "LAPTOP DETECTED", f"EXAM ENVIRONMENT · {pconf:.0%}"))
+            elif dev_type == "book":
+                book_boxes.append((px1, py1, px2, py2, pconf))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 70, 255), 2,
+                                 "UNAUTHORIZED NOTES DETECTED", f"PROHIBITED MATERIAL · {pconf:.0%}"))
+            elif dev_type == "tablet":
+                tablet_boxes.append((px1, py1, px2, py2, pconf))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (255, 140, 0), 2,
+                                 "TABLET / SCREEN DETECTED", f"SECONDARY SCREEN · {pconf:.0%}"))
             else:
                 phone_boxes.append((px1, py1, px2, py2, pconf))
                 draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 0, 255), 2,
@@ -3813,7 +3824,9 @@ def _ai_worker_loop():
         room_state["phone_detected"] = len(phone_boxes) > 0
         room_state["smartwatch_detected"] = len(smartwatch_boxes) > 0
         room_state["earbud_detected"] = len(earbud_boxes) > 0
-        room_state["book_detected"] = False
+        room_state["laptop_detected"] = len(laptop_boxes) > 0
+        room_state["book_detected"] = len(book_boxes) > 0
+        room_state["tablet_detected"] = len(tablet_boxes) > 0
 
         # 3. MediaPipe FaceLandmarker analysis (all visible faces with real iris & head pose)
         face_obs_list = face_analyzer.analyze(frame)

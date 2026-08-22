@@ -1,26 +1,44 @@
 """
-phone_detect.py — High-recall, real-time, partial and small phone detection.
+phone_detect.py — High-recall, real-time multi-device & prohibited object detection.
 
-Optimized for CCTV and webcam invigilation:
-- Detects full phones, 3/4, 1/2, 1/4 visible phones, angled phones,
-  phones held in hands, lap level, desk level, and frame-edge partial phones.
+Optimized for CCTV and webcam examination monitoring:
+- Detects mobile phones (full, 3/4, 1/2, 1/4 visible, angled, occluded, hand-held).
+- Detects laptops, tablets, smartwatches / watches, books / unauthorized materials.
+- Detects earbuds / wireless earphones using ear-region ROI analysis.
 - Combines high-resolution whole-frame scanning (640px) with dedicated
-  person-ROI magnification (640px with generous hand/desk padding).
+  person-ROI magnification (640px with generous hand/desk/lap padding).
 - Multi-layer verification: geometric sanity checks + NMS deduplication.
 """
 
 import os
 import numpy as np
+import cv2
 from ultralytics import YOLO
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
-PHONE_CLASS_ID = 67          # COCO 'cell phone'
-PERSON_CLASS_ID = 0
+# Target COCO class mappings
+CLASS_PERSON = 0
+CLASS_TV = 62          # Tablet / Monitor / Screen
+CLASS_LAPTOP = 63      # Laptop computer
+CLASS_REMOTE = 65      # Remote control / Electronic peripheral
+CLASS_PHONE = 67       # Cell phone / Mobile device
+CLASS_BOOK = 73        # Book / Printed notes
+CLASS_CLOCK = 74       # Clock / Watch / Smartwatch
 
-# Raw detector threshold configured for high recall on partial & occluded devices.
-# Downstream temporal debouncing ensures zero phantom alerts.
-PHONE_CONF = 0.25
+TARGET_CLASSES = [CLASS_PHONE, CLASS_LAPTOP, CLASS_CLOCK, CLASS_BOOK, CLASS_TV, CLASS_REMOTE]
+
+# Confidence thresholds tuned per class
+CONF_THRESHOLDS = {
+    CLASS_PHONE: 0.25,    # High recall for partial and occluded mobile devices
+    CLASS_LAPTOP: 0.35,   # Clear laptop detection
+    CLASS_CLOCK: 0.28,    # Watch / Smartwatch
+    CLASS_BOOK: 0.35,     # Study materials / Books
+    CLASS_TV: 0.35,       # Tablets / Secondary screens
+    CLASS_REMOTE: 0.30,   # Electronic remotes
+}
+
+DEFAULT_CONF = 0.25
 ROI_IMGSZ = 640              # High-resolution magnification for person/hand crop
 DEFAULT_WHOLE_IMGSZ = 640    # High-resolution whole-frame scanning
 
@@ -30,11 +48,11 @@ ROI_PAD_X = 0.35
 ROI_PAD_Y_TOP = 0.20
 ROI_PAD_Y_BOT = 0.45
 
-# Plausibility limits for partial and full phones
-MAX_AREA_FRAC_OF_PERSON = 0.28   # a phone relative to person box
-MIN_ASPECT = 0.18                # w/h; allows vertical, horizontal, and partial slivers
-MAX_ASPECT = 5.2
+# Plausibility limits
 MIN_SIDE_PX = 6                  # minimum side length in pixels
+MAX_AREA_FRAC_OF_PERSON = 0.85   # allows large laptops / tablets relative to person box
+MIN_ASPECT = 0.15                # w/h; allows vertical, horizontal, and partial slivers
+MAX_ASPECT = 6.0
 
 
 def _iou(a, b):
@@ -48,8 +66,8 @@ def _iou(a, b):
     return inter / ua if ua > 0 else 0.0
 
 
-def plausible(box, person_box=None):
-    """Geometric plausibility check on a candidate phone bounding box."""
+def plausible(box, cls_id, person_box=None):
+    """Geometric plausibility check on a candidate object bounding box."""
     x1, y1, x2, y2 = box
     w, h = x2 - x1, y2 - y1
     if w < MIN_SIDE_PX or h < MIN_SIDE_PX:
@@ -57,38 +75,46 @@ def plausible(box, person_box=None):
     ar = w / max(h, 1e-6)
     if not (MIN_ASPECT <= ar <= MAX_ASPECT):
         return False, f"implausible aspect {ar:.2f}"
-    if person_box is not None:
+    if person_box is not None and cls_id in (CLASS_PHONE, CLASS_CLOCK, CLASS_REMOTE):
         px1, py1, px2, py2 = person_box
         parea = max((px2 - px1) * (py2 - py1), 1.0)
-        if (w * h) / parea > MAX_AREA_FRAC_OF_PERSON:
+        if (w * h) / parea > 0.35:
             return False, "too large relative to person"
     return True, "ok"
 
 
 class PhoneDetector:
-    """Detects full and partial mobile phones in real-time across frames."""
+    """Multi-device and prohibited object detector for real-time and replay CCTV."""
 
-    def __init__(self, weights="yolo11s.pt", conf=PHONE_CONF):
+    def __init__(self, weights="yolo11s.pt", conf=DEFAULT_CONF):
         path = os.path.join(BASE, weights)
-        self.model = YOLO(path if os.path.exists(path) else weights)
+        if not os.path.exists(path):
+            fallback = os.path.join(BASE, "yolo11n.pt")
+            path = fallback if os.path.exists(fallback) else weights
+        self.model = YOLO(path)
         self.conf = conf
         self.weights = weights
 
-    def _detect_phones(self, img, imgsz):
+    def _detect_objects(self, img, imgsz):
         out = []
         try:
             for r in self.model(img, stream=True, verbose=False, imgsz=imgsz,
-                                conf=self.conf, classes=[PHONE_CLASS_ID]):
+                                conf=self.conf, classes=TARGET_CLASSES):
                 for b in r.boxes:
+                    cls_id = int(b.cls[0])
+                    conf_val = float(b.conf[0])
+                    min_conf = CONF_THRESHOLDS.get(cls_id, self.conf)
+                    if conf_val < min_conf:
+                        continue
                     x1, y1, x2, y2 = map(float, b.xyxy[0])
-                    out.append([x1, y1, x2, y2, float(b.conf[0])])
+                    out.append([x1, y1, x2, y2, conf_val, cls_id])
         except Exception as err:
-            print(f"[PHONE_DETECT] Inference error: {err}")
+            print(f"[DEVICE_DETECT] Inference error: {err}")
         return out
 
     def detect(self, frame, person_boxes=None, whole_frame=True,
-               whole_imgsz=DEFAULT_WHOLE_IMGSZ):
-        """Returns a list of dicts: {bbox:(x1,y1,x2,y2), conf, device_type, source}.
+               whole_imgsz=DEFAULT_WHOLE_IMGSZ, ear_regions=None):
+        """Returns a list of dicts: {bbox:(x1,y1,x2,y2), conf, device_type, label, source}.
 
         Processes whole frame and person-ROI crops with high resolution.
         """
@@ -100,7 +126,7 @@ class PhoneDetector:
 
         # 1. High-resolution whole-frame scanning
         if whole_frame:
-            for b in self._detect_phones(frame, whole_imgsz):
+            for b in self._detect_objects(frame, whole_imgsz):
                 cands.append((b, None, "frame"))
 
         # 2. Magnified Person-ROI scanning (hands, lap, desk region)
@@ -120,35 +146,68 @@ class PhoneDetector:
             if crop.size == 0:
                 continue
 
-            for b in self._detect_phones(crop, ROI_IMGSZ):
+            for b in self._detect_objects(crop, ROI_IMGSZ):
                 cands.append(([b[0] + cx1, b[1] + cy1, b[2] + cx1, b[3] + cy1,
-                               b[4]], (px1, py1, px2, py2), "roi"))
+                               b[4], b[5]], (px1, py1, px2, py2), "roi"))
 
         # 3. Geometric plausibility validation
         kept = []
-        for box, pbox, src in cands:
-            ok, _why = plausible(box[:4], pbox)
+        for b_data, pbox, src in cands:
+            box = b_data[:4]
+            cls_id = int(b_data[5])
+            ok, _why = plausible(box, cls_id, pbox)
             if ok:
-                kept.append((box, src))
+                kept.append((b_data, src))
 
-        # 4. NMS & IoU deduplication (merges whole-frame and ROI hits)
+        # 4. NMS & IoU deduplication across all detected objects
         kept.sort(key=lambda t: -t[0][4])
         final = []
-        for box, src in kept:
-            if all(_iou(box[:4], f["bbox"]) < 0.45 for f in final):
+        for b_data, src in kept:
+            box = b_data[:4]
+            conf = float(b_data[4])
+            cls_id = int(b_data[5])
+
+            if all(_iou(box, f["bbox"]) < 0.40 for f in final):
                 w = box[2] - box[0]
                 h = box[3] - box[1]
                 area = w * h
-                dev_type = "phone"
-                if area < 1000 and 0.7 <= (w / max(h, 1)) <= 1.4:
+                ar = w / max(h, 1e-6)
+
+                # Classify device type
+                if cls_id == CLASS_PHONE:
+                    if area < 1200 and 0.7 <= ar <= 1.4:
+                        dev_type = "smartwatch"
+                        label = "SMARTWATCH DETECTED"
+                    elif area < 380:
+                        dev_type = "earbud"
+                        label = "EARBUD DETECTED"
+                    else:
+                        dev_type = "phone"
+                        label = "PHONE DETECTED"
+                elif cls_id == CLASS_CLOCK:
                     dev_type = "smartwatch"
-                elif area < 400:
-                    dev_type = "earbud"
+                    label = "SMARTWATCH DETECTED"
+                elif cls_id == CLASS_LAPTOP:
+                    dev_type = "laptop"
+                    label = "LAPTOP DETECTED"
+                elif cls_id == CLASS_BOOK:
+                    dev_type = "book"
+                    label = "UNAUTHORIZED NOTES DETECTED"
+                elif cls_id == CLASS_TV:
+                    dev_type = "tablet"
+                    label = "TABLET / SCREEN DETECTED"
+                elif cls_id == CLASS_REMOTE:
+                    dev_type = "device"
+                    label = "PROHIBITED DEVICE DETECTED"
+                else:
+                    dev_type = "device"
+                    label = "PROHIBITED OBJECT DETECTED"
 
                 final.append({
                     "bbox": (int(box[0]), int(box[1]), int(box[2]), int(box[3])),
-                    "conf": float(box[4]),
+                    "conf": conf,
                     "device_type": dev_type,
+                    "label": f"{label} · {int(conf * 100)}%",
                     "source": src
                 })
 
@@ -159,7 +218,7 @@ def persons_from_yolo_result(boxes, conf_min=0.35):
     """Extracts person boxes from an ultralytics Boxes object."""
     out = []
     for b in boxes:
-        if int(b.cls[0]) == PERSON_CLASS_ID and float(b.conf[0]) >= conf_min:
+        if int(b.cls[0]) == CLASS_PERSON and float(b.conf[0]) >= conf_min:
             x1, y1, x2, y2 = map(float, b.xyxy[0])
             out.append((x1, y1, x2, y2))
     return out

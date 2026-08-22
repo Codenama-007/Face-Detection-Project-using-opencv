@@ -384,13 +384,29 @@ async function runNeuralFrameDetection() {
                         DOM.cctvDetectionBox.style.borderColor = 'var(--cyan)';
                         DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(6, 182, 212, 0.5)';
                         DOM.cctvDetectionLabel.style.background = 'var(--cyan)';
+                    } else if (det.device_type === 'laptop') {
+                        DOM.cctvDetectionBox.style.borderColor = 'rgba(59, 130, 246, 0.9)';
+                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(59, 130, 246, 0.5)';
+                        DOM.cctvDetectionLabel.style.background = 'rgba(37, 99, 235, 0.95)';
+                    } else if (det.device_type === 'book') {
+                        DOM.cctvDetectionBox.style.borderColor = 'rgba(249, 115, 22, 0.9)';
+                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(249, 115, 22, 0.5)';
+                        DOM.cctvDetectionLabel.style.background = 'rgba(234, 88, 12, 0.95)';
+                    } else if (det.device_type === 'tablet') {
+                        DOM.cctvDetectionBox.style.borderColor = 'rgba(168, 85, 247, 0.9)';
+                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(168, 85, 247, 0.5)';
+                        DOM.cctvDetectionLabel.style.background = 'rgba(147, 51, 234, 0.95)';
+                    } else {
+                        DOM.cctvDetectionBox.style.borderColor = 'var(--danger)';
+                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
+                        DOM.cctvDetectionLabel.style.background = 'var(--danger)';
                     }
 
                     DOM.cctvDetectionLabel.textContent = det.label;
                 }
 
                 if (DOM.playbackOverlayTag && DOM.playbackOverlayText) {
-                    DOM.playbackOverlayTag.className = 'status-overlay danger-bg';
+                    DOM.playbackOverlayTag.className = det.device_type === 'laptop' ? 'status-overlay info-bg' : 'status-overlay danger-bg';
                     DOM.playbackOverlayTag.style.display = 'flex';
                     DOM.playbackOverlayText.textContent = det.label;
                     lucide.createIcons();
