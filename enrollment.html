@@ -113,7 +113,7 @@ body::after {
 /* Top Navigation Bar */
 .enroll-nav {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1380px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -180,20 +180,198 @@ body::after {
     height: 13px;
 }
 
-/* Two-Column Master Grid */
+/* ══ MASTER 3-COLUMN GRID ══════════════════════════════════════
+   Row 1: Stage tracker banner — spans all 3 columns
+   Row 2: [Student Details] [Face/Camera Preview] [Readiness Matrix]
+   ═══════════════════════════════════════════════════════════ */
 .master-grid {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1380px;
     display: grid;
-    grid-template-columns: 520px 1fr;
-    gap: 1.5rem;
+    grid-template-columns: 310px 1fr 330px;
+    grid-template-rows: auto 1fr;
+    gap: 1.25rem;
     position: relative;
     z-index: 1;
+    align-items: start;
 }
 
-@media (max-width: 1060px) {
+.top-banner-panel {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding: 1.35rem 1.75rem 1.15rem;
+}
+
+.enroll-left-panel {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 1.35rem 1.25rem;
+}
+
+.enroll-center-panel {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 1.35rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.enroll-right-panel {
+    grid-column: 3;
+    grid-row: 2;
+    padding: 1.35rem 1.25rem;
+}
+
+/* Panel Header Components */
+.left-panel-hd,
+.center-panel-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.65rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.lp-title-wrap,
+.cp-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.lp-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.28);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cp-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lp-title,
+.cp-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--t1);
+    letter-spacing: -0.01em;
+}
+
+.lp-sub,
+.cp-sub {
+    font-size: 0.66rem;
+    color: var(--t3);
+}
+
+.cam-sensor-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.6rem;
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--success);
+    background: var(--success-dim);
+    border: 1px solid var(--success-bd);
+    padding: 0.18rem 0.5rem;
+    border-radius: 99px;
+}
+
+.live-pulse-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
+    animation: tmbBlink 1.5s infinite ease-in-out;
+}
+
+.cam-status-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.75rem;
+    margin-top: 0.65rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+}
+
+.cs-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.66rem;
+    font-family: var(--mono);
+    color: var(--t3);
+}
+
+.cs-item strong {
+    color: var(--t1);
+    font-weight: 600;
+}
+
+.cs-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--t4);
+}
+
+.cs-dot.active {
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+}
+
+@media (max-width: 1140px) {
+    .master-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+    }
+    .top-banner-panel {
+        grid-column: 1 / -1;
+        grid-row: 1;
+    }
+    .enroll-center-panel {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+    .enroll-left-panel {
+        grid-column: 1;
+        grid-row: 3;
+    }
+    .enroll-right-panel {
+        grid-column: 2;
+        grid-row: 3;
+    }
+}
+
+@media (max-width: 768px) {
     .master-grid {
         grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+    .top-banner-panel,
+    .enroll-center-panel,
+    .enroll-left-panel,
+    .enroll-right-panel {
+        grid-column: 1;
+        grid-row: auto;
     }
 }
 
@@ -865,13 +1043,19 @@ p.subtitle {
 /* Video Container & Reticle */
 .video-container {
     width: 100%;
-    height: 220px;
+    aspect-ratio: 4 / 3;
+    min-height: 320px;
+    max-height: 480px;
     background: #000;
     border-radius: 12px;
     overflow: hidden;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     border: 1px solid var(--border-subtle);
     position: relative;
+    box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .video-container video {
@@ -879,6 +1063,7 @@ p.subtitle {
     height: 100%;
     object-fit: cover;
     transform: scaleX(-1);
+    display: block;
 }
 
 .cam-reticle-br {
@@ -1368,11 +1553,11 @@ p.subtitle {
         </div>
     </nav>
 
-    <!-- ══ MASTER 2-COLUMN GRID ════════════════════════════════════ -->
+    <!-- ══ MASTER 3-COLUMN GRID ════════════════════════════════════ -->
     <div class="master-grid">
 
-        <!-- ═ LEFT COLUMN: BIOMETRIC ENROLLMENT CONSOLE ═ -->
-        <div class="panel-container">
+        <!-- ═ TOP BANNER: STAGE TRACKER & STEP HEADER (Spans all columns) ═ -->
+        <div class="panel-container top-banner-panel">
             <div class="panel-header">
                 <div class="enroll-shield-icon">
                     <i data-lucide="scan-face"></i>
@@ -1650,6 +1835,21 @@ p.subtitle {
             </div>
 
             <div class="stage-status-sub" id="timelineStatus">Enter student full name & identification ID</div>
+        </div>
+
+        <!-- ═ LEFT COLUMN: STUDENT INFORMATION ═ -->
+        <div class="panel-container enroll-left-panel">
+            <div class="left-panel-hd">
+                <div class="lp-title-wrap">
+                    <div class="lp-icon">
+                        <i data-lucide="user-check"></i>
+                    </div>
+                    <div>
+                        <div class="lp-title">Student Details</div>
+                        <div class="lp-sub">Candidate Registration Profile</div>
+                    </div>
+                </div>
+            </div>
 
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
@@ -1657,11 +1857,6 @@ p.subtitle {
             </div>
 
             <div id="webcamTab" class="tab-content active">
-                <div class="video-container">
-                    <div class="cam-reticle-br"></div>
-                    <video id="webcam" autoplay playsinline></video>
-                </div>
-
                 <div class="input-group">
                     <label for="studentName">Student Full Name</label>
                     <input type="text" id="studentName" placeholder="e.g. Nalin Tuscano" autocomplete="off" required>
@@ -1672,20 +1867,21 @@ p.subtitle {
                     <input type="text" id="studentId" placeholder="e.g. 1009" autocomplete="off" required>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-                    <div class="input-group">
-                        <label for="studentCourse">Class / Course</label>
-                        <input type="text" id="studentCourse" placeholder="e.g. CS302 AI Systems" value="CS302 Computer Vision">
-                    </div>
-                    <div class="input-group">
-                        <label for="studentExam">Examination</label>
-                        <input type="text" id="studentExam" placeholder="e.g. Final Examination" value="Final Semester Examination 2026">
-                    </div>
+                <div class="input-group">
+                    <label for="studentCourse">Class / Course</label>
+                    <input type="text" id="studentCourse" placeholder="e.g. CS302 AI Systems" value="CS302 Computer Vision">
+                </div>
+
+                <div class="input-group">
+                    <label for="studentExam">Examination</label>
+                    <input type="text" id="studentExam" placeholder="e.g. Final Examination" value="Final Semester Examination 2026">
                 </div>
 
                 <button class="btn" id="captureBtn">
                     <i data-lucide="camera"></i> Register Biometric Face ID
                 </button>
+
+                <div id="statusMsg" class="message"></div>
             </div>
 
             <div id="uploadTab" class="tab-content">
@@ -1701,12 +1897,45 @@ p.subtitle {
                     <i data-lucide="upload"></i> Enroll Batch Selected
                 </button>
             </div>
+        </div>
 
-            <div id="statusMsg" class="message"></div>
+        <!-- ═ CENTER COLUMN: FACE / CAMERA PREVIEW ═ -->
+        <div class="panel-container enroll-center-panel">
+            <div class="center-panel-hd">
+                <div class="cp-title-wrap">
+                    <div class="cp-icon">
+                        <i data-lucide="scan"></i>
+                    </div>
+                    <div>
+                        <div class="cp-title">Face / Camera Preview</div>
+                        <div class="cp-sub">Live Neural Facial Landmark Alignment</div>
+                    </div>
+                </div>
+                <div class="cam-sensor-badge">
+                    <span class="live-pulse-dot"></span>
+                    <span>LIVE SENSOR</span>
+                </div>
+            </div>
+
+            <div class="video-container">
+                <div class="cam-reticle-br"></div>
+                <video id="webcam" autoplay playsinline></video>
+            </div>
+
+            <div class="cam-status-footer">
+                <div class="cs-item">
+                    <span class="cs-dot active"></span>
+                    <span class="cs-lbl">Optical Feed: <strong id="camSensorResolution">Active HD</strong></span>
+                </div>
+                <div class="cs-item">
+                    <span class="cs-dot active"></span>
+                    <span class="cs-lbl">Biometrics: <strong>ArcFace 512D</strong></span>
+                </div>
+            </div>
         </div>
 
         <!-- ═ RIGHT COLUMN: PRE-SESSION READINESS & ROSTER ═ -->
-        <div class="panel-container">
+        <div class="panel-container enroll-right-panel">
             <div class="right-panel-hd">
                 <div class="r-title-wrap">
                     <div class="r-icon">
