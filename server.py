@@ -3345,7 +3345,11 @@ def debug_selftest():
 
 # ---- Phone detection thread -------------------------------------------
 PHONE_INTERVAL = 0.04         # High-responsiveness continuous phone detection (25 FPS)
-PHONE_RESULT_TTL = 1.0       # Hold detection bounding box smoothly across frames
+PHONE_RESULT_TTL = 0.6       # How long a SLOW-worker hit stays valid. Kept short
+                             # so the box clears promptly on removal -- the fast
+                             # per-frame pass now provides continuous coverage.
+PHONE_FAST_CONF = 0.35       # min confidence for the FAST per-frame phone pass
+                             # (rides on the main yolo11n@384 person inference)
 PHONE_WHOLE_FRAME_EVERY = 1  # Continuous whole-frame + person-ROI scanning on every pass
 
 _phone_lock = threading.Lock()
@@ -3369,7 +3373,11 @@ def _phone_worker():
             if phone_detector is None:
                 continue
             # Continuous high-resolution scanning (640px) for small and partial phones
+            _t_slow = time.time()
             found = phone_detector.detect(frame, persons, whole_frame=True, whole_imgsz=640)
+            if RECOG_DEBUG:
+                print(f"[PERF] slow phone worker pass {(time.time() - _t_slow) * 1000:.0f}ms "
+                      f"({1 + len(persons)} inferences@640) hits={len(found)}")
             with _phone_lock:
                 _phone_output["boxes"] = found
                 _phone_output["ts"] = time.time()
@@ -3949,28 +3957,65 @@ def _ai_worker_loop():
         now = time.time()
         draw_ops = []
 
-        # 1. YOLO person detection
+        # 1. YOLO person + FAST phone detection in ONE shared inference.
+        # Adding the phone class (COCO 67) to the person pass yields a phone
+        # detection on EVERY AI frame at ~no extra cost -- the "fast pass" that
+        # flags a clearly-visible phone within ~one frame (~100ms) instead of
+        # waiting for the heavy high-recall phone worker's next cycle (which runs
+        # multiple 640px inferences and can take ~1s). The slow worker still adds
+        # recall for small/partial/occluded devices; the two are merged below.
+        _t_yolo = time.time()
         yolo_results = yolo_model(frame, stream=True, verbose=False,
-                                  imgsz=YOLO_IMGSZ, classes=[0])
+                                  imgsz=YOLO_IMGSZ, classes=[0, 67])
         person_detections = []
         person_boxes = []
+        fast_phone_raw = []
 
         for r in yolo_results:
             for box in r.boxes:
+                cls = int(box.cls[0])
                 conf = float(box.conf[0])
-                if conf <= 0.45:
-                    continue
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                person_detections.append(([x1, y1, x2 - x1, y2 - y1], conf, "person"))
-                person_boxes.append((x1, y1, x2, y2))
+                if cls == 0:
+                    if conf <= 0.45:
+                        continue
+                    person_detections.append(([x1, y1, x2 - x1, y2 - y1], conf, "person"))
+                    person_boxes.append((x1, y1, x2, y2))
+                elif cls == 67 and conf >= PHONE_FAST_CONF:
+                    fast_phone_raw.append((x1, y1, x2, y2, conf))
+        if RECOG_DEBUG:
+            print(f"[PERF] fast YOLO(person+phone)@{YOLO_IMGSZ} "
+                  f"{(time.time() - _t_yolo) * 1000:.0f}ms persons={len(person_boxes)} "
+                  f"fast_phones={len(fast_phone_raw)}")
 
-        # 2. Phone / Device detection dispatch
+        # 2. Phone / Device detection = FAST pass (this frame) + SLOW high-recall
+        # worker pass, merged. The fast pass makes the box/alert appear within one
+        # AI frame of the phone becoming visible, instead of a worker cycle later.
         with _phone_lock:
             if _phone_input["frame"] is None:
                 _phone_input["frame"] = frame.copy()
                 _phone_input["persons"] = person_boxes
-            fresh = (now - _phone_output["ts"]) <= PHONE_RESULT_TTL
-            phone_hits = list(_phone_output["boxes"]) if fresh else []
+            slow_fresh = (now - _phone_output["ts"]) <= PHONE_RESULT_TTL
+            slow_hits = list(_phone_output["boxes"]) if slow_fresh else []
+
+        # Fast-pass detections -> same dict shape, with device typing.
+        fast_hits = []
+        for (fx1, fy1, fx2, fy2, fconf) in fast_phone_raw:
+            fw, fh = fx2 - fx1, fy2 - fy1
+            farea = fw * fh
+            fdev = "phone"
+            if farea < 1000 and 0.7 <= (fw / max(fh, 1)) <= 1.4:
+                fdev = "smartwatch"
+            elif farea < 400:
+                fdev = "earbud"
+            fast_hits.append({"bbox": (fx1, fy1, fx2, fy2), "conf": fconf,
+                              "device_type": fdev, "source": "fast"})
+
+        # Merge fast + slow, highest confidence first, dedup by IoU.
+        phone_hits = []
+        for d in sorted(fast_hits + slow_hits, key=lambda x: -x["conf"]):
+            if all(phone_detect._iou(d["bbox"], e["bbox"]) < 0.45 for e in phone_hits):
+                phone_hits.append(d)
 
         phone_boxes = []
         smartwatch_boxes = []
