@@ -304,29 +304,39 @@ def serve_login():
 
 @app.route('/reports/<path:filename>')
 def serve_report(filename):
-    """Protects direct examination report downloads against IDOR."""
-    if 'user_id' not in session:
-        return redirect('/login.html')
-    
-    role = session.get('role')
-    user_inst = session.get('institution_id')
+    """Serves a generated examination report HTML file.
 
-    if role != 'ADMIN':
-        try:
-            conn = psycopg2.connect(DB_URL)
-            cursor = conn.cursor()
-            cursor.execute("SELECT institution_id FROM exam_sessions WHERE report_url LIKE %s LIMIT 1;", (f"%{filename}%",))
-            row = cursor.fetchone()
-            cursor.close()
-            conn.close()
+    Auth guard: when REQUIRE_LOGIN is True we verify the session user_id and
+    prevent cross-institution access via DB lookup.  When REQUIRE_LOGIN is
+    False (demo / offline mode) the before_request middleware already skips
+    all auth, so we must do the same here — otherwise the hard-coded
+    'user_id not in session' check would redirect every report click to the
+    login page even though the rest of the app is open to anyone.
+    """
+    if REQUIRE_LOGIN:
+        if 'user_id' not in session:
+            return redirect('/login.html')
 
-            if row and row[0] and row[0] != user_inst:
-                record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, 'REPORT_ACCESS_DENIED', request.remote_addr, 'DENIED', f"Attempted cross-institution report access: {filename}")
-                return jsonify({"error": "FORBIDDEN: Access to cross-institution examination report denied"}), 403
-        except Exception as e:
-            print(f"Error validating report access: {e}")
+        role = session.get('role')
+        user_inst = session.get('institution_id')
 
-    record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, 'REPORT_ACCESS', request.remote_addr, 'SUCCESS', f"Accessed examination report: {filename}")
+        if role != 'ADMIN':
+            try:
+                conn = psycopg2.connect(DB_URL)
+                cursor = conn.cursor()
+                cursor.execute("SELECT institution_id FROM exam_sessions WHERE report_url LIKE %s LIMIT 1;", (f"%{filename}%",))
+                row = cursor.fetchone()
+                cursor.close()
+                conn.close()
+
+                if row and row[0] and row[0] != user_inst:
+                    record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, 'REPORT_ACCESS_DENIED', request.remote_addr, 'DENIED', f"Attempted cross-institution report access: {filename}")
+                    return jsonify({"error": "FORBIDDEN: Access to cross-institution examination report denied"}), 403
+            except Exception as e:
+                print(f"Error validating report access: {e}")
+
+        record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, 'REPORT_ACCESS', request.remote_addr, 'SUCCESS', f"Accessed examination report: {filename}")
+
     return send_from_directory(REPORTS_DIR, filename)
 
 @app.route('/<path:path>')

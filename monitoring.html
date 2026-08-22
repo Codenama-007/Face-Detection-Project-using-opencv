@@ -3175,9 +3175,12 @@ $endSessionBtn.addEventListener('click', async () => {
     if (reportBtn) {
         reportBtn.onclick = () => {
             if (reportUrl) {
+                // Open the generated report HTML file directly
                 window.open(reportUrl, '_blank');
             } else {
-                window.open(`${BASE}/reports`, '_blank');
+                // Fallback: no report URL received (offline / no session) —
+                // open the reports list page which is a real static file
+                window.open(`${BASE}/reports.html`, '_blank');
             }
         };
     }
