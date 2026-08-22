@@ -174,9 +174,11 @@ function cacheDOMElements() {
     DOM.playbackEventBadge = document.getElementById('playbackEventBadge');
     DOM.playbackOverlayTag = document.getElementById('playbackOverlayTag');
     DOM.playbackOverlayText = document.getElementById('playbackOverlayText');
+    DOM.videoStateOverlay = document.getElementById('videoStateOverlay');
     DOM.cctvDetectionBox = document.getElementById('cctvDetectionBox');
     DOM.cctvDetectionLabel = document.getElementById('cctvDetectionLabel');
     DOM.cctvStatusText = document.getElementById('cctvStatusText');
+    DOM.cctvStatusIndicator = document.getElementById('cctvStatusIndicator');
     DOM.actionTimelineTrack = document.getElementById('actionTimelineTrack');
     DOM.inspectorTime = document.getElementById('inspectorTime');
     DOM.inspectorSeverityBadge = document.getElementById('inspectorSeverityBadge');
@@ -204,11 +206,15 @@ function togglePlayPause() {
         const p = cctvVideo.play();
         if (p !== undefined) {
             p.then(() => {
+                if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'none';
                 if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="pause"></i>';
                 if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
                 lucide.createIcons();
             }).catch(err => {
                 console.info('CCTV playback notice:', err.message);
+                if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'flex';
+                if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV RECORDING UNAVAILABLE';
+                showToast('CCTV recording source unavailable for this session', 'warning', 2500);
             });
         }
     } else {
@@ -295,6 +301,16 @@ function initCCTVVideoPlayer() {
     cctvVideo = document.getElementById('cctvVideoPlayer');
     if (!cctvVideo) return;
 
+    const setUnavailableState = () => {
+        if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'flex';
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV RECORDING UNAVAILABLE';
+    };
+
+    const setReadyState = () => {
+        if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'none';
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE READY';
+    };
+
     // 1. Play / Pause Button
     if (DOM.btnPlayPause) {
         DOM.btnPlayPause.addEventListener('click', togglePlayPause);
@@ -324,6 +340,7 @@ function initCCTVVideoPlayer() {
 
     // 4. Video Events (State Handlers)
     cctvVideo.addEventListener('play', () => {
+        if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'none';
         if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="pause"></i>';
         if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
         lucide.createIcons();
@@ -340,6 +357,7 @@ function initCCTVVideoPlayer() {
     });
 
     cctvVideo.addEventListener('playing', () => {
+        if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'none';
         if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
     });
 
@@ -349,9 +367,9 @@ function initCCTVVideoPlayer() {
         lucide.createIcons();
     });
 
-    cctvVideo.addEventListener('loadedmetadata', () => {
-        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE READY';
-    });
+    cctvVideo.addEventListener('loadedmetadata', setReadyState);
+    cctvVideo.addEventListener('canplay', setReadyState);
+    cctvVideo.addEventListener('error', setUnavailableState);
 
     // 5. Continuous Time Update (Optimized with RAF)
     cctvVideo.addEventListener('timeupdate', () => {

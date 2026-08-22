@@ -352,6 +352,13 @@
                         <div class="timestamp-overlay" id="playbackTimestamp">09:58:01</div>
                     </div>
 
+                    <!-- Video State Overlay for Unavailable / Error State -->
+                    <div class="video-state-overlay" id="videoStateOverlay" style="display:none;">
+                        <i data-lucide="video-off" class="state-icon"></i>
+                        <span class="state-title" id="videoStateTitle">CCTV Recording Unavailable</span>
+                        <span class="state-sub" id="videoStateSub">No local CCTV video file found for session REC-9948271</span>
+                    </div>
+
                     <!-- Active Event Notification Overlay Tag -->
                     <div class="status-overlay danger-bg" id="playbackOverlayTag" style="display:none;">
                         <i data-lucide="alert-triangle"></i> <span id="playbackOverlayText">Mobile Device Detected</span>
