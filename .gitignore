@@ -97,3 +97,11 @@ datasets/
 # OS specific files
 .DS_Store
 Thumbs.db
+.env
+venv/
+__pycache__/
+*.pyc
+
+ExamCheatingDataset/
+models/ExamCheatingDataset/
+snapshot.json

@@ -13,7 +13,7 @@ import requests
 from PIL import Image
 from tqdm import tqdm
 
-from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 
 
@@ -23,7 +23,7 @@ from langchain_core.messages import HumanMessage
 
 OUTPUT_DIR = "ExamCheatingDataset/candidates"
 
-# class_name -> (search queries, description used to prompt the vision model for validation)
+# class_name -> (search queries, description used to prompt Gemini for validation)
 TARGETS = {
     "cheating": {
         "queries": [
@@ -53,7 +53,7 @@ TARGETS = {
     },
 }
 
-IMAGES_PER_QUERY = 100
+IMAGES_PER_QUERY = 5
 
 HEADERS = {
     "User-Agent": (
@@ -64,26 +64,26 @@ HEADERS = {
 }
 
 # ============================================================
-# OLLAMA VALIDATION (via langchain_ollama.ChatOllama)
+# GEMINI VALIDATION (via langchain-google-genai)
 # ============================================================
 
-# NOTE: this needs a VISION-capable model pulled in Ollama.
-# "llama3.1:8b" is TEXT-ONLY — it cannot see the image at all, so validation
-# will be meaningless (it'll guess blind, or the image field may just be ignored).
-# Swap in a vision model instead, e.g.:
-#   ollama pull qwen2.5vl:7b     (Qwen vision-language model)
-#   ollama pull llava
-#   ollama pull llama3.2-vision  (this is the vision sibling of Llama 3.1/3.2)
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
 
-# How many times to retry an Ollama call before giving up on an image
-OLLAMA_MAX_RETRIES = 2
-OLLAMA_RETRY_DELAY = 3  # seconds
+if not GEMINI_API_KEY:
+    raise RuntimeError(
+        "No Gemini API key found. Set GOOGLE_API_KEY (or GEMINI_API_KEY) in your .env file."
+    )
 
-_llm = ChatOllama(
-    model=OLLAMA_MODEL,
+_llm = ChatGoogleGenerativeAI(
+    model=GEMINI_MODEL,
+    google_api_key=GEMINI_API_KEY,
     temperature=0,
 )
+
+# How many times to retry a Gemini call before giving up on an image
+GEMINI_MAX_RETRIES = 2
+GEMINI_RETRY_DELAY = 3  # seconds
 
 
 def _image_to_data_url(image, quality=85):
@@ -93,10 +93,9 @@ def _image_to_data_url(image, quality=85):
     return f"data:image/jpeg;base64,{b64}"
 
 
-def validate_image_with_ollama(image, description):
+def validate_image_with_gemini(image, description):
     """
-    Asks a local Ollama vision model (via LangChain's ChatOllama) whether the
-    image actually matches the target class description.
+    Asks Gemini whether the image actually matches the target class description.
     Returns True/False. Returns None if the call failed after retries (caller
     decides whether to keep or skip on uncertainty).
     """
@@ -117,16 +116,16 @@ def validate_image_with_ollama(image, description):
         ]
     )
 
-    for attempt in range(OLLAMA_MAX_RETRIES + 1):
+    for attempt in range(GEMINI_MAX_RETRIES + 1):
         try:
             response = _llm.invoke([message])
             answer = (response.content or "").strip().upper()
             return answer.startswith("YES")
         except Exception as e:
-            if attempt < OLLAMA_MAX_RETRIES:
-                time.sleep(OLLAMA_RETRY_DELAY)
+            if attempt < GEMINI_MAX_RETRIES:
+                time.sleep(GEMINI_RETRY_DELAY)
             else:
-                print(f"Ollama validation failed after retries: {e}")
+                print(f"Gemini validation failed after retries: {e}")
                 return None
 
 
@@ -239,8 +238,8 @@ def scrape_class(class_name, queries, description):
 
             existing_hashes.add(h)
 
-            # ---- Ollama validation gate ----
-            verdict = validate_image_with_ollama(image, description)
+            # ---- Gemini validation gate ----
+            verdict = validate_image_with_gemini(image, description)
 
             if verdict is False:
                 rejected_counter += 1
@@ -249,7 +248,7 @@ def scrape_class(class_name, queries, description):
                 continue
 
             if verdict is None:
-                # Ollama call failed after retries — keep the image but flag it
+                # Gemini call failed after retries — keep the image but flag it
                 # in the filename so you can review it manually later.
                 uncertain_counter += 1
 
@@ -259,13 +258,12 @@ def scrape_class(class_name, queries, description):
             filepath = os.path.join(output_path, filename)
             image.save(filepath, "JPEG", quality=90)
 
-            # No API rate limit with local Ollama, but a tiny delay avoids
-            # hammering the GPU/CPU back-to-back on slower machines.
-            time.sleep(0.1)
+            # Small delay to stay within Gemini/API rate limits
+            time.sleep(0.5)
 
     print(
         f"\nSaved {counter} images for {class_name} "
-        f"({rejected_counter} rejected by Ollama, {uncertain_counter} unverified)"
+        f"({rejected_counter} rejected by Gemini, {uncertain_counter} unverified)"
     )
 
 
@@ -280,4 +278,3 @@ if __name__ == "__main__":
     print("\n================================")
     print("SCRAPING COMPLETE")
     print("================================")
-refer this code
