@@ -4107,19 +4107,37 @@ def gen_frames():
     """Per-viewer generator. Touches no camera and runs no AI - it only
     forwards the latest frame the worker produced, so extra viewers are
     nearly free and never contend for the camera. Registering as a viewer is
-    what tells the worker to acquire the camera."""
+    what tells the worker to acquire the camera.
+
+    FIX: Track the identity of the last sent frame (via id()) so the same
+    JPEG bytes are never yielded twice in a row. Without this guard the
+    generator re-yields the cached _latest_jpeg on every Condition notify,
+    even when no new frame has arrived, which makes the <img> MJPEG stream
+    appear frozen / static while the camera hardware is running normally."""
     global _viewers
     start_camera_worker()
     with _viewers_lock:
         _viewers += 1
+    last_sent_id = None   # identity of the last frame bytes object we forwarded
     try:
         while True:
             with _frame_ready:
-                # Wait for the worker to publish a new frame
+                # Block until the stream-compositor publishes a genuinely new frame
+                # or the 5-second timeout elapses (acts as a keepalive).
                 _frame_ready.wait(timeout=5.0)
                 jpeg = _latest_jpeg
+
             if jpeg is None:
                 continue
+
+            # Only forward frames that are actually new.  The Condition is
+            # notified on every publish, but if the camera is slow or the
+            # viewer loop wakes early we must not re-send the same bytes.
+            frame_id = id(jpeg)
+            if frame_id == last_sent_id:
+                continue
+            last_sent_id = frame_id
+
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + jpeg + b'\r\n')
     finally:
@@ -4129,7 +4147,18 @@ def gen_frames():
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    """MJPEG live stream endpoint.
+    The explicit no-cache and no-buffering headers are required so that:
+    - Browsers (Chrome, Firefox, Edge) do not cache the first frame and show
+      a frozen image instead of the continuous stream.
+    - Reverse-proxies (nginx, etc.) do not buffer the multipart response,
+      which would stall delivery and make the feed appear stuck."""
+    resp = Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    resp.headers['X-Accel-Buffering'] = 'no'   # disable nginx proxy buffering
+    return resp
 
 @app.route('/api/camera/pause', methods=['POST'])
 def camera_pause():

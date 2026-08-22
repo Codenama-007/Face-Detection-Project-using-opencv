@@ -2176,7 +2176,7 @@ body::after {
                         <span class="hud-alert-text" id="hudAlertText">Critical event</span>
                     </div>
 
-                    <img id="cctvFeedImg" src="/video_feed" alt="Live examination feed"
+                    <img id="cctvFeedImg" src="" alt="Live examination feed"
                          class="cctv-img" onerror="onFeedError()" onload="onFeedLoaded()">
 
                     <div class="feed-offline show" id="feedOffline">
@@ -2553,7 +2553,41 @@ function updateExamScore(students) {
 }
 
 // ── VIDEO FEED STATE HANDLERS ────────────────
+// Track the last time onFeedLoaded fired so the watchdog can detect stalls.
+// In most browsers onFeedLoaded fires on every decoded MJPEG frame, so a
+// long gap indicates the stream has silently stopped pushing frames.
+let _lastFeedLoadedAt = 0;
+let _feedWatchdogTimer = null;
+const FEED_STALL_THRESHOLD_MS = 8000; // reconnect if no new frame for 8 s
+
+function _reconnectFeed(reason) {
+    // Only reconnect when we believe the stream is/was online - avoid
+    // spamming reconnects when the backend is genuinely offline.
+    if (!feedOnline && !backendOnline) return;
+    console.warn(`[FeedWatchdog] Reconnecting stream — ${reason}`);
+    if ($feedImg) {
+        // Assign a new cache-busted URL so the browser opens a fresh
+        // multipart/x-mixed-replace connection instead of reusing the stale one.
+        $feedImg.src = '';
+        requestAnimationFrame(() => {
+            $feedImg.src = `${BASE}/video_feed?t=${Date.now()}`;
+        });
+    }
+}
+
+function _startFeedWatchdog() {
+    if (_feedWatchdogTimer) return; // already running
+    _feedWatchdogTimer = setInterval(() => {
+        if (!feedOnline) return; // stream hasn't connected yet — skip
+        const staleSince = Date.now() - _lastFeedLoadedAt;
+        if (staleSince > FEED_STALL_THRESHOLD_MS) {
+            _reconnectFeed(`no frame for ${Math.round(staleSince / 1000)}s`);
+        }
+    }, 3000); // check every 3 s
+}
+
 function onFeedLoaded() {
+    _lastFeedLoadedAt = Date.now();
     feedOnline    = true;
     backendOnline = true;
     $feedOffline.classList.remove('show');
@@ -3258,7 +3292,12 @@ function init() {
     }
 
     if ($feedImg) {
-        $feedImg.src = `${BASE}/video_feed`;
+        // Use a cache-busting timestamp so the browser does not serve
+        // a stale first frame from disk cache, which would make the feed
+        // appear frozen even when the server is pushing live frames.
+        $feedImg.src = `${BASE}/video_feed?t=${Date.now()}`;
+        // Start the watchdog that reconnects the stream if it stalls
+        _startFeedWatchdog();
     }
 
     checkAuthContext();
