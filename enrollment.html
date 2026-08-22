@@ -180,46 +180,72 @@ body::after {
     height: 13px;
 }
 
-/* ══ MASTER 3-COLUMN GRID ══════════════════════════════════════
-   Row 1: Stage tracker banner — spans all 3 columns
-   Row 2: [Student Details] [Face/Camera Preview] [Readiness Matrix]
+/* ══ HERO 2-COLUMN LAYOUT (ABOVE THE FOLD) ═══════════════════
+   Left: [Student Details] + [Pre-Session Readiness Matrix]
+   Right: [Large Face / Camera Live Preview]
    ═══════════════════════════════════════════════════════════ */
-.master-grid {
+.enroll-container {
     width: 100%;
     max-width: 1380px;
-    display: grid;
-    grid-template-columns: 310px 1fr 330px;
-    grid-template-rows: auto 1fr;
-    gap: 1.25rem;
-    position: relative;
-    z-index: 1;
-    align-items: start;
-}
-
-.top-banner-panel {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    padding: 1.35rem 1.75rem 1.15rem;
-}
-
-.enroll-left-panel {
-    grid-column: 1;
-    grid-row: 2;
-    padding: 1.35rem 1.25rem;
-}
-
-.enroll-center-panel {
-    grid-column: 2;
-    grid-row: 2;
-    padding: 1.35rem 1.25rem;
     display: flex;
     flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
 }
 
-.enroll-right-panel {
-    grid-column: 3;
-    grid-row: 2;
-    padding: 1.35rem 1.25rem;
+.enroll-hero-grid {
+    display: grid;
+    grid-template-columns: 440px 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+.enroll-left-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.enroll-right-camera {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.enroll-camera-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+}
+
+.enroll-camera-card .video-container {
+    flex: 1;
+    width: 100%;
+    min-height: 480px;
+    background: #000;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--border-subtle);
+    position: relative;
+    box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.85), 0 12px 36px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.enroll-camera-card .video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+    display: block;
+}
+
+.enroll-timeline-card {
+    padding: 1.5rem 1.75rem;
 }
 
 /* Panel Header Components */
@@ -338,40 +364,13 @@ body::after {
     box-shadow: 0 0 6px var(--cyan);
 }
 
-@media (max-width: 1140px) {
-    .master-grid {
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto auto;
-    }
-    .top-banner-panel {
-        grid-column: 1 / -1;
-        grid-row: 1;
-    }
-    .enroll-center-panel {
-        grid-column: 1 / -1;
-        grid-row: 2;
-    }
-    .enroll-left-panel {
-        grid-column: 1;
-        grid-row: 3;
-    }
-    .enroll-right-panel {
-        grid-column: 2;
-        grid-row: 3;
-    }
-}
-
-@media (max-width: 768px) {
-    .master-grid {
+@media (max-width: 1080px) {
+    .enroll-hero-grid {
         grid-template-columns: 1fr;
-        grid-template-rows: auto;
     }
-    .top-banner-panel,
-    .enroll-center-panel,
-    .enroll-left-panel,
-    .enroll-right-panel {
-        grid-column: 1;
-        grid-row: auto;
+    .enroll-camera-card .video-container {
+        min-height: 360px;
+        max-height: 500px;
     }
 }
 
@@ -1553,17 +1552,180 @@ p.subtitle {
         </div>
     </nav>
 
-    <!-- ══ MASTER 3-COLUMN GRID ════════════════════════════════════ -->
-    <div class="master-grid">
+    <!-- ══ MAIN ENROLLMENT CONTAINER ═════════════════════════════ -->
+    <div class="enroll-container">
 
-        <!-- ═ TOP BANNER: STAGE TRACKER & STEP HEADER (Spans all columns) ═ -->
-        <div class="panel-container top-banner-panel">
+        <!-- ══ 1. TOP HERO SECTION (ABOVE THE FOLD) ══════════════════ -->
+        <div class="enroll-hero-grid">
+
+            <!-- ═ LEFT COLUMN: Student Details + Pre-Session Readiness ═ -->
+            <div class="enroll-left-stack">
+
+                <!-- Panel 1: Student Information -->
+                <div class="panel-container">
+                    <div class="left-panel-hd">
+                        <div class="lp-title-wrap">
+                            <div class="lp-icon">
+                                <i data-lucide="user-check"></i>
+                            </div>
+                            <div>
+                                <div class="lp-title">Student Details</div>
+                                <div class="lp-sub">Candidate Registration Profile</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
+                        <button class="tab-btn" onclick="switchTab('uploadTab', this)">Batch Upload</button>
+                    </div>
+
+                    <div id="webcamTab" class="tab-content active">
+                        <div class="input-group">
+                            <label for="studentName">Student Full Name</label>
+                            <input type="text" id="studentName" placeholder="e.g. Nalin Tuscano" autocomplete="off" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="studentId">Student ID / Roll Number</label>
+                            <input type="text" id="studentId" placeholder="e.g. 1009" autocomplete="off" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="studentCourse">Class / Course</label>
+                            <input type="text" id="studentCourse" placeholder="e.g. CS302 AI Systems" value="CS302 Computer Vision">
+                        </div>
+
+                        <div class="input-group">
+                            <label for="studentExam">Examination</label>
+                            <input type="text" id="studentExam" placeholder="e.g. Final Examination" value="Final Semester Examination 2026">
+                        </div>
+
+                        <button class="btn" id="captureBtn">
+                            <i data-lucide="camera"></i> Register Biometric Face ID
+                        </button>
+
+                        <div id="statusMsg" class="message"></div>
+                    </div>
+
+                    <div id="uploadTab" class="tab-content">
+                        <div class="file-upload-zone" onclick="document.getElementById('fileInput').click()">
+                            <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--cyan);margin-bottom:0.5rem;display:inline-block;"></i>
+                            <p style="margin-bottom:0;color:var(--t2);font-size:0.82rem;">Select student photos or ID documents<br><small style="color:var(--t3);font-family:var(--mono);">Format: "ID-Name.jpg" to auto-parse</small></p>
+                        </div>
+                        <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+                        
+                        <div class="file-list" id="fileList"></div>
+                        
+                        <button class="btn" id="uploadAllBtn" disabled>
+                            <i data-lucide="upload"></i> Enroll Batch Selected
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Panel 2: Pre-Session Readiness Matrix (BELOW Student Details on the Left) -->
+                <div class="panel-container">
+                    <div class="right-panel-hd">
+                        <div class="r-title-wrap">
+                            <div class="r-icon">
+                                <i data-lucide="shield-check"></i>
+                            </div>
+                            <div>
+                                <div class="r-title">Pre-Session Readiness Matrix</div>
+                                <div class="r-sub">Verified Biometric Baseline for Active Examination</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Readiness Indicators Grid -->
+                    <div class="readiness-grid">
+                        <div class="ready-card">
+                            <div class="ready-label">
+                                <span>Students Enrolled</span>
+                                <i data-lucide="users" style="width:12px;height:12px;"></i>
+                            </div>
+                            <div class="ready-val ok" id="enrolledCountDisplay">0 Verified</div>
+                            <div class="ready-sub">Current institution scope</div>
+                        </div>
+
+                        <div class="ready-card">
+                            <div class="ready-label">
+                                <span>Camera Sensor</span>
+                                <i data-lucide="video" style="width:12px;height:12px;"></i>
+                            </div>
+                            <div class="ready-val ok" id="camStatusDisplay">CONNECTED</div>
+                            <div class="ready-sub">Webcam / RTSP Active</div>
+                        </div>
+
+                        <div class="ready-card">
+                            <div class="ready-label">
+                                <span>AI Defense Matrix</span>
+                                <i data-lucide="cpu" style="width:12px;height:12px;"></i>
+                            </div>
+                            <div class="ready-val ok">READY</div>
+                            <div class="ready-sub">ArcFace + YOLO11s</div>
+                        </div>
+
+                        <div class="ready-card">
+                            <div class="ready-label">
+                                <span>Tenant Isolation</span>
+                                <i data-lucide="lock" style="width:12px;height:12px;"></i>
+                            </div>
+                            <div class="ready-val ok">ENFORCED</div>
+                            <div class="ready-sub">Zero cross-tenant exposure</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ═ RIGHT COLUMN: LARGE LIVE FACE/CAMERA PREVIEW ═ -->
+            <div class="enroll-right-camera">
+                <div class="panel-container enroll-camera-card">
+                    <div class="center-panel-hd">
+                        <div class="cp-title-wrap">
+                            <div class="cp-icon">
+                                <i data-lucide="scan-face"></i>
+                            </div>
+                            <div>
+                                <div class="cp-title">Live Biometric Face ID Camera</div>
+                                <div class="cp-sub">Real-Time Facial Landmark Alignment & Neural Capture</div>
+                            </div>
+                        </div>
+                        <div class="cam-sensor-badge">
+                            <span class="live-pulse-dot"></span>
+                            <span>LIVE SENSOR ACTIVE</span>
+                        </div>
+                    </div>
+
+                    <div class="video-container">
+                        <div class="cam-reticle-br"></div>
+                        <video id="webcam" autoplay playsinline></video>
+                    </div>
+
+                    <div class="cam-status-footer">
+                        <div class="cs-item">
+                            <span class="cs-dot active"></span>
+                            <span class="cs-lbl">Optical Sensor: <strong id="camSensorResolution">Active HD Stream</strong></span>
+                        </div>
+                        <div class="cs-item">
+                            <span class="cs-dot active"></span>
+                            <span class="cs-lbl">Biometrics Engine: <strong>ArcFace 512D</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ══ 2. VERIFICATION TIMELINE (BELOW ENTIRE TOP SECTION) ═════ -->
+        <div class="panel-container enroll-timeline-card">
             <div class="panel-header">
                 <div class="enroll-shield-icon">
-                    <i data-lucide="scan-face"></i>
+                    <i data-lucide="shield"></i>
                 </div>
-                <h2>Student Biometric Enrollment</h2>
-                <p class="subtitle">Register student identity and capture high-fidelity facial landmarks for ArcFace neural matching.</p>
+                <h2>Biometric Verification Pipeline</h2>
+                <p class="subtitle">Real-time neural pipeline tracking candidate identity registration, sensor calibration, and vector indexing.</p>
             </div>
 
             <!-- Stage Progress Tracker (Live Camera Mode) -->
@@ -1837,157 +1999,8 @@ p.subtitle {
             <div class="stage-status-sub" id="timelineStatus">Enter student full name & identification ID</div>
         </div>
 
-        <!-- ═ LEFT COLUMN: STUDENT INFORMATION ═ -->
-        <div class="panel-container enroll-left-panel">
-            <div class="left-panel-hd">
-                <div class="lp-title-wrap">
-                    <div class="lp-icon">
-                        <i data-lucide="user-check"></i>
-                    </div>
-                    <div>
-                        <div class="lp-title">Student Details</div>
-                        <div class="lp-sub">Candidate Registration Profile</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('webcamTab', this)">Live Camera</button>
-                <button class="tab-btn" onclick="switchTab('uploadTab', this)">Batch Upload</button>
-            </div>
-
-            <div id="webcamTab" class="tab-content active">
-                <div class="input-group">
-                    <label for="studentName">Student Full Name</label>
-                    <input type="text" id="studentName" placeholder="e.g. Nalin Tuscano" autocomplete="off" required>
-                </div>
-
-                <div class="input-group">
-                    <label for="studentId">Student ID / Roll Number</label>
-                    <input type="text" id="studentId" placeholder="e.g. 1009" autocomplete="off" required>
-                </div>
-
-                <div class="input-group">
-                    <label for="studentCourse">Class / Course</label>
-                    <input type="text" id="studentCourse" placeholder="e.g. CS302 AI Systems" value="CS302 Computer Vision">
-                </div>
-
-                <div class="input-group">
-                    <label for="studentExam">Examination</label>
-                    <input type="text" id="studentExam" placeholder="e.g. Final Examination" value="Final Semester Examination 2026">
-                </div>
-
-                <button class="btn" id="captureBtn">
-                    <i data-lucide="camera"></i> Register Biometric Face ID
-                </button>
-
-                <div id="statusMsg" class="message"></div>
-            </div>
-
-            <div id="uploadTab" class="tab-content">
-                <div class="file-upload-zone" onclick="document.getElementById('fileInput').click()">
-                    <i data-lucide="upload-cloud" style="width:32px;height:32px;color:var(--cyan);margin-bottom:0.5rem;display:inline-block;"></i>
-                    <p style="margin-bottom:0;color:var(--t2);font-size:0.82rem;">Select student photos or ID documents<br><small style="color:var(--t3);font-family:var(--mono);">Format: "ID-Name.jpg" to auto-parse</small></p>
-                </div>
-                <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
-                
-                <div class="file-list" id="fileList"></div>
-                
-                <button class="btn" id="uploadAllBtn" disabled>
-                    <i data-lucide="upload"></i> Enroll Batch Selected
-                </button>
-            </div>
-        </div>
-
-        <!-- ═ CENTER COLUMN: FACE / CAMERA PREVIEW ═ -->
-        <div class="panel-container enroll-center-panel">
-            <div class="center-panel-hd">
-                <div class="cp-title-wrap">
-                    <div class="cp-icon">
-                        <i data-lucide="scan"></i>
-                    </div>
-                    <div>
-                        <div class="cp-title">Face / Camera Preview</div>
-                        <div class="cp-sub">Live Neural Facial Landmark Alignment</div>
-                    </div>
-                </div>
-                <div class="cam-sensor-badge">
-                    <span class="live-pulse-dot"></span>
-                    <span>LIVE SENSOR</span>
-                </div>
-            </div>
-
-            <div class="video-container">
-                <div class="cam-reticle-br"></div>
-                <video id="webcam" autoplay playsinline></video>
-            </div>
-
-            <div class="cam-status-footer">
-                <div class="cs-item">
-                    <span class="cs-dot active"></span>
-                    <span class="cs-lbl">Optical Feed: <strong id="camSensorResolution">Active HD</strong></span>
-                </div>
-                <div class="cs-item">
-                    <span class="cs-dot active"></span>
-                    <span class="cs-lbl">Biometrics: <strong>ArcFace 512D</strong></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═ RIGHT COLUMN: PRE-SESSION READINESS & ROSTER ═ -->
-        <div class="panel-container enroll-right-panel">
-            <div class="right-panel-hd">
-                <div class="r-title-wrap">
-                    <div class="r-icon">
-                        <i data-lucide="shield-check"></i>
-                    </div>
-                    <div>
-                        <div class="r-title">Pre-Session Readiness Matrix</div>
-                        <div class="r-sub">Verified Biometric Baseline for Active Examination</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Readiness Indicators Grid -->
-            <div class="readiness-grid">
-                <div class="ready-card">
-                    <div class="ready-label">
-                        <span>Students Enrolled</span>
-                        <i data-lucide="users" style="width:12px;height:12px;"></i>
-                    </div>
-                    <div class="ready-val ok" id="enrolledCountDisplay">0 Verified</div>
-                    <div class="ready-sub">Current institution scope</div>
-                </div>
-
-                <div class="ready-card">
-                    <div class="ready-label">
-                        <span>Camera Sensor</span>
-                        <i data-lucide="video" style="width:12px;height:12px;"></i>
-                    </div>
-                    <div class="ready-val ok" id="camStatusDisplay">CONNECTED</div>
-                    <div class="ready-sub">Webcam / RTSP Active</div>
-                </div>
-
-                <div class="ready-card">
-                    <div class="ready-label">
-                        <span>AI Defense Matrix</span>
-                        <i data-lucide="cpu" style="width:12px;height:12px;"></i>
-                    </div>
-                    <div class="ready-val ok">READY</div>
-                    <div class="ready-sub">ArcFace + YOLO11s</div>
-                </div>
-
-                <div class="ready-card">
-                    <div class="ready-label">
-                        <span>Tenant Isolation</span>
-                        <i data-lucide="lock" style="width:12px;height:12px;"></i>
-                    </div>
-                    <div class="ready-val ok">ENFORCED</div>
-                    <div class="ready-sub">Zero cross-tenant exposure</div>
-                </div>
-            </div>
-
-            <!-- Enrolled Candidates Roster Section -->
+        <!-- ══ 3. ENROLLED CANDIDATES ROSTER & CTA ════════════════════ -->
+        <div class="panel-container">
             <div class="roster-header">
                 <div class="roster-title">
                     <i data-lucide="user-check" style="width:14px;height:14px;color:var(--success);"></i>
