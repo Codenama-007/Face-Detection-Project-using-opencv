@@ -3064,6 +3064,8 @@ def replay_detect_frame():
                 detections.append({
                     "bbox": [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])],
                     "conf": round(float(conf), 3),
+                    "class_id": r.get("class_id", -1),
+                    "class_name": r.get("class_name", ""),
                     "device_type": dtype,
                     "label": label
                 })

@@ -49,7 +49,7 @@ function downloadBlob(content, filename, mimeType) {
     setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 500);
 }
 
-// ─── Global State ────────────────────────────────────────────
+// ─── Global State ────────────────────────────────────
 let currentEvents = [];
 let selectedEventIndex = 0;
 let currentCategory = 'ALL';
@@ -183,6 +183,7 @@ function cacheDOMElements() {
     DOM.videoStateOverlay = document.getElementById('videoStateOverlay');
     DOM.cctvCamTag = document.getElementById('cctvCamTag');
     DOM.cctvRecTag = document.getElementById('cctvRecTag');
+    DOM.cctvDetectionsContainer = document.getElementById('cctvDetectionsContainer');
     DOM.cctvDetectionBox = document.getElementById('cctvDetectionBox');
     DOM.cctvDetectionLabel = document.getElementById('cctvDetectionLabel');
     DOM.cctvStatusText = document.getElementById('cctvStatusText');
@@ -354,65 +355,64 @@ async function runNeuralFrameDetection() {
 
         if (res.ok) {
             const data = await res.json();
-            if (data.success && data.detections && data.detections.length > 0) {
-                const det = data.detections[0]; // Primary device detection
-                const bbox = det.bbox; // [x1, y1, x2, y2]
-                const fW = data.frame_shape ? data.frame_shape[0] : targetW;
-                const fH = data.frame_shape ? data.frame_shape[1] : targetH;
+            const detections = data.detections || [];
+            const fW = data.frame_shape ? data.frame_shape[0] : targetW;
+            const fH = data.frame_shape ? data.frame_shape[1] : targetH;
 
-                const leftPct = (bbox[0] / fW) * 100;
-                const topPct = (bbox[1] / fH) * 100;
-                const widthPct = ((bbox[2] - bbox[0]) / fW) * 100;
-                const heightPct = ((bbox[3] - bbox[1]) / fH) * 100;
+            if (data.success && detections.length > 0) {
+                // Multi-device bounding box rendering
+                if (DOM.cctvDetectionsContainer) {
+                    DOM.cctvDetectionsContainer.innerHTML = detections.map(det => {
+                        const bbox = det.bbox; // [x1, y1, x2, y2]
+                        const leftPct = (bbox[0] / fW) * 100;
+                        const topPct = (bbox[1] / fH) * 100;
+                        const widthPct = ((bbox[2] - bbox[0]) / fW) * 100;
+                        const heightPct = ((bbox[3] - bbox[1]) / fH) * 100;
 
-                if (DOM.cctvDetectionBox && DOM.cctvDetectionLabel) {
-                    DOM.cctvDetectionBox.style.display = 'block';
-                    DOM.cctvDetectionBox.style.left = `${leftPct.toFixed(1)}%`;
-                    DOM.cctvDetectionBox.style.top = `${topPct.toFixed(1)}%`;
-                    DOM.cctvDetectionBox.style.width = `${Math.max(8, widthPct).toFixed(1)}%`;
-                    DOM.cctvDetectionBox.style.height = `${Math.max(8, heightPct).toFixed(1)}%`;
+                        let colorBorder = 'var(--danger)';
+                        let colorBg = 'var(--danger)';
+                        let colorShadow = 'rgba(239, 68, 68, 0.45)';
 
-                    if (det.device_type === 'phone') {
-                        DOM.cctvDetectionBox.style.borderColor = 'var(--danger)';
-                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
-                        DOM.cctvDetectionLabel.style.background = 'var(--danger)';
-                    } else if (det.device_type === 'smartwatch') {
-                        DOM.cctvDetectionBox.style.borderColor = 'var(--warning)';
-                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(245, 158, 11, 0.5)';
-                        DOM.cctvDetectionLabel.style.background = 'var(--warning)';
-                    } else if (det.device_type === 'earbud') {
-                        DOM.cctvDetectionBox.style.borderColor = 'var(--cyan)';
-                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(6, 182, 212, 0.5)';
-                        DOM.cctvDetectionLabel.style.background = 'var(--cyan)';
-                    } else if (det.device_type === 'laptop') {
-                        DOM.cctvDetectionBox.style.borderColor = 'rgba(59, 130, 246, 0.9)';
-                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(59, 130, 246, 0.5)';
-                        DOM.cctvDetectionLabel.style.background = 'rgba(37, 99, 235, 0.95)';
-                    } else if (det.device_type === 'book') {
-                        DOM.cctvDetectionBox.style.borderColor = 'rgba(249, 115, 22, 0.9)';
-                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(249, 115, 22, 0.5)';
-                        DOM.cctvDetectionLabel.style.background = 'rgba(234, 88, 12, 0.95)';
-                    } else if (det.device_type === 'tablet') {
-                        DOM.cctvDetectionBox.style.borderColor = 'rgba(168, 85, 247, 0.9)';
-                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(168, 85, 247, 0.5)';
-                        DOM.cctvDetectionLabel.style.background = 'rgba(147, 51, 234, 0.95)';
-                    } else {
-                        DOM.cctvDetectionBox.style.borderColor = 'var(--danger)';
-                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
-                        DOM.cctvDetectionLabel.style.background = 'var(--danger)';
-                    }
+                        if (det.device_type === 'smartwatch') {
+                            colorBorder = 'var(--warning)';
+                            colorBg = 'var(--warning)';
+                            colorShadow = 'rgba(245, 158, 11, 0.45)';
+                        } else if (det.device_type === 'earbud') {
+                            colorBorder = 'var(--cyan)';
+                            colorBg = 'var(--cyan)';
+                            colorShadow = 'rgba(6, 182, 212, 0.45)';
+                        } else if (det.device_type === 'laptop') {
+                            colorBorder = 'rgba(59, 130, 246, 0.9)';
+                            colorBg = 'rgba(37, 99, 235, 0.95)';
+                            colorShadow = 'rgba(59, 130, 246, 0.45)';
+                        } else if (det.device_type === 'book') {
+                            colorBorder = 'rgba(249, 115, 22, 0.9)';
+                            colorBg = 'rgba(234, 88, 12, 0.95)';
+                            colorShadow = 'rgba(249, 115, 22, 0.45)';
+                        } else if (det.device_type === 'tablet') {
+                            colorBorder = 'rgba(168, 85, 247, 0.9)';
+                            colorBg = 'rgba(147, 51, 234, 0.95)';
+                            colorShadow = 'rgba(168, 85, 247, 0.45)';
+                        }
 
-                    DOM.cctvDetectionLabel.textContent = det.label;
+                        return `
+                            <div class="cctv-detection-box" style="display:block;left:${leftPct.toFixed(1)}%;top:${topPct.toFixed(1)}%;width:${Math.max(6, widthPct).toFixed(1)}%;height:${Math.max(6, heightPct).toFixed(1)}%;border-color:${colorBorder};box-shadow:0 0 14px ${colorShadow};">
+                                <span class="cctv-detection-label" style="background:${colorBg};">${escapeHtml(det.label)}</span>
+                            </div>
+                        `;
+                    }).join('');
                 }
 
                 if (DOM.playbackOverlayTag && DOM.playbackOverlayText) {
-                    DOM.playbackOverlayTag.className = det.device_type === 'laptop' ? 'status-overlay info-bg' : 'status-overlay danger-bg';
+                    const primaryDet = detections[0];
+                    DOM.playbackOverlayTag.className = primaryDet.device_type === 'laptop' ? 'status-overlay info-bg' : 'status-overlay danger-bg';
                     DOM.playbackOverlayTag.style.display = 'flex';
-                    DOM.playbackOverlayText.textContent = det.label;
+                    DOM.playbackOverlayText.textContent = detections.map(d => d.label).join(' | ');
                     lucide.createIcons();
                 }
             } else {
-                // Clear bounding box and active overlay when no device in frame
+                // Clear bounding boxes when no prohibited objects in frame
+                if (DOM.cctvDetectionsContainer) DOM.cctvDetectionsContainer.innerHTML = '';
                 if (DOM.cctvDetectionBox) DOM.cctvDetectionBox.style.display = 'none';
                 if (DOM.playbackOverlayTag) DOM.playbackOverlayTag.style.display = 'none';
             }
@@ -487,7 +487,11 @@ function initCCTVVideoPlayer() {
     });
 
     cctvVideo.addEventListener('waiting', () => {
-        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV BUFFERING...';
+        if (cctvVideo.readyState >= 2 && !cctvVideo.error && cctvVideo.currentSrc) {
+            if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV BUFFERING...';
+        } else {
+            setUnavailableState();
+        }
     });
 
     cctvVideo.addEventListener('playing', () => {
@@ -505,6 +509,11 @@ function initCCTVVideoPlayer() {
     cctvVideo.addEventListener('loadedmetadata', setReadyState);
     cctvVideo.addEventListener('canplay', setReadyState);
     cctvVideo.addEventListener('error', setUnavailableState);
+    cctvVideo.addEventListener('stalled', () => {
+        if (!cctvVideo.currentSrc || cctvVideo.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+            setUnavailableState();
+        }
+    });
 
     // Initial check on load
     setTimeout(() => {
