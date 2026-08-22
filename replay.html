@@ -59,7 +59,7 @@
              LEVEL 2: SEARCH & DISCOVERY COMMAND DECK
              ═════════════════════════════════════════════════════════════════ -->
         <section class="glass-panel search-discovery-deck">
-            <!-- Search Input & Sorting Controls -->
+            <!-- ROW 1: Search Input & Primary Controls -->
             <div class="search-row">
                 <div class="search-input-wrap">
                     <i data-lucide="search" class="search-icon"></i>
@@ -104,7 +104,7 @@
                 </div>
             </div>
 
-            <!-- Lightweight Category Filter Chips -->
+            <!-- ROW 2: Category Filter Chips -->
             <div class="category-filters-row">
                 <span class="filter-group-label"><i data-lucide="filter" style="width:12px;height:12px;"></i> Categories:</span>
                 <div class="category-chips" id="categoryChips">
@@ -150,7 +150,7 @@
                 </div>
             </div>
 
-            <!-- Quick Queries & Result Feedback -->
+            <!-- ROW 3: Status Summary & Quick Queries -->
             <div class="search-status-bar" id="searchStatusBar">
                 <div class="results-summary">
                     <span id="resultsCountText">Showing 15 of 15 recorded timeline events</span>
@@ -214,15 +214,16 @@
                     </div>
 
                     <div class="details-content" id="inspectorContent">
-                        <!-- Top Metadata Row -->
+                        <!-- 1. Event Header & Category -->
                         <div class="inspector-meta-row">
                             <div class="detail-time danger-text" id="inspectorTime">10:42:31</div>
                             <span class="badge badge-outline" id="inspectorCategoryBadge">DEVICE</span>
                         </div>
 
-                        <!-- Title and Student -->
+                        <!-- 2. Event Title -->
                         <h4 class="detail-title" id="inspectorTitle">PHONE DETECTED</h4>
                         
+                        <!-- 3. Entity / Session Information -->
                         <div class="inspector-student-card" id="inspectorStudentCard">
                             <div class="stu-avatar-box" id="inspectorAvatar">NT</div>
                             <div class="stu-info-box">
@@ -232,7 +233,7 @@
                             </div>
                         </div>
 
-                        <!-- Description & Root Cause -->
+                        <!-- 4. Incident Summary & Root Cause -->
                         <div class="inspector-desc-wrap">
                             <label class="inspector-lbl">Incident Summary &amp; Description:</label>
                             <p class="detail-desc" id="inspectorDesc">
@@ -240,7 +241,7 @@
                             </p>
                         </div>
 
-                        <!-- Recorded State Transitions Card (X → Y) -->
+                        <!-- 5. Recorded State Transitions Card (X → Y) -->
                         <div class="state-changes-card" id="inspectorStateChanges">
                             <div class="sc-header">
                                 <i data-lucide="git-commit" style="width:13px;height:13px;color:var(--cyan);"></i>
@@ -266,7 +267,7 @@
                             </div>
                         </div>
 
-                        <!-- Available Telemetry -->
+                        <!-- 6. Available Telemetry -->
                         <div class="telemetry-block" id="telemetryBlock">
                             <div class="tel-header">
                                 <i data-lucide="cpu" style="width:13px;height:13px;color:var(--accent);"></i>
@@ -292,7 +293,7 @@
                             </div>
                         </div>
 
-                        <!-- Interactive Resolution Button -->
+                        <!-- 7. Dedicated Incident Resolution Action Area -->
                         <div class="inspector-action-row" id="inspectorActionRow">
                             <button type="button" class="btn-resolve" id="resolveIncidentBtn" onclick="resolveCurrentEvent()">
                                 <i data-lucide="check-circle"></i>
