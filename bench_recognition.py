@@ -20,7 +20,7 @@ import psycopg2
 BASE = os.path.dirname(os.path.abspath(__file__))
 DB_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql://neondb_owner:npg_58LHqXDdanEy@ep-young-sea-aotvi360.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require")
+    "postgresql://postgres:postgres@localhost:5432/proctor_db")
 
 detector = cv2.FaceDetectorYN.create(
     os.path.join(BASE, "models", "face_detection_yunet_2023mar.onnx"), "",

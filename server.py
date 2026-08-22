@@ -33,11 +33,9 @@ def get_replay_detector():
     return global_replay_detector
 
 # ---------------- CONFIG ----------------
-# Prefer the environment variable; the hardcoded fallback should be rotated
-# and removed before any public deployment.
 DB_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql://neondb_owner:npg_58LHqXDdanEy@ep-young-sea-aotvi360.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+    "postgresql://postgres:postgres@localhost:5432/proctor_db"
 )
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
