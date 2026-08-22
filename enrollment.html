@@ -2553,6 +2553,8 @@ p.subtitle {
                         studentId: defaultId,
                         studentName: defaultName,
                         validationStatus: 'validating',
+                        validationMessage: 'SCANNING...',
+                        faceCount: null,
                         hasFace: null,
                         enrollStatus: 'pending'
                     };
@@ -2560,7 +2562,7 @@ p.subtitle {
                     renderFileList();
                     updateBatchTimeline();
                     
-                    // Trigger real face detection validation for this uploaded image
+                    // Immediately start real face scanning for this uploaded image
                     validateStudentFace(itemData);
                 };
                 reader.readAsDataURL(file);
@@ -2575,33 +2577,41 @@ p.subtitle {
                     body: JSON.stringify({ image: item.dataUrl })
                 });
                 
+                const currentItem = selectedFilesData.find(x => String(x.id) === String(item.id));
+                if (!currentItem) return; // Item removed while scanning
+                
                 if (response.ok) {
                     const result = await response.json();
-                    item.faceCount = typeof result.faces_count === 'number' ? result.faces_count : (result.valid ? 1 : 0);
-                    item.validationMessage = result.message || (item.faceCount === 1 ? '1 face detected — Valid' : (item.faceCount > 1 ? `Multiple faces detected (${item.faceCount}) — Invalid` : 'No face detected — Invalid'));
+                    const count = typeof result.faces_count === 'number' ? result.faces_count : (result.valid ? 1 : 0);
+                    currentItem.faceCount = count;
                     
-                    // MANDATORY RULE: Exactly 1 face is valid, 0 or >1 is invalid
-                    if (item.faceCount === 1) {
-                        item.hasFace = true;
-                        item.validationStatus = 'valid';
+                    if (count === 1) {
+                        currentItem.hasFace = true;
+                        currentItem.validationStatus = 'valid';
+                        currentItem.validationMessage = result.message || '1 face detected — Valid';
+                    } else if (count > 1) {
+                        currentItem.hasFace = false;
+                        currentItem.validationStatus = 'invalid';
+                        currentItem.validationMessage = result.message || 'Multiple faces detected — Invalid';
                     } else {
-                        item.hasFace = false;
-                        item.validationStatus = 'invalid';
+                        currentItem.hasFace = false;
+                        currentItem.validationStatus = 'invalid';
+                        currentItem.validationMessage = result.message || 'No face detected — Invalid';
                     }
                 } else {
-                    const clientFaces = await detectFaceCountClient(item.dataUrl);
-                    item.faceCount = clientFaces;
-                    item.hasFace = (clientFaces === 1);
-                    item.validationStatus = item.hasFace ? 'valid' : 'invalid';
-                    item.validationMessage = item.hasFace ? '1 face detected — Valid' : (clientFaces > 1 ? `Multiple faces detected (${clientFaces}) — Invalid` : 'No face detected — Invalid');
+                    currentItem.faceCount = 0;
+                    currentItem.hasFace = false;
+                    currentItem.validationStatus = 'invalid';
+                    currentItem.validationMessage = 'SCAN FAILED';
                 }
             } catch (err) {
-                console.warn('Face validation network check fallback:', err);
-                const clientFaces = await detectFaceCountClient(item.dataUrl);
-                item.faceCount = clientFaces;
-                item.hasFace = (clientFaces === 1);
-                item.validationStatus = item.hasFace ? 'valid' : 'invalid';
-                item.validationMessage = item.hasFace ? '1 face detected — Valid' : (clientFaces > 1 ? `Multiple faces detected (${clientFaces}) — Invalid` : 'No face detected — Invalid');
+                console.warn('Face validation error:', err);
+                const currentItem = selectedFilesData.find(x => String(x.id) === String(item.id));
+                if (!currentItem) return;
+                currentItem.faceCount = 0;
+                currentItem.hasFace = false;
+                currentItem.validationStatus = 'invalid';
+                currentItem.validationMessage = 'SCAN FAILED';
             }
 
             const allValidated = selectedFilesData.every(x => x.validationStatus !== 'validating');
@@ -2609,31 +2619,37 @@ p.subtitle {
                 batchState.isValid = true;
             }
             
-            renderFileList();
+            updateItemStatusDom(item);
             updateBatchTimeline();
         }
 
-        async function detectFaceCountClient(dataUrl) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = async () => {
-                    try {
-                        if (window.FaceDetector) {
-                            try {
-                                const detector = new window.FaceDetector({ fastMode: false, maxDetectedFaces: 20 });
-                                const detected = await detector.detect(img);
-                                return resolve(detected ? detected.length : 0);
-                            } catch (e) {}
-                        }
-                        resolve(0);
-                    } catch (e) {
-                        resolve(0);
-                    }
-                };
-                img.onerror = () => resolve(0);
-                img.src = dataUrl;
-            });
+        function getItemStatusIconHtml(item) {
+            if (item.enrollStatus === 'uploading') {
+                return '<i data-lucide="loader" class="lucide-spin status-icon-loading" style="width:16px;height:16px;" title="Enrolling biometric profile..."></i>';
+            } else if (item.enrollStatus === 'success') {
+                return '<i data-lucide="check-circle-2" class="status-icon-valid" style="width:16px;height:16px;" title="Enrolled successfully into database"></i>';
+            } else if (item.enrollStatus === 'error') {
+                return '<i data-lucide="x-circle" class="status-icon-invalid" style="width:16px;height:16px;" title="Enrollment failed"></i>';
+            } else if (item.validationStatus === 'validating') {
+                return '<i data-lucide="loader" class="lucide-spin status-icon-loading" style="width:16px;height:16px;" title="SCANNING..."></i>';
+            } else if (item.hasFace === true) {
+                const tip = item.validationMessage || '1 face detected — Valid';
+                return `<i data-lucide="check-circle-2" class="status-icon-valid" style="width:16px;height:16px;" title="${tip}"></i>`;
+            } else if (item.hasFace === false) {
+                const tip = item.validationMessage || 'No face detected — Invalid';
+                return `<i data-lucide="x-circle" class="status-icon-invalid" style="width:16px;height:16px;" title="${tip}"></i>`;
+            } else {
+                return '<i data-lucide="loader" class="lucide-spin status-icon-loading" style="width:16px;height:16px;" title="SCANNING..."></i>';
+            }
+        }
+
+        function updateItemStatusDom(item) {
+            const statusEl = document.getElementById(`status-${item.id}`);
+            if (statusEl) {
+                statusEl.innerHTML = getItemStatusIconHtml(item);
+                statusEl.title = item.validationMessage || (item.validationStatus === 'validating' ? 'SCANNING...' : '');
+                lucide.createIcons();
+            }
         }
         
         function renderFileList() {
@@ -2651,25 +2667,8 @@ p.subtitle {
                 const el = document.createElement('div');
                 el.className = 'file-item';
                 
-                let iconHtml = '';
-                if (item.enrollStatus === 'uploading') {
-                    iconHtml = '<i data-lucide="loader" class="lucide-spin status-icon-loading" style="width:16px;height:16px;" title="Enrolling biometric profile..."></i>';
-                } else if (item.enrollStatus === 'success') {
-                    iconHtml = '<i data-lucide="check-circle-2" class="status-icon-valid" style="width:16px;height:16px;" title="Enrolled successfully into database"></i>';
-                } else if (item.enrollStatus === 'error') {
-                    iconHtml = '<i data-lucide="x-circle" class="status-icon-invalid" style="width:16px;height:16px;" title="Enrollment failed"></i>';
-                } else if (item.validationStatus === 'validating') {
-                    iconHtml = '<i data-lucide="loader" class="lucide-spin status-icon-loading" style="width:16px;height:16px;" title="Analyzing image for human faces..."></i>';
-                } else if (item.hasFace === true) {
-                    const tip = item.validationMessage || '1 face detected — Valid';
-                    iconHtml = `<i data-lucide="check-circle-2" class="status-icon-valid" style="width:16px;height:16px;" title="${tip}"></i>`;
-                } else if (item.hasFace === false) {
-                    const tip = item.validationMessage || (item.faceCount > 1 ? `Multiple faces detected (${item.faceCount}) — Invalid` : 'No face detected — Invalid');
-                    iconHtml = `<i data-lucide="x-circle" class="status-icon-invalid" style="width:16px;height:16px;" title="${tip}"></i>`;
-                } else {
-                    iconHtml = '<i data-lucide="loader" class="lucide-spin status-icon-loading" style="width:16px;height:16px;" title="Analyzing image for human faces..."></i>';
-                }
-                
+                const iconHtml = getItemStatusIconHtml(item);
+                const tip = item.validationMessage || (item.validationStatus === 'validating' ? 'SCANNING...' : '');
                 const safeId = (item.studentId || '').replace(/"/g, '&quot;');
                 const safeName = (item.studentName || '').replace(/"/g, '&quot;');
 
@@ -2679,7 +2678,7 @@ p.subtitle {
                         <input type="text" placeholder="ID" value="${safeId}" oninput="updateFileData('${item.id}', 'studentId', this.value)">
                         <input type="text" placeholder="Name" value="${safeName}" oninput="updateFileData('${item.id}', 'studentName', this.value)">
                     </div>
-                    <div id="status-${item.id}" class="file-item-status">${iconHtml}</div>
+                    <div id="status-${item.id}" class="file-item-status" title="${tip}">${iconHtml}</div>
                     <button type="button" class="file-remove-btn" onclick="removeBatchFile('${item.id}')" aria-label="Remove student" title="Remove student">
                         <i data-lucide="x" style="width:14px;height:14px;stroke-width:2.5;"></i>
                     </button>

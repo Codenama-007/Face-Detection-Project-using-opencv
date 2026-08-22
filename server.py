@@ -186,6 +186,7 @@ PUBLIC_API = {
     "/api/webauthn/status",
     "/api/webauthn/login/begin",
     "/api/webauthn/login/complete",
+    "/api/validate_face",
 }
 
 REQUIRE_LOGIN = False
@@ -1817,7 +1818,7 @@ def validate_face():
                 "valid": False,
                 "faces_count": face_count,
                 "error": f"Multiple faces detected ({face_count} faces)",
-                "message": f"Multiple faces detected ({face_count}) — Invalid"
+                "message": "Multiple faces detected — Invalid"
             }), 200
         else:
             return jsonify({
@@ -1833,7 +1834,7 @@ def validate_face():
             "valid": False,
             "faces_count": 0,
             "error": str(e),
-            "message": "Validation error — Invalid"
+            "message": "SCAN FAILED"
         }), 200
 
 @app.route('/api/register', methods=['POST'])
