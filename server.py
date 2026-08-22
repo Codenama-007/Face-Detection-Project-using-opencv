@@ -111,7 +111,10 @@ RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get('RATE_LIMIT_WINDOW_SECONDS', 300)
 RATE_LIMIT_BLOCK_SECONDS = int(os.environ.get('RATE_LIMIT_BLOCK_SECONDS', 60))     # 60 seconds lockout
 failed_attempts_registry = {}     # key -> [timestamps]
 
-ADMIN_DEFAULT_MFA_SECRET = os.environ.get('ADMIN_MFA_SECRET', "JBSWY3DPEHPK3PXP") # Base32 standard secret for Admin TOTP
+def generate_secure_mfa_secret():
+    """Generates a 160-bit cryptographically secure RFC 6238 Base32 secret."""
+    raw_secret = os.urandom(20)
+    return base64.b32encode(raw_secret).decode('utf-8').replace('=', '')
 
 def check_rate_limit(key):
     """Checks if a client/account has exceeded maximum failed attempts."""
@@ -759,8 +762,8 @@ def init_db():
                 institution_id TEXT,
                 student_id VARCHAR(50),
                 status VARCHAR(20) DEFAULT 'ACTIVE',
-                mfa_secret VARCHAR(64) DEFAULT 'JBSWY3DPEHPK3PXP',
-                mfa_enabled BOOLEAN DEFAULT TRUE,
+                mfa_secret VARCHAR(64) DEFAULT NULL,
+                mfa_enabled BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
@@ -768,10 +771,10 @@ def init_db():
             DO $$ 
             BEGIN 
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='mfa_secret') THEN
-                    ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) DEFAULT 'JBSWY3DPEHPK3PXP';
+                    ALTER TABLE users ADD COLUMN mfa_secret VARCHAR(64) DEFAULT NULL;
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='mfa_enabled') THEN
-                    ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN DEFAULT TRUE;
+                    ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN DEFAULT FALSE;
                 END IF;
             END $$;
         """)
@@ -889,8 +892,8 @@ def init_db():
             admin_hash = generate_password_hash("Admin@ProctorAI2026")
             cursor.execute("""
                 INSERT INTO users (name, username, password_hash, role, institution_id, status, mfa_secret, mfa_enabled)
-                VALUES ('Platform Administrator', 'admin', %s, 'ADMIN', NULL, 'ACTIVE', 'JBSWY3DPEHPK3PXP', FALSE);
-            """, (admin_hash,))
+                VALUES ('Platform Administrator', 'admin', %s, 'ADMIN', NULL, 'ACTIVE', %s, FALSE);
+            """, (admin_hash, generate_secure_mfa_secret()))
 
         # Seed default Faculty user for INST-001 if not exists
         cursor.execute("SELECT COUNT(*) FROM users WHERE role IN ('FACULTY', 'SUPERVISOR');")
@@ -899,8 +902,8 @@ def init_db():
             faculty_hash = generate_password_hash("Faculty@123")
             cursor.execute("""
                 INSERT INTO users (name, username, password_hash, role, institution_id, status, mfa_secret, mfa_enabled)
-                VALUES ('Dr. Sarah Jenkins', 'faculty@apex.edu', %s, 'FACULTY', 'INST-001', 'ACTIVE', 'JBSWY3DPEHPK3PXP', FALSE);
-            """, (faculty_hash,))
+                VALUES ('Dr. Sarah Jenkins', 'faculty@apex.edu', %s, 'FACULTY', 'INST-001', 'ACTIVE', %s, FALSE);
+            """, (faculty_hash, generate_secure_mfa_secret()))
 
         # Seed realistic action timeline events if table empty
         cursor.execute("SELECT COUNT(*) FROM action_timeline;")
@@ -1427,17 +1430,18 @@ def auth_login():
         # Multi-Factor Authentication Check for Platform Admin
         if role == 'ADMIN' and mfa_enabled:
             totp_code = data.get('code') or data.get('totp')
-            if totp_code:
-                if not verify_totp_code(mfa_secret or ADMIN_DEFAULT_MFA_SECRET, str(totp_code).strip()):
+            user_mfa_secret = mfa_secret or os.environ.get('ADMIN_MFA_SECRET')
+            if totp_code and user_mfa_secret:
+                if not verify_totp_code(user_mfa_secret, str(totp_code).strip()):
                     record_failed_attempt(rate_key)
                     record_audit_event(user_id, uname, 'ADMIN', 'PLATFORM', "MFA_FAILED", ip, "FAILED", "Invalid 6-digit MFA token entered")
                     return jsonify({"error": "INVALID MFA CODE"}), 401
-            elif data.get('require_mfa', False):
+            elif data.get('require_mfa', False) or not totp_code:
                 session['mfa_pending'] = True
                 session['mfa_user_id'] = user_id
                 session['mfa_username'] = uname
                 session['mfa_name'] = name
-                session['mfa_secret'] = mfa_secret or ADMIN_DEFAULT_MFA_SECRET
+                session['mfa_secret'] = user_mfa_secret
                 record_audit_event(user_id, uname, role, 'PLATFORM', "MFA_CHALLENGE_ISSUED", ip, "PENDING", "Admin MFA 2FA verification challenge issued")
                 return jsonify({
                     "success": True,
@@ -1500,7 +1504,9 @@ def auth_mfa_verify():
     user_id = session.get('mfa_user_id')
     uname = session.get('mfa_username')
     name = session.get('mfa_name')
-    secret = session.get('mfa_secret') or ADMIN_DEFAULT_MFA_SECRET
+    secret = session.get('mfa_secret') or os.environ.get('ADMIN_MFA_SECRET')
+    if not secret:
+        return jsonify({"error": "MFA configuration error on server"}), 500
 
     # Verify authentic RFC 6238 TOTP verification code
     valid_code = verify_totp_code(secret, code)
@@ -1560,25 +1566,20 @@ def admin_mfa_status():
 
 @app.route('/api/admin/mfa/setup', methods=['POST'])
 def admin_mfa_setup():
-    """Generates a new RFC 6238 Base32 TOTP secret for Admin authenticator setup."""
+    """Generates a new RFC 6238 Base32 TOTP secret server-side for Admin authenticator setup."""
     if session.get('role') != 'ADMIN':
         return jsonify({"error": "Forbidden"}), 403
     
     # Generate 160-bit cryptographically secure secret in Base32
-    raw_secret = os.urandom(20)
-    secret_base32 = base64.b32encode(raw_secret).decode('utf-8').replace('=', '')
+    secret_base32 = generate_secure_mfa_secret()
     
-    username = session.get('username', 'admin')
-    otpauth_uri = f"otpauth://totp/ProctorAI:{username}?secret={secret_base32}&issuer=ProctorAI&algorithm=SHA1&digits=6&period=30"
-    
-    # Store pending secret in session until initial code is verified
+    # Store pending secret strictly in server-side session
     session['pending_mfa_secret'] = secret_base32
     
+    # NEVER expose raw secret to client/frontend
     return jsonify({
         "success": True,
-        "secret": secret_base32,
-        "otpauth_uri": otpauth_uri,
-        "message": "Scan with Google Authenticator or enter secret manually, then verify an initial code to activate."
+        "message": "Authenticator secret securely initialized on server. Enter 6-digit confirmation code to activate."
     })
 
 @app.route('/api/admin/mfa/enable', methods=['POST'])

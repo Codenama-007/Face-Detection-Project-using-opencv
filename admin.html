@@ -902,18 +902,19 @@ body::before {
 
             <div id="mfaSetupSection" style="display:none;">
                 <div style="background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.2);border-radius:10px;padding:0.9rem;margin-bottom:1rem;">
-                    <div style="font-size:0.72rem;font-weight:800;color:var(--cyan);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.3rem;">
-                        Authenticator Secret (Base32)
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;">
+                        <i data-lucide="shield-check" style="width:16px;height:16px;color:var(--cyan);"></i>
+                        <span style="font-size:0.75rem;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:0.04em;">Authenticator Key Initialized</span>
                     </div>
-                    <div id="mfaSecretDisplay" style="font-family:var(--mono);font-size:1rem;font-weight:800;color:#fff;word-break:break-all;letter-spacing:0.1em;background:rgba(0,0,0,0.4);padding:0.6rem;border-radius:6px;border:1px solid rgba(255,255,255,0.1);">
-                        -
-                    </div>
+                    <p style="font-size:0.75rem;color:var(--t2);margin:0;line-height:1.4;">
+                        Authenticator secret is securely stored. Enter the 6-digit confirmation code from your authenticator app below to activate.
+                    </p>
                 </div>
 
                 <form onsubmit="confirmEnableMfa(event)">
                     <div class="form-group">
                         <label>Enter 6-Digit Code to Confirm & Activate</label>
-                        <input type="text" id="mfaConfirmCode" placeholder="000000" maxlength="6" style="text-align:center;font-family:var(--mono);font-size:1.2rem;font-weight:800;letter-spacing:0.2em;" required>
+                        <input type="text" id="mfaConfirmCode" placeholder="000000" maxlength="6" style="text-align:center;font-family:var(--mono);font-size:1.2rem;font-weight:800;letter-spacing:0.2em;" required autocomplete="one-time-code">
                     </div>
                     <button type="submit" class="btn-primary" style="width:100%;justify-content:center;">
                         Verify Code & Activate 2FA
@@ -1291,9 +1292,9 @@ body::before {
                 const res = await fetch('/api/admin/mfa/setup', { method: 'POST', credentials: 'include' });
                 const data = await res.json();
                 if (data.success) {
-                    document.getElementById('mfaSecretDisplay').textContent = data.secret;
                     document.getElementById('mfaSetupSection').style.display = 'block';
                     document.getElementById('mfaInitialSection').style.display = 'none';
+                    lucide.createIcons();
                 } else {
                     alert(data.error || 'Failed to initiate 2FA setup');
                 }
