@@ -3312,6 +3312,50 @@ def api_detect_frame():
         book_count = 0
         tablet_count = 0
 
+        # 1. Real-Time Face Detection via FaceAnalyzer
+        face_boxes = []
+        try:
+            face_obs = face_analyzer.analyze(frame)
+            for fo in face_obs:
+                fx, fy, fw, fh = fo.bbox
+                if fw >= 24 and fh >= 24:
+                    fx1, fy1, fx2, fy2 = fx, fy, fx + fw, fy + fh
+                    landmarks = []
+                    if fo.left_iris_xy:
+                        landmarks.append({"name": "left_iris", "x": round(fo.left_iris_xy[0] / W, 4), "y": round(fo.left_iris_xy[1] / H, 4)})
+                    if fo.right_iris_xy:
+                        landmarks.append({"name": "right_iris", "x": round(fo.right_iris_xy[0] / W, 4), "y": round(fo.right_iris_xy[1] / H, 4)})
+                    if fo.left_eye_center:
+                        landmarks.append({"name": "left_eye", "x": round(fo.left_eye_center[0] / W, 4), "y": round(fo.left_eye_center[1] / H, 4)})
+                    if fo.right_eye_center:
+                        landmarks.append({"name": "right_eye", "x": round(fo.right_eye_center[0] / W, 4), "y": round(fo.right_eye_center[1] / H, 4)})
+                    if fo.nose_xy:
+                        landmarks.append({"name": "nose", "x": round(fo.nose_xy[0] / W, 4), "y": round(fo.nose_xy[1] / H, 4)})
+
+                    conf_score = round(float(getattr(fo, 'confidence', 0.95)), 3)
+                    detected_objects.append({
+                        "type": "face",
+                        "label": "FACE",
+                        "confidence": conf_score,
+                        "confidence_pct": int(conf_score * 100),
+                        "bbox": [int(fx1), int(fy1), int(fx2), int(fy2)],
+                        "norm_bbox": [
+                            round(fx1 / W, 4),
+                            round(fy1 / H, 4),
+                            round(fx2 / W, 4),
+                            round(fy2 / H, 4)
+                        ],
+                        "landmarks": landmarks,
+                        "head_pose": {
+                            "pitch": round(float(getattr(fo, 'pitch', 0.0)), 1),
+                            "yaw": round(float(getattr(fo, 'yaw', 0.0)), 1),
+                            "roll": round(float(getattr(fo, 'roll', 0.0)), 1)
+                        }
+                    })
+                    face_boxes.append((fx1, fy1, fx2, fy2))
+        except Exception as e:
+            print(f"[DETECT_FRAME] Face analyzer notice: {e}")
+
         for (x1, y1, x2, y2, conf, cls_id) in dedup_boxes:
             w = max(1, x2 - x1)
             h = max(1, y2 - y1)

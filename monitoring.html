@@ -2599,16 +2599,17 @@ let lastLatencyMs = 0;
 let detectionLoopTimer = null;
 
 const CLASS_COLORS = {
-    phone:           { main: '#f85149', bg: 'rgba(248, 81, 73, 0.16)', border: '#f85149', label: '📱 CELL PHONE' },
-    laptop:          { main: '#d29922', bg: 'rgba(210, 153, 34, 0.16)', border: '#d29922', label: '💻 LAPTOP' },
-    smartwatch:      { main: '#38bdf8', bg: 'rgba(56, 189, 248, 0.16)', border: '#38bdf8', label: '⌚ SMARTWATCH' },
-    earbuds:         { main: '#c084fc', bg: 'rgba(192, 132, 252, 0.16)', border: '#c084fc', label: '🎧 EARBUDS' },
-    headphones:      { main: '#a855f7', bg: 'rgba(168, 85, 247, 0.16)', border: '#a855f7', label: '🎧 HEADPHONES' },
-    book:            { main: '#f97316', bg: 'rgba(249, 115, 22, 0.16)', border: '#f97316', label: '📚 NOTES / BOOK' },
-    tablet:          { main: '#fb923c', bg: 'rgba(251, 146, 60, 0.16)', border: '#fb923c', label: '📱 TABLET' },
+    face:            { main: '#00e5ff', bg: 'rgba(0, 229, 255, 0.12)', border: '#00e5ff', label: 'FACE' },
+    phone:           { main: '#f85149', bg: 'rgba(248, 81, 73, 0.16)', border: '#f85149', label: 'PHONE' },
+    laptop:          { main: '#d29922', bg: 'rgba(210, 153, 34, 0.16)', border: '#d29922', label: 'LAPTOP' },
+    smartwatch:      { main: '#38bdf8', bg: 'rgba(56, 189, 248, 0.16)', border: '#38bdf8', label: 'SMARTWATCH' },
+    earbuds:         { main: '#c084fc', bg: 'rgba(192, 132, 252, 0.16)', border: '#c084fc', label: 'EARBUDS' },
+    headphones:      { main: '#a855f7', bg: 'rgba(168, 85, 247, 0.16)', border: '#a855f7', label: 'HEADPHONES' },
+    book:            { main: '#f97316', bg: 'rgba(249, 115, 22, 0.16)', border: '#f97316', label: 'NOTES / BOOK' },
+    tablet:          { main: '#fb923c', bg: 'rgba(251, 146, 60, 0.16)', border: '#fb923c', label: 'TABLET' },
     device:          { main: '#f85149', bg: 'rgba(248, 81, 73, 0.16)', border: '#f85149', label: 'PROHIBITED DEVICE' },
-    multiple_people: { main: '#fb923c', bg: 'rgba(251, 146, 60, 0.16)', border: '#fb923c', label: '👥 MULTIPLE PEOPLE' },
-    face_missing:    { main: '#eab308', bg: 'rgba(234, 179, 8, 0.16)',  border: '#eab308', label: '👤 FACE MISSING' }
+    multiple_people: { main: '#fb923c', bg: 'rgba(251, 146, 60, 0.16)', border: '#fb923c', label: 'MULTIPLE PEOPLE' },
+    face_missing:    { main: '#eab308', bg: 'rgba(234, 179, 8, 0.16)',  border: '#eab308', label: 'FACE MISSING' }
 };
 
 // MediaRecorder Live Camera Video Recording Engine
@@ -2925,7 +2926,8 @@ function processDetections(objects, personCount, multiplePeople, faceMissing, or
             type: type,
             label: obj.label || CLASS_COLORS[type]?.label || type.toUpperCase(),
             conf: obj.confidence || 0.85,
-            confPct: obj.confidence_pct || Math.round((obj.confidence || 0.85) * 100)
+            confPct: obj.confidence_pct || Math.round((obj.confidence || 0.85) * 100),
+            landmarks: obj.landmarks || []
         });
     });
 
@@ -3009,7 +3011,7 @@ function processDetections(objects, personCount, multiplePeople, faceMissing, or
         prevAlerts = prevAlerts.filter(a => a !== 'face_missing');
     }
 
-    if (activeTypes.size === 0) {
+    if (activeTypes.size === 0 || (activeTypes.size === 1 && activeTypes.has('face'))) {
         hideHudAlert();
     }
 
@@ -3027,7 +3029,7 @@ function updateSmoothBoxes(targets) {
                     sb.curr[0] - target.normBbox[0],
                     sb.curr[1] - target.normBbox[1]
                 );
-                if (dist < bestDist && dist < 0.35) {
+                if (dist < bestDist && dist < 0.40) {
                     bestDist = dist;
                     best = sb;
                 }
@@ -3039,6 +3041,7 @@ function updateSmoothBoxes(targets) {
             best.conf = target.conf;
             best.confPct = target.confPct;
             best.label = target.label;
+            best.landmarks = target.landmarks || [];
             best.alive = 8;
             updated.push(best);
         } else {
@@ -3049,6 +3052,7 @@ function updateSmoothBoxes(targets) {
                 label: target.label,
                 conf: target.conf,
                 confPct: target.confPct,
+                landmarks: target.landmarks || [],
                 alive: 8
             });
         }
@@ -3088,7 +3092,7 @@ function startRenderLoop() {
         ctx.clearRect(0, 0, cw, ch);
 
         smoothedBoxes.forEach(box => {
-            const lerpSpeed = 0.28;
+            const lerpSpeed = 0.32;
             for (let i = 0; i < 4; i++) {
                 box.curr[i] += (box.target[i] - box.curr[i]) * lerpSpeed;
             }
@@ -3144,12 +3148,27 @@ function startRenderLoop() {
             ctx.lineTo(bx1 + bw, by1 + bh - clen);
             ctx.stroke();
 
+            // Render landmark dots on detected face if available
+            if (box.type === 'face' && box.landmarks && box.landmarks.length > 0) {
+                ctx.fillStyle = '#00e5ff';
+                ctx.shadowColor = '#00e5ff';
+                ctx.shadowBlur = 4;
+                box.landmarks.forEach(lm => {
+                    const lx = lm.x * cw;
+                    const ly = lm.y * ch;
+                    ctx.beginPath();
+                    ctx.arc(lx, ly, 2.5, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
+                ctx.shadowBlur = 0;
+            }
+
             // Label Pill above box
             const titleText = `${box.label}`;
             const subText = `CONFIDENCE: ${box.confPct}%`;
             ctx.font = 'bold 11px Inter, sans-serif';
             const tm = ctx.measureText(titleText);
-            const pillW = Math.max(tm.width + 16, 120);
+            const pillW = Math.max(tm.width + 16, 110);
             const pillH = 22;
             const pillX = Math.max(0, Math.min(cw - pillW, bx1));
             const pillY = Math.max(0, by1 - pillH - 4);
