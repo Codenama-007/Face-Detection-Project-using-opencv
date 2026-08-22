@@ -486,11 +486,13 @@ body::after {
 }
 
 /* ═════════════════════════════════════════════════════════════════════
-   2. COMMAND CENTER GRID (LIVE CAMERA + ALERTS IN RIGHT PANEL)
+   2. REFLOWED 2-COLUMN COMMAND CENTER GRID (CLEAN SOC ARCHITECTURE)
    ═════════════════════════════════════════════════════════════════════ */
+/* Three fixed regions: subjects, feed, risk. The outer page never scrolls --
+   only panel interiors do -- so the whole operating picture stays on screen. */
 .soc-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 420px;
+    grid-template-columns: 288px minmax(0, 1fr) 340px;
     gap: var(--s3);
     flex: 1;
     min-height: 0;
@@ -1970,27 +1972,54 @@ body::after {
 /* ═════════════════════════════════════════════════════════════════════
    9. RESPONSIVE BREAKPOINTS
    ═════════════════════════════════════════════════════════════════════ */
-@media (max-width: 1400px) {
-    .soc-grid { grid-template-columns: minmax(0, 1fr) 380px; gap: var(--s2); }
+/* Keep three columns for as long as they genuinely fit. The rails are only
+   ~600px combined, so they still work at 1280 and below -- stacking at 1280
+   was far too eager and dropped desktop users (and anyone at 150% zoom) into
+   the narrow fallback. Shrink the rails in steps instead. */
+@media (max-width: 1600px) {
+    .soc-grid { grid-template-columns: 264px minmax(0, 1fr) 312px; }
 }
 
-@media (max-width: 1100px) {
-    .soc-grid { grid-template-columns: minmax(0, 1fr) 340px; }
+@media (max-width: 1360px) {
+    .soc-grid { grid-template-columns: 236px minmax(0, 1fr) 288px; gap: var(--s2); }
+}
+
+@media (max-width: 1150px) {
+    .soc-grid { grid-template-columns: 210px minmax(0, 1fr) 256px; }
+}
+
+/* Only once the rails would genuinely starve the feed do we reflow to:
+   feed across the top, roster and risk queue side by side beneath it. */
+@media (max-width: 1000px) {
+    html, body { overflow: auto; }
+    .soc-wrap { height: auto; min-height: 100vh; overflow: visible; }
+    .soc-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        overflow: visible;
+    }
+    .hero-stream-col { grid-column: 1 / -1; grid-row: 1; }
+    .col-roster      { grid-column: 1; grid-row: 2; }
+    .col-risk        { grid-column: 2; grid-row: 2; }
+    .col-roster .roster-panel { min-height: 260px; }
+    .cctv-feed-area { max-height: 46vh; }
+}
+
+/* One column once even a 2-up row is cramped. */
+@media (max-width: 900px) {
+    .soc-grid { grid-template-columns: 1fr; }
+    .hero-stream-col, .col-roster, .col-risk {
+        grid-column: 1; grid-row: auto;
+    }
 }
 
 @media (max-width: 860px) {
     html, body { overflow: auto; }
-    .soc-wrap { height: auto; min-height: 100vh; overflow: visible; padding: 0.5rem; gap: 0.5rem; }
+    .soc-wrap { height: auto; padding: 0.5rem; gap: 0.5rem; }
     .soc-grid {
         grid-template-columns: 1fr;
         overflow: visible;
     }
-    .col-roster, .col-risk {
-        grid-column: 1;
-    }
-    .col-roster .roster-panel { min-height: 280px; }
-    .cctv-feed-area { min-height: 220px; }
-}
     .soc-col.right-col {
         grid-column: unset;
         display: flex;
@@ -2087,50 +2116,45 @@ body::after {
         </div>
     </header>
 
-    <!-- ══ 2. COMMAND CENTER GRID (LIVE VIDEO & ALERTS IN RIGHT PANEL) ═════════════════ -->
+    <!-- ══ 2. REFLOWED 2-COLUMN COMMAND CENTER GRID ═════════════════ -->
     <main class="soc-grid">
 
         <!-- ═ LEFT: LIVE EXAMINEES ═ -->
-        <section class="soc-col col-roster" style="flex:1; min-height:0;">
-            <div class="panel roster-panel" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+        <aside class="soc-col col-roster">
+            <section class="panel roster-panel" style="flex:1; min-height:0;">
                 <div class="panel-hd panel-hd-stack">
-                    <div class="hd-row">
-                        <h2 class="panel-h1">Live Examinees <span id="rosterCount">(0)</span></h2>
-                        <span class="brand-badge" style="background:rgba(56,189,248,0.08);color:var(--cyan);border:1px solid rgba(56,189,248,0.25);font-size:0.65rem;padding:2px 8px;border-radius:99px;">AI Biometrics Active</span>
-                    </div>
-                    <p class="panel-sub">Active candidates in examination perimeter</p>
+                    <h2 class="panel-h1">Live Examinees <span id="rosterCount">(0)</span></h2>
+                    <p class="panel-sub">Students currently in frame</p>
                 </div>
-                <div class="panel-body custom-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+                <div class="panel-body custom-scroll">
                     <div id="rosterList" class="roster-list">
                         <div class="roster-empty">No students in frame</div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        </aside>
 
-        <!-- ═ RIGHT: LIVE VIDEO STREAM + RISK ALERTS ═ -->
-        <aside class="soc-col col-risk" style="display:flex; flex-direction:column; gap:var(--s3); min-height:0;">
-            
-            <!-- Live Optical Camera Video Feed Panel -->
-            <div class="panel cctv-panel" id="video-feed" style="flex:0 0 auto; display:flex; flex-direction:column;">
+        <!-- ═ CENTRE: LIVE CCTV FEED ═ -->
+        <section class="soc-col hero-stream-col">
+            <div class="panel cctv-panel" id="video-feed" style="flex:1; min-height:0;">
                 <div class="panel-hd">
                     <div class="cctv-hd-left">
                         <span class="live-dot" id="cctvStatusDot"></span>
-                        <h2 class="panel-h1" style="font-size:0.9rem;">Live Optical Feed</h2>
+                        <h2 class="panel-h1">Live CCTV Feed</h2>
                     </div>
                     <div class="cctv-hd-right">
-                        <select class="feed-select" id="feedQuality" aria-label="Stream quality" style="font-size:0.7rem;padding:2px 6px;">
+                        <select class="feed-select" id="feedQuality" aria-label="Stream quality">
                             <option>1080p</option>
                             <option>720p</option>
                             <option>480p</option>
                         </select>
-                        <button class="icon-btn" id="feedFullscreen" title="Fullscreen" aria-label="Fullscreen" style="width:24px;height:24px;">
-                            <i data-lucide="maximize" style="width:13px;height:13px;"></i>
+                        <button class="icon-btn" id="feedFullscreen" title="Fullscreen" aria-label="Fullscreen">
+                            <i data-lucide="maximize" style="width:15px;height:15px;"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="cctv-feed-area" id="cctvFeedContainer" style="position:relative; overflow:hidden; width:100%; aspect-ratio:16/9; min-height:180px; max-height:240px; background:#05080c; border-radius:0;">
+                <div class="cctv-feed-area" id="cctvFeedContainer">
                     <!-- HUD Tactical Corner Brackets -->
                     <div class="cc cc-tl"></div>
                     <div class="cc cc-tr"></div>
@@ -2143,40 +2167,42 @@ body::after {
                     </div>
 
                     <!-- Continuous Live Video Element -->
-                    <video id="liveWebcamVideo" autoplay playsinline muted class="cctv-video" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;"></video>
+                    <video id="liveWebcamVideo" autoplay playsinline muted class="cctv-video"></video>
 
                     <!-- Real-Time AI Detection Overlay Canvas (Transparent) -->
-                    <canvas id="detectionCanvas" class="cctv-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:10;pointer-events:none;"></canvas>
+                    <canvas id="detectionCanvas" class="cctv-canvas"></canvas>
 
                     <!-- Remote CCTV / MJPEG Fallback -->
                     <img id="cctvFeedImg" src="" alt="Live examination feed"
-                         class="cctv-img" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;" onerror="onFeedError()" onload="onFeedLoaded()">
+                         class="cctv-img" style="display:none;" onerror="onFeedError()" onload="onFeedLoaded()">
 
                     <div class="feed-offline show" id="feedOffline">
                         <div class="fo-text-wrap">
-                            <div class="fo-title" id="feedOfflineTitle" style="font-size:0.85rem;">Connecting Optical Sensor</div>
-                            <div class="fo-body" id="feedOfflineBody" style="font-size:0.72rem;">Initializing live webcam & real-time AI defense matrix...</div>
+                            <div class="fo-title" id="feedOfflineTitle">Connecting Optical Sensor</div>
+                            <div class="fo-body" id="feedOfflineBody">Initializing live webcam & real-time AI defense matrix...</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="cam-status-row" style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;">
-                    <span class="cam-pill" style="padding:2px 8px;font-size:0.7rem;">
+                <div class="cam-status-row">
+                    <span class="cam-pill">
                         <span class="live-dot" id="cctvLiveDot"></span>
                         <span id="camStatusText">Camera 1 &ndash; Active</span>
                     </span>
-                    <span class="hud-perf-pill" id="hudPerfPill" style="font-size:0.65rem;">
+                    <span class="hud-perf-pill" id="hudPerfPill">
                         <span>FPS: <strong class="hp-val" id="camFpsVal">--</strong></span>
                         <span>&middot;</span>
-                        <span>Inf: <strong class="hp-val" id="camInferVal">--</strong> ms</span>
+                        <span>Inference: <strong class="hp-val" id="camInferVal">--</strong> ms</span>
                         <span>&middot;</span>
-                        <span>Lat: <strong class="hp-val" id="camLatVal">--</strong> ms</span>
+                        <span>Latency: <strong class="hp-val" id="camLatVal">--</strong> ms</span>
                     </span>
                 </div>
             </div>
+        </section>
 
-            <!-- Risk Alerts Panel (Below the video in right column) -->
-            <section class="panel alerts-panel" id="alerts" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+        <!-- ═ RIGHT: RISK ALERTS ═ -->
+        <aside class="soc-col col-risk">
+            <section class="panel alerts-panel" id="alerts" style="flex:1; min-height:0;">
                 <div class="panel-hd panel-hd-stack">
                     <div class="hd-row">
                         <h2 class="panel-h1">Risk Alerts</h2>
@@ -2184,7 +2210,7 @@ body::after {
                     </div>
                     <p class="panel-sub">Real-time detection alerts</p>
                 </div>
-                <div class="panel-body custom-scroll" style="flex:1; min-height:0; overflow-y:auto;">
+                <div class="panel-body custom-scroll">
                     <div id="alertsList" class="alerts-body">
                         <div class="alerts-empty" id="alertsEmpty">
                             <div>
@@ -2196,7 +2222,6 @@ body::after {
                 </div>
                 <a class="view-all" href="replay.html" style="display:flex;justify-content:space-between;align-items:center;"><span>Review Action Timeline</span><span aria-hidden="true">&rarr;</span></a>
             </section>
-
         </aside>
     </main>
 
