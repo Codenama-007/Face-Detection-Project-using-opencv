@@ -383,7 +383,7 @@ html, body {
     margin-bottom: 1.5rem;
 }
 
-/* ── ROLE SELECTOR TABS ── */
+/* ── ROLE / DEMO SELECTOR TABS ── */
 .role-tabs-wrap {
     display: flex;
     background: rgba(255, 255, 255, 0.03);
@@ -399,17 +399,18 @@ html, body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    padding: 0.65rem 0.75rem;
+    gap: 0.35rem;
+    padding: 0.6rem 0.45rem;
     border-radius: 8px;
     border: 1px solid transparent;
     background: transparent;
     color: var(--t2);
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 700;
     font-family: var(--font);
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .role-tab-btn:hover {
@@ -422,6 +423,56 @@ html, body {
     color: #ffffff;
     border-color: rgba(56, 189, 248, 0.4);
     box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
+}
+
+/* ── SWITCH PROMPT LINK ── */
+.switch-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    color: var(--t3);
+}
+
+.switch-prompt a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.switch-prompt a:hover {
+    text-decoration: underline;
+    color: var(--cyan);
+}
+
+/* ── QUICK FILL HELPER ── */
+.quick-fill-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    margin-bottom: 1.15rem;
+    padding: 0.55rem 0.75rem;
+    background: rgba(56, 189, 248, 0.06);
+    border: 1px dashed rgba(56, 189, 248, 0.3);
+    border-radius: 8px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    font-family: var(--mono);
+    color: var(--accent-blue);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-fill-btn:hover {
+    background: rgba(56, 189, 248, 0.12);
+    border-color: var(--accent-blue);
+    transform: translateY(-1px);
 }
 
 /* ── FORM CONTROLS ── */
@@ -814,27 +865,192 @@ html, body {
                 
                 <!-- Card Header Top Badge -->
                 <div class="card-header-badge" id="cardRoleBadge">
-                    <i data-lucide="shield" style="width:11px;height:11px;"></i>
-                    <span id="roleBadgeText">FACULTY PROCTOR ACCESS</span>
+                    <i data-lucide="sparkles" id="roleBadgeIcon" style="width:11px;height:11px;"></i>
+                    <span id="roleBadgeText">DEMO MODE • JUDGE ACCESS</span>
                 </div>
 
-                <h2 class="card-title" id="authCardTitle">Sign In to ProctorAI</h2>
-                <p class="card-subtitle" id="authCardSubtitle">Select your authorized role to access institutional examination monitoring.</p>
+                <h2 class="card-title" id="authCardTitle">Demo Login</h2>
+                <p class="card-subtitle" id="authCardSubtitle">Frontend evaluation access for judges &amp; testing (no backend needed).</p>
 
-                <!-- Role Selection Tabs -->
+                <!-- Role / Mode Selection Tabs -->
                 <div class="role-tabs-wrap" role="tablist">
-                    <button type="button" class="role-tab-btn active" id="tabFaculty" role="tab" aria-selected="true">
-                        <i data-lucide="user-check" style="width:14px;height:14px;"></i>
-                        <span>Faculty Login</span>
+                    <button type="button" class="role-tab-btn active" id="tabDemoLogin" role="tab" aria-selected="true" onclick="setAuthMode('DEMO_LOGIN')">
+                        <i data-lucide="zap" style="width:13px;height:13px;"></i>
+                        <span>Demo Login</span>
                     </button>
-                    <button type="button" class="role-tab-btn" id="tabAdmin" role="tab" aria-selected="false">
-                        <i data-lucide="shield" style="width:14px;height:14px;"></i>
-                        <span>Admin Login</span>
+                    <button type="button" class="role-tab-btn" id="tabDemoSignup" role="tab" aria-selected="false" onclick="setAuthMode('DEMO_SIGNUP')">
+                        <i data-lucide="user-plus" style="width:13px;height:13px;"></i>
+                        <span>Sign Up</span>
+                    </button>
+                    <button type="button" class="role-tab-btn" id="tabFaculty" role="tab" aria-selected="false" onclick="setAuthMode('FACULTY')">
+                        <i data-lucide="user-check" style="width:13px;height:13px;"></i>
+                        <span>Faculty</span>
+                    </button>
+                    <button type="button" class="role-tab-btn" id="tabAdmin" role="tab" aria-selected="false" onclick="setAuthMode('ADMIN')">
+                        <i data-lucide="shield" style="width:13px;height:13px;"></i>
+                        <span>Admin</span>
                     </button>
                 </div>
 
-                <!-- Unified Authentication Form -->
-                <form id="authLoginForm" novalidate>
+                <!-- 1. DEMO LOGIN FORM -->
+                <form id="demoLoginForm" novalidate>
+                    <button type="button" class="quick-fill-btn" onclick="quickFillDemo()" title="Click to fill judge demo credentials">
+                        <i data-lucide="zap" style="width:12px;height:12px;"></i>
+                        <span>⚡ Quick Fill: judge@proctorai.demo / demo123</span>
+                    </button>
+
+                    <!-- Email Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="demoEmailInput">Email</label>
+                        <div class="input-container">
+                            <input 
+                                type="email" 
+                                id="demoEmailInput" 
+                                class="form-input" 
+                                placeholder="judge@proctorai.demo" 
+                                required 
+                                autocomplete="email"
+                                spellcheck="false"
+                            >
+                            <i data-lucide="mail" class="input-icon-leading" style="width:15px;height:15px;"></i>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="demoPasswordInput">Password</label>
+                        <div class="input-container">
+                            <input 
+                                type="password" 
+                                id="demoPasswordInput" 
+                                class="form-input has-toggle" 
+                                placeholder="••••••••••••" 
+                                required 
+                                autocomplete="current-password"
+                            >
+                            <i data-lucide="key" class="input-icon-leading" style="width:15px;height:15px;"></i>
+                            <button 
+                                type="button" 
+                                class="pwd-toggle-btn" 
+                                onclick="togglePwdVisibility('demoPasswordInput', 'demoPwdEyeIcon')" 
+                                aria-label="Toggle password visibility"
+                            >
+                                <i data-lucide="eye" id="demoPwdEyeIcon" style="width:15px;height:15px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-submit" id="demoSubmitBtn">
+                        <i data-lucide="log-in" style="width:15px;height:15px;"></i>
+                        <span>Login</span>
+                    </button>
+
+                    <!-- Switch link -->
+                    <div class="switch-prompt">
+                        <span>Don't have an account?</span>
+                        <a href="javascript:void(0)" onclick="setAuthMode('DEMO_SIGNUP')">Sign Up</a>
+                    </div>
+                </form>
+
+                <!-- 2. DEMO SIGN UP FORM -->
+                <form id="demoSignupForm" style="display:none;" novalidate>
+                    <!-- Full Name Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="signupNameInput">Full Name</label>
+                        <div class="input-container">
+                            <input 
+                                type="text" 
+                                id="signupNameInput" 
+                                class="form-input" 
+                                placeholder="Judge Alex Morgan" 
+                                required 
+                                autocomplete="name"
+                            >
+                            <i data-lucide="user" class="input-icon-leading" style="width:15px;height:15px;"></i>
+                        </div>
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="signupEmailInput">Email</label>
+                        <div class="input-container">
+                            <input 
+                                type="email" 
+                                id="signupEmailInput" 
+                                class="form-input" 
+                                placeholder="judge@example.com" 
+                                required 
+                                autocomplete="email"
+                                spellcheck="false"
+                            >
+                            <i data-lucide="mail" class="input-icon-leading" style="width:15px;height:15px;"></i>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="signupPasswordInput">Password</label>
+                        <div class="input-container">
+                            <input 
+                                type="password" 
+                                id="signupPasswordInput" 
+                                class="form-input has-toggle" 
+                                placeholder="••••••••••••" 
+                                required 
+                                autocomplete="new-password"
+                            >
+                            <i data-lucide="key" class="input-icon-leading" style="width:15px;height:15px;"></i>
+                            <button 
+                                type="button" 
+                                class="pwd-toggle-btn" 
+                                onclick="togglePwdVisibility('signupPasswordInput', 'signupPwdEyeIcon')" 
+                                aria-label="Toggle password visibility"
+                            >
+                                <i data-lucide="eye" id="signupPwdEyeIcon" style="width:15px;height:15px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="signupConfirmPasswordInput">Confirm Password</label>
+                        <div class="input-container">
+                            <input 
+                                type="password" 
+                                id="signupConfirmPasswordInput" 
+                                class="form-input has-toggle" 
+                                placeholder="••••••••••••" 
+                                required 
+                                autocomplete="new-password"
+                            >
+                            <i data-lucide="shield-check" class="input-icon-leading" style="width:15px;height:15px;"></i>
+                            <button 
+                                type="button" 
+                                class="pwd-toggle-btn" 
+                                onclick="togglePwdVisibility('signupConfirmPasswordInput', 'signupConfirmEyeIcon')" 
+                                aria-label="Toggle password visibility"
+                            >
+                                <i data-lucide="eye" id="signupConfirmEyeIcon" style="width:15px;height:15px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-submit" id="signupSubmitBtn">
+                        <i data-lucide="user-plus" style="width:15px;height:15px;"></i>
+                        <span>Create Account</span>
+                    </button>
+
+                    <!-- Switch link -->
+                    <div class="switch-prompt">
+                        <span>Already have an account?</span>
+                        <a href="javascript:void(0)" onclick="setAuthMode('DEMO_LOGIN')">Log In</a>
+                    </div>
+                </form>
+
+                <!-- 3. ENTERPRISE BACKEND AUTHENTICATION FORM -->
+                <form id="authLoginForm" style="display:none;" novalidate>
 
                     <!-- Institution Selector (Visible in Faculty mode) -->
                     <div class="form-group" id="institutionGroup">
@@ -880,7 +1096,7 @@ html, body {
                             <button 
                                 type="button" 
                                 class="pwd-toggle-btn" 
-                                id="pwdToggleBtn" 
+                                onclick="togglePwdVisibility('passwordInput', 'pwdEyeIcon')" 
                                 aria-label="Toggle password visibility"
                             >
                                 <i data-lucide="eye" id="pwdEyeIcon" style="width:15px;height:15px;"></i>
@@ -913,7 +1129,7 @@ html, body {
                         <i data-lucide="arrow-left" style="width:12px;height:12px;"></i>
                         <span>Platform Overview</span>
                     </a>
-                    <span class="footer-shield-tag">ENTERPRISE RBAC &bull; SECURE</span>
+                    <span class="footer-shield-tag">DEMO MODE • UI EVALUATION</span>
                 </div>
 
             </div>
@@ -926,11 +1142,9 @@ html, body {
         lucide.createIcons();
 
         // State & DOM Elements
-        let currentRole = 'FACULTY'; // 'FACULTY' | 'ADMIN'
+        let currentMode = 'DEMO_LOGIN'; // 'DEMO_LOGIN' | 'DEMO_SIGNUP' | 'FACULTY' | 'ADMIN'
         let availableInstitutions = [];
 
-        const tabFaculty = document.getElementById('tabFaculty');
-        const tabAdmin = document.getElementById('tabAdmin');
         const institutionGroup = document.getElementById('institutionGroup');
         const institutionSelect = document.getElementById('institutionSelect');
         const usernameLabel = document.getElementById('usernameLabel');
@@ -940,116 +1154,92 @@ html, body {
         const btnSubmitText = document.getElementById('btnSubmitText');
         const authSubmitBtn = document.getElementById('authSubmitBtn');
         const statusBanner = document.getElementById('statusBanner');
-        const pwdToggleBtn = document.getElementById('pwdToggleBtn');
         const pwdEyeIcon = document.getElementById('pwdEyeIcon');
-        const authForm = document.getElementById('authLoginForm');
 
-        // ── LOAD REAL INSTITUTIONS FROM BACKEND ──
-        async function loadInstitutions() {
-            try {
-                const res = await fetch('/api/institutions');
-                if (res.ok) {
-                    const list = await res.json();
-                    availableInstitutions = list;
-                }
-            } catch (err) {
-                console.warn('Could not fetch institutions list:', err);
-            }
-
-            // Fallback to local setup data if empty
-            if (!availableInstitutions || availableInstitutions.length === 0) {
-                const raw = sessionStorage.getItem('proctorai_institution_data') || localStorage.getItem('proctorai_institution_data');
-                if (raw) {
-                    try {
-                        const parsed = JSON.parse(raw);
-                        availableInstitutions = [{
-                            institution_id: parsed.institution_id || "INST-001",
-                            institution_name: parsed.institutionName || "Configured Institution",
-                            institution_type: parsed.institutionType || "University",
-                            city: parsed.city || "",
-                            country: parsed.country || ""
-                        }];
-                    } catch (e) {}
-                }
-            }
-
-            // If still empty, add default
-            if (!availableInstitutions || availableInstitutions.length === 0) {
-                availableInstitutions = [{
-                    institution_id: "INST-001",
-                    institution_name: "Apex Institute of Technology",
-                    institution_type: "University",
-                    city: "San Francisco",
-                    country: "United States"
-                }];
-            }
-
-            renderInstitutionOptions();
+        // ── PASSWORD VISIBILITY TOGGLE HELPER ──
+        function togglePwdVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+            lucide.createIcons();
         }
 
-        function renderInstitutionOptions() {
-            institutionSelect.innerHTML = '';
-            
-            // Check stored institution preference
-            const stored = sessionStorage.getItem('proctorai_institution_data') || localStorage.getItem('proctorai_institution_data');
-            let preferredId = null;
-            if (stored) {
-                try { preferredId = JSON.parse(stored).institution_id; } catch(e){}
-            }
-
-            availableInstitutions.forEach((inst, idx) => {
-                const opt = document.createElement('option');
-                opt.value = inst.institution_id;
-                const loc = inst.city ? ` (${inst.city}, ${inst.country})` : '';
-                opt.textContent = `${inst.institution_name}${loc}`;
-                if (preferredId === inst.institution_id || (!preferredId && idx === 0)) {
-                    opt.selected = true;
-                }
-                institutionSelect.appendChild(opt);
-            });
+        // ── QUICK FILL DEMO CREDENTIALS ──
+        function quickFillDemo() {
+            document.getElementById('demoEmailInput').value = 'judge@proctorai.demo';
+            document.getElementById('demoPasswordInput').value = 'demo123';
         }
 
-        // ── TAB SWITCHING ──
-        tabFaculty.addEventListener('click', () => setRole('FACULTY'));
-        tabAdmin.addEventListener('click', () => setRole('ADMIN'));
-
-        function setRole(role) {
-            currentRole = role;
+        // ── MODE / ROLE SWITCHER ──
+        function setAuthMode(mode) {
+            currentMode = mode;
             hideBanner();
 
-            if (role === 'FACULTY') {
-                tabFaculty.classList.add('active');
-                tabFaculty.setAttribute('aria-selected', 'true');
-                tabAdmin.classList.remove('active');
-                tabAdmin.setAttribute('aria-selected', 'false');
+            // Reset tab styles
+            ['tabDemoLogin', 'tabDemoSignup', 'tabFaculty', 'tabAdmin'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.remove('active');
+                    el.setAttribute('aria-selected', 'false');
+                }
+            });
+
+            // Hide all forms
+            document.getElementById('demoLoginForm').style.display = 'none';
+            document.getElementById('demoSignupForm').style.display = 'none';
+            document.getElementById('authLoginForm').style.display = 'none';
+
+            const cardTitle = document.getElementById('authCardTitle');
+            const cardSubtitle = document.getElementById('authCardSubtitle');
+            const cardBadge = document.getElementById('roleBadgeText');
+
+            if (mode === 'DEMO_LOGIN') {
+                document.getElementById('tabDemoLogin').classList.add('active');
+                document.getElementById('tabDemoLogin').setAttribute('aria-selected', 'true');
+                document.getElementById('demoLoginForm').style.display = 'block';
+
+                cardBadge.textContent = 'DEMO MODE • JUDGE ACCESS';
+                cardTitle.textContent = 'Demo Login';
+                cardSubtitle.textContent = 'Frontend evaluation access for judges & testing (no backend needed).';
+            } else if (mode === 'DEMO_SIGNUP') {
+                document.getElementById('tabDemoSignup').classList.add('active');
+                document.getElementById('tabDemoSignup').setAttribute('aria-selected', 'true');
+                document.getElementById('demoSignupForm').style.display = 'block';
+
+                cardBadge.textContent = 'DEMO MODE • CREATE ACCOUNT';
+                cardTitle.textContent = 'Demo Sign Up';
+                cardSubtitle.textContent = 'Create a frontend demo account for testing (no backend required).';
+            } else if (mode === 'FACULTY') {
+                document.getElementById('tabFaculty').classList.add('active');
+                document.getElementById('tabFaculty').setAttribute('aria-selected', 'true');
+                document.getElementById('authLoginForm').style.display = 'block';
 
                 institutionGroup.style.display = 'block';
                 usernameLabel.textContent = 'Faculty Email / Username';
                 usernameInput.placeholder = 'faculty@institution.edu';
-                roleBadgeText.textContent = 'FACULTY PROCTOR ACCESS';
+                cardBadge.textContent = 'FACULTY PROCTOR ACCESS';
+                cardTitle.textContent = 'Sign In to ProctorAI';
+                cardSubtitle.textContent = 'Select your authorized institution to access proctoring monitoring.';
                 btnSubmitText.textContent = 'Authenticate & Enter SOC';
-            } else {
-                tabAdmin.classList.add('active');
-                tabAdmin.setAttribute('aria-selected', 'true');
-                tabFaculty.classList.remove('active');
-                tabFaculty.setAttribute('aria-selected', 'false');
+            } else if (mode === 'ADMIN') {
+                document.getElementById('tabAdmin').classList.add('active');
+                document.getElementById('tabAdmin').setAttribute('aria-selected', 'true');
+                document.getElementById('authLoginForm').style.display = 'block';
 
                 institutionGroup.style.display = 'none';
                 usernameLabel.textContent = 'Administrator Username / Email';
                 usernameInput.placeholder = 'admin';
-                roleBadgeText.textContent = 'PLATFORM / INSTITUTION ADMIN';
+                cardBadge.textContent = 'PLATFORM / INSTITUTION ADMIN';
+                cardTitle.textContent = 'Sign In to ProctorAI';
+                cardSubtitle.textContent = 'Enter administrative credentials for system command operations.';
                 btnSubmitText.textContent = 'Authenticate & Enter Command';
             }
+
             lucide.createIcons();
         }
-
-        // ── PASSWORD VISIBILITY TOGGLE ──
-        pwdToggleBtn.addEventListener('click', () => {
-            const isPassword = passwordInput.type === 'password';
-            passwordInput.type = isPassword ? 'text' : 'password';
-            pwdEyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
-            lucide.createIcons();
-        });
 
         // ── BANNER NOTIFICATION HELPERS ──
         function showBanner(msg, type = 'error') {
@@ -1067,14 +1257,155 @@ html, body {
             statusBanner.style.display = 'none';
         }
 
-        // ── FORM SUBMISSION & BACKEND AUTHENTICATION ──
-        authForm.addEventListener('submit', async (e) => {
+        // ── 1. DEMO LOGIN FORM SUBMISSION ──
+        document.getElementById('demoLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            hideBanner();
+
+            const email = document.getElementById('demoEmailInput').value.trim();
+            const password = document.getElementById('demoPasswordInput').value;
+
+            if (!email) {
+                showBanner('Please enter your email.', 'error');
+                document.getElementById('demoEmailInput').focus();
+                return;
+            }
+
+            if (!password) {
+                showBanner('Please enter your password.', 'error');
+                document.getElementById('demoPasswordInput').focus();
+                return;
+            }
+
+            // Find stored user name if available
+            let judgeName = 'Demo Judge';
+            try {
+                const storedUsers = JSON.parse(localStorage.getItem('proctorai_demo_users') || '[]');
+                const match = storedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+                if (match && match.name) judgeName = match.name;
+            } catch(e){}
+
+            // Set frontend demo session
+            try {
+                sessionStorage.setItem('proctorai_demo_auth', 'true');
+                localStorage.setItem('proctorai_demo_auth', 'true');
+                sessionStorage.setItem('proctorai_role', 'DEMO');
+                sessionStorage.setItem('proctorai_auth_user', JSON.stringify({
+                    name: judgeName,
+                    email: email,
+                    role: 'DEMO'
+                }));
+            } catch(err){}
+
+            const submitBtn = document.getElementById('demoSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i data-lucide="check-circle-2" style="width:15px;height:15px;"></i> <span>Demo Login Successful</span>';
+            lucide.createIcons();
+
+            showBanner('Demo Login Successful. Launching ProctorAI...', 'success');
+
+            setTimeout(() => {
+                const currentParams = new URLSearchParams(window.location.search);
+                const redirectTarget = currentParams.get('redirect');
+                if (redirectTarget && (redirectTarget.endsWith('.html') || redirectTarget.startsWith('/'))) {
+                    window.location.href = redirectTarget;
+                } else {
+                    window.location.href = 'monitoring.html';
+                }
+            }, 350);
+        });
+
+        // ── 2. DEMO SIGN UP FORM SUBMISSION ──
+        document.getElementById('demoSignupForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            hideBanner();
+
+            const fullName = document.getElementById('signupNameInput').value.trim();
+            const email = document.getElementById('signupEmailInput').value.trim();
+            const password = document.getElementById('signupPasswordInput').value;
+            const confirmPassword = document.getElementById('signupConfirmPasswordInput').value;
+
+            if (!fullName || !email || !password || !confirmPassword) {
+                showBanner('Please fill in all fields.', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showBanner('Passwords do not match.', 'error');
+                document.getElementById('signupConfirmPasswordInput').focus();
+                return;
+            }
+
+            if (password.length < 4) {
+                showBanner('Password must be at least 4 characters.', 'error');
+                document.getElementById('signupPasswordInput').focus();
+                return;
+            }
+
+            // Store in demo users registry (frontend-only)
+            try {
+                let demoUsers = [];
+                try { demoUsers = JSON.parse(localStorage.getItem('proctorai_demo_users') || '[]'); } catch(e){}
+                demoUsers.push({ name: fullName, email: email, created_at: new Date().toISOString() });
+                localStorage.setItem('proctorai_demo_users', JSON.stringify(demoUsers));
+            } catch(e){}
+
+            // Pre-fill demo login form
+            document.getElementById('demoEmailInput').value = email;
+            document.getElementById('demoPasswordInput').value = password;
+
+            showBanner('Demo account created successfully.', 'success');
+
+            // Switch to Demo Login for immediate evaluation
+            setTimeout(() => {
+                setAuthMode('DEMO_LOGIN');
+                showBanner('Demo account created successfully. Click Login to enter.', 'success');
+            }, 450);
+        });
+
+        // ── 3. ENTERPRISE BACKEND AUTHENTICATION ──
+        async function loadInstitutions() {
+            try {
+                const res = await fetch('/api/institutions');
+                if (res.ok) {
+                    availableInstitutions = await res.json();
+                }
+            } catch (err) {
+                console.warn('Could not fetch institutions list:', err);
+            }
+
+            if (!availableInstitutions || availableInstitutions.length === 0) {
+                availableInstitutions = [{
+                    institution_id: "INST-001",
+                    institution_name: "Apex Institute of Technology",
+                    institution_type: "University",
+                    city: "San Francisco",
+                    country: "United States"
+                }];
+            }
+
+            renderInstitutionOptions();
+        }
+
+        function renderInstitutionOptions() {
+            institutionSelect.innerHTML = '';
+            availableInstitutions.forEach((inst, idx) => {
+                const opt = document.createElement('option');
+                opt.value = inst.institution_id;
+                const loc = inst.city ? ` (${inst.city}, ${inst.country})` : '';
+                opt.textContent = `${inst.institution_name}${loc}`;
+                if (idx === 0) opt.selected = true;
+                institutionSelect.appendChild(opt);
+            });
+        }
+
+        document.getElementById('authLoginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             hideBanner();
 
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
-            const institutionId = currentRole === 'FACULTY' ? institutionSelect.value : null;
+            const institutionId = currentMode === 'FACULTY' ? institutionSelect.value : null;
 
             if (!username) {
                 showBanner('Please enter your username or email.', 'error');
@@ -1089,7 +1420,7 @@ html, body {
             }
 
             authSubmitBtn.disabled = true;
-            authSubmitBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Authenticating Clearance...</span>';
+            authSubmitBtn.innerHTML = '<i data-lucide="loader" class="lucide-spin" style="width:15px;height:15px;"></i> <span>Authenticating...</span>';
             lucide.createIcons();
 
             try {
@@ -1099,7 +1430,7 @@ html, body {
                     body: JSON.stringify({
                         username: username,
                         password: password,
-                        role: currentRole,
+                        role: currentMode,
                         institution_id: institutionId
                     })
                 });
@@ -1109,7 +1440,6 @@ html, body {
                 if (response.ok && data.success) {
                     showBanner(`Authentication successful. Redirecting to ${data.role === 'ADMIN' ? 'Admin Portal' : 'Proctoring Console'}...`, 'success');
                     
-                    // Store non-sensitive session metadata
                     try {
                         sessionStorage.setItem('proctorai_auth_user', JSON.stringify(data.user || {}));
                         sessionStorage.setItem('proctorai_role', data.role);
@@ -1136,7 +1466,6 @@ html, body {
                     showBanner(data.error || 'Invalid credentials or unauthorized institution clearance.', 'error');
                 }
             } catch (err) {
-                console.error('Authentication request error:', err);
                 authSubmitBtn.disabled = false;
                 authSubmitBtn.innerHTML = `<i data-lucide="log-in" style="width:15px;height:15px;"></i> <span>${btnSubmitText.textContent}</span>`;
                 lucide.createIcons();
@@ -1144,7 +1473,7 @@ html, body {
             }
         });
 
-        // Initialize on page load
+        // Initialize
         loadInstitutions();
     </script>
 </body>
