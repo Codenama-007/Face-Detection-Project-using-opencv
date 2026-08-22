@@ -2786,9 +2786,29 @@ def _stream_worker():
 
 
 def _ai_worker():
-    """Asynchronous AI Detection Worker Thread.
-    Runs YOLO person detection, MediaPipe FaceLandmarker, ArcFace Identity Matching,
-    and behavior engines off the video stream's critical path. Never blocks camera preview."""
+    """Supervisor: keeps the AI loop alive across transient errors.
+
+    Previously a single exception anywhere in the per-frame pipeline (a
+    MediaPipe VIDEO-mode timestamp hiccup, an edge-case detection, a bad
+    frame) killed this thread outright. When that happened the on-frame face
+    boxes and overlays silently vanished from the stream -- draw_ops froze --
+    while /api/status kept serving the last cached roster, so the dashboard
+    still listed students with no boxes on the video. Restarting the inner
+    loop on error keeps detection running instead."""
+    while True:
+        try:
+            _ai_worker_loop()
+        except Exception as exc:
+            import traceback
+            print(f"[AI] worker loop crashed, restarting: {type(exc).__name__}: {exc}")
+            traceback.print_exc()
+            time.sleep(0.1)
+
+
+def _ai_worker_loop():
+    """The AI detection loop. Runs YOLO person detection, MediaPipe
+    FaceLandmarker, ArcFace identity matching and the behavior engines off the
+    video stream's critical path. Never blocks camera preview."""
     global tracked_students, current_students_in_frame, track_to_student, track_votes, historical_risk_scores, smooth_boxes, smooth_face_boxes, _shared_draw_ops
     last_ai_ts = 0.0
     last_log_time = 0.0
@@ -2957,7 +2977,6 @@ def _ai_worker():
                 tracked_students[sid]["_logged_event"] = le
 
                 tier = snap["tier"]
-                trust_pct = int(snap.get("trust_score", 100 - snap["suspicion_score"]))
 
                 if tier == "LOW":
                     color = (0, 230, 115)       # Emerald Green
@@ -2966,9 +2985,12 @@ def _ai_worker():
                 else:
                     color = (0, 0, 255)         # Red Violation
 
-                # Header & Subtitle displaying registered Name & ID
-                title = f"REGISTERED: {snap['name']}"
-                sub = f"ID: {sid} | GAZE: {snap['gaze']} | TRUST: {trust_pct}%"
+                # On-frame tag: name above the box, roll number + live risk
+                # score below it. ASCII separator only -- the OpenCV Hershey
+                # font has no glyph for a middle dot and would draw a box.
+                risk_val = int(round(snap.get("suspicion_score", 0)))
+                title = snap['name']
+                sub = f"Roll {sid} | Risk {risk_val}"
                 draw_ops.append(('hud_box', (sfx1, sfy1), (sfx2, sfy2), color, 2, title, sub))
 
                 # Subtle Iris Markers and Gaze Direction Indicator
