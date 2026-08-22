@@ -2599,17 +2599,17 @@ let lastLatencyMs = 0;
 let detectionLoopTimer = null;
 
 const CLASS_COLORS = {
-    face:            { main: '#00e5ff', bg: 'rgba(0, 229, 255, 0.12)', border: '#00e5ff', label: 'FACE' },
-    phone:           { main: '#f85149', bg: 'rgba(248, 81, 73, 0.16)', border: '#f85149', label: 'PHONE' },
-    laptop:          { main: '#d29922', bg: 'rgba(210, 153, 34, 0.16)', border: '#d29922', label: 'LAPTOP' },
-    smartwatch:      { main: '#38bdf8', bg: 'rgba(56, 189, 248, 0.16)', border: '#38bdf8', label: 'SMARTWATCH' },
-    earbuds:         { main: '#c084fc', bg: 'rgba(192, 132, 252, 0.16)', border: '#c084fc', label: 'EARBUDS' },
-    headphones:      { main: '#a855f7', bg: 'rgba(168, 85, 247, 0.16)', border: '#a855f7', label: 'HEADPHONES' },
-    book:            { main: '#f97316', bg: 'rgba(249, 115, 22, 0.16)', border: '#f97316', label: 'NOTES / BOOK' },
-    tablet:          { main: '#fb923c', bg: 'rgba(251, 146, 60, 0.16)', border: '#fb923c', label: 'TABLET' },
-    device:          { main: '#f85149', bg: 'rgba(248, 81, 73, 0.16)', border: '#f85149', label: 'PROHIBITED DEVICE' },
-    multiple_people: { main: '#fb923c', bg: 'rgba(251, 146, 60, 0.16)', border: '#fb923c', label: 'MULTIPLE PEOPLE' },
-    face_missing:    { main: '#eab308', bg: 'rgba(234, 179, 8, 0.16)',  border: '#eab308', label: 'FACE MISSING' }
+    face:            { main: '#00e5ff', bg: 'rgba(0, 229, 255, 0.10)', border: '#00e5ff', glow: 'rgba(0, 229, 255, 0.35)', isRisk: false, label: 'FACE' },
+    phone:           { main: '#ff2d55', bg: 'rgba(255, 45, 85, 0.16)', border: '#ff2d55', glow: 'rgba(255, 45, 85, 0.75)', isRisk: true,  label: 'PHONE' },
+    smartwatch:      { main: '#ff2d55', bg: 'rgba(255, 45, 85, 0.16)', border: '#ff2d55', glow: 'rgba(255, 45, 85, 0.75)', isRisk: true,  label: 'SMARTWATCH' },
+    earbuds:         { main: '#ff2d55', bg: 'rgba(255, 45, 85, 0.16)', border: '#ff2d55', glow: 'rgba(255, 45, 85, 0.75)', isRisk: true,  label: 'EARBUDS' },
+    headphones:      { main: '#ff2d55', bg: 'rgba(255, 45, 85, 0.16)', border: '#ff2d55', glow: 'rgba(255, 45, 85, 0.75)', isRisk: true,  label: 'HEADPHONES' },
+    laptop:          { main: '#ff2d55', bg: 'rgba(255, 45, 85, 0.16)', border: '#ff2d55', glow: 'rgba(255, 45, 85, 0.75)', isRisk: true,  label: 'LAPTOP' },
+    book:            { main: '#ff2d55', bg: 'rgba(255, 45, 85, 0.16)', border: '#ff2d55', glow: 'rgba(255, 45, 85, 0.75)', isRisk: true,  label: 'NOTES / BOOK' },
+    tablet:          { main: '#ff2d55', bg: 'rgba(255, 45, 85, 0.16)', border: '#ff2d55', glow: 'rgba(255, 45, 85, 0.75)', isRisk: true,  label: 'TABLET' },
+    device:          { main: '#ff2d55', bg: 'rgba(255, 45, 85, 0.16)', border: '#ff2d55', glow: 'rgba(255, 45, 85, 0.75)', isRisk: true,  label: 'PROHIBITED DEVICE' },
+    multiple_people: { main: '#ff9800', bg: 'rgba(255, 152, 0, 0.16)', border: '#ff9800', glow: 'rgba(255, 152, 0, 0.50)', isRisk: true,  label: 'MULTIPLE PEOPLE' },
+    face_missing:    { main: '#eab308', bg: 'rgba(234, 179, 8, 0.16)',  border: '#eab308', glow: 'rgba(234, 179, 8, 0.40)', isRisk: false, label: 'FACE MISSING' }
 };
 
 // MediaRecorder Live Camera Video Recording Engine
@@ -3091,6 +3091,8 @@ function startRenderLoop() {
 
         ctx.clearRect(0, 0, cw, ch);
 
+        const pulse = 0.5 + 0.5 * Math.sin(now * 0.006); // 1.05s smooth periodic cycle
+
         smoothedBoxes.forEach(box => {
             const lerpSpeed = 0.32;
             for (let i = 0; i < 4; i++) {
@@ -3105,23 +3107,33 @@ function startRenderLoop() {
             const bh = Math.max(10, by2 - by1);
 
             const style = CLASS_COLORS[box.type] || CLASS_COLORS.device;
+            const isRisk = style.isRisk || false;
             const alpha = Math.min(1.0, (box.alive || 8) / 8);
 
             ctx.save();
             ctx.globalAlpha = alpha;
 
-            // Semi-transparent box background
-            ctx.fillStyle = style.bg;
+            // 1. Semi-transparent background with risk tint
+            ctx.fillStyle = isRisk ? `rgba(255, 45, 85, ${0.14 + pulse * 0.06})` : style.bg;
             ctx.fillRect(bx1, by1, bw, bh);
 
-            // Bounding box border
+            // 2. High-Risk Security Red Glow (subtle, pulsing softly)
+            if (isRisk) {
+                ctx.shadowColor = style.glow || '#ff2d55';
+                ctx.shadowBlur = 6 + pulse * 6;
+            } else {
+                ctx.shadowColor = style.glow || 'rgba(0, 229, 255, 0.35)';
+                ctx.shadowBlur = 3;
+            }
+
+            // 3. Strong Bounding Box Border
             ctx.strokeStyle = style.main;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = isRisk ? 2.5 : 2;
             ctx.strokeRect(bx1, by1, bw, bh);
 
-            // Corner brackets
+            // 4. Tactical Corner Reticles
             const clen = Math.min(16, bw * 0.25, bh * 0.25);
-            ctx.lineWidth = 3.5;
+            ctx.lineWidth = isRisk ? 4 : 3.5;
             ctx.strokeStyle = style.main;
 
             ctx.beginPath();
@@ -3148,7 +3160,10 @@ function startRenderLoop() {
             ctx.lineTo(bx1 + bw, by1 + bh - clen);
             ctx.stroke();
 
-            // Render landmark dots on detected face if available
+            // 5. Reset shadow before text to keep it crisp
+            ctx.shadowBlur = 0;
+
+            // 6. Render landmark dots on detected face if available
             if (box.type === 'face' && box.landmarks && box.landmarks.length > 0) {
                 ctx.fillStyle = '#00e5ff';
                 ctx.shadowColor = '#00e5ff';
@@ -3163,27 +3178,27 @@ function startRenderLoop() {
                 ctx.shadowBlur = 0;
             }
 
-            // Label Pill above box
-            const titleText = `${box.label}`;
+            // 7. Security Label Pill above box
+            const titleText = isRisk ? `⚠️ ${box.label}` : `${box.label}`;
             const subText = `CONFIDENCE: ${box.confPct}%`;
             ctx.font = 'bold 11px Inter, sans-serif';
             const tm = ctx.measureText(titleText);
-            const pillW = Math.max(tm.width + 16, 110);
+            const pillW = Math.max(tm.width + 18, 115);
             const pillH = 22;
             const pillX = Math.max(0, Math.min(cw - pillW, bx1));
             const pillY = Math.max(0, by1 - pillH - 4);
 
-            ctx.fillStyle = 'rgba(13, 17, 23, 0.92)';
+            ctx.fillStyle = isRisk ? 'rgba(24, 8, 12, 0.94)' : 'rgba(13, 17, 23, 0.92)';
             ctx.strokeStyle = style.main;
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1.2;
             ctx.beginPath();
             ctx.roundRect(pillX, pillY, pillW, pillH, 4);
             ctx.fill();
             ctx.stroke();
 
-            ctx.fillStyle = style.main;
+            ctx.fillStyle = isRisk ? '#ff4d6d' : style.main;
             ctx.fillText(titleText, pillX + 6, pillY + 11);
-            ctx.fillStyle = '#9aa7b4';
+            ctx.fillStyle = isRisk ? '#ff99a8' : '#9aa7b4';
             ctx.font = '9px JetBrains Mono, monospace';
             ctx.fillText(subText, pillX + 6, pillY + 19);
 
