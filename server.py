@@ -43,6 +43,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 REPORTS_DIR = os.path.join(BASE_DIR, "reports")
 os.makedirs(REPORTS_DIR, exist_ok=True)
+RECORDINGS_DIR = os.path.join(BASE_DIR, "recordings")
+os.makedirs(RECORDINGS_DIR, exist_ok=True)
 
 DEFAULT_CONFIG = {
     "setup_complete": False,
@@ -208,6 +210,8 @@ PUBLIC_API = {
     "/api/timeline/event",
     "/api/replay/detect_frame",
     "/api/detect_frame",
+    "/api/recording/save",
+    "/api/recording/latest",
 }
 
 REQUIRE_LOGIN = False
@@ -216,10 +220,10 @@ REQUIRE_LOGIN = False
 def require_auth():
     path = request.path
 
-    # Public static files, scripts, fonts, images, landing
+    # Public static files, scripts, fonts, images, recordings, landing
     if path in ['/', '/index.html', '/login.html', '/supervisor_login.html', '/setup.html', '/setup_institution.html']:
         return
-    if path.startswith('/static/') or path.startswith('/models/') or path.endswith(('.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.ttf')):
+    if path.startswith('/static/') or path.startswith('/models/') or path.startswith('/recordings/') or path.endswith(('.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.webm', '.mp4')):
         return
 
     # Public Auth endpoints & streaming element
@@ -340,6 +344,101 @@ def serve_report(filename):
         record_audit_event(session.get('user_id'), session.get('username'), role, user_inst, 'REPORT_ACCESS', request.remote_addr, 'SUCCESS', f"Accessed examination report: {filename}")
 
     return send_from_directory(REPORTS_DIR, filename)
+
+@app.route('/recordings/<path:filename>')
+def serve_recording(filename):
+    """Serves recorded examination video files with byte range streaming support for smooth seeking."""
+    rec_path = os.path.join(RECORDINGS_DIR, filename)
+    if os.path.exists(rec_path):
+        return send_from_directory(RECORDINGS_DIR, filename, conditional=True)
+    # Check fallback in BASE_DIR
+    base_rec = os.path.join(BASE_DIR, filename)
+    if os.path.exists(base_rec):
+        return send_from_directory(BASE_DIR, filename, conditional=True)
+    return jsonify({"error": "Recording not found"}), 404
+
+@app.route('/api/recording/save', methods=['POST'])
+def api_recording_save():
+    """
+    Saves a real recorded examination video file from MediaRecorder.
+    Supports multipart/form-data with file or raw binary video data.
+    """
+    try:
+        data = None
+        filename = "cctv_recording.webm"
+        if 'video' in request.files:
+            file_obj = request.files['video']
+            filename = file_obj.filename or "cctv_recording.webm"
+            data = file_obj.read()
+        elif request.data:
+            data = request.data
+            content_type = request.content_type or ""
+            if "mp4" in content_type:
+                filename = "cctv_recording.mp4"
+            else:
+                filename = "cctv_recording.webm"
+
+        if not data:
+            return jsonify({"success": False, "error": "No video data received"}), 400
+
+        target_path = os.path.join(RECORDINGS_DIR, filename)
+        with open(target_path, "wb") as f:
+            f.write(data)
+
+        # Also write a standard cctv_recording.webm copy for seamless fallback
+        standard_path = os.path.join(RECORDINGS_DIR, "cctv_recording.webm")
+        if target_path != standard_path:
+            with open(standard_path, "wb") as f:
+                f.write(data)
+
+        root_copy = os.path.join(BASE_DIR, "cctv_recording.webm")
+        with open(root_copy, "wb") as f:
+            f.write(data)
+
+        size_mb = round(len(data) / (1024 * 1024), 2)
+        print(f"[RECORDING] Saved video recording {filename} ({size_mb} MB) to disk.")
+
+        return jsonify({
+            "success": True,
+            "url": f"/recordings/{filename}",
+            "filename": filename,
+            "size_bytes": len(data),
+            "size_mb": size_mb
+        })
+    except Exception as e:
+        print(f"[RECORDING] Error saving video: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/recording/latest', methods=['GET'])
+def api_recording_latest():
+    """Returns the latest available recorded video metadata and direct URL."""
+    candidates = [
+        os.path.join(RECORDINGS_DIR, "cctv_recording.webm"),
+        os.path.join(RECORDINGS_DIR, "cctv_recording.mp4"),
+        os.path.join(BASE_DIR, "cctv_recording.webm"),
+        os.path.join(BASE_DIR, "cctv_recording.mp4"),
+        os.path.join(BASE_DIR, "exam_room.mp4"),
+    ]
+    for c in candidates:
+        if os.path.exists(c) and os.path.getsize(c) > 0:
+            rel = os.path.basename(c)
+            url = f"/recordings/{rel}" if os.path.exists(os.path.join(RECORDINGS_DIR, rel)) else f"/{rel}"
+            return jsonify({
+                "success": True,
+                "has_recording": True,
+                "url": url,
+                "filename": rel,
+                "size_bytes": os.path.getsize(c),
+                "size_mb": round(os.path.getsize(c) / (1024 * 1024), 2)
+            })
+
+    return jsonify({
+        "success": True,
+        "has_recording": False,
+        "url": None,
+        "filename": None,
+        "size_bytes": 0
+    })
 
 @app.route('/<path:path>')
 def serve_static(path):
@@ -2811,6 +2910,25 @@ def end_session():
         <div class="r-section-header">AI Security Insights</div>
         <div class="insights-body">
             {insights_html}
+        </div>
+    </div>
+
+    <!-- Synchronized CCTV Video Recording & Evidence -->
+    <div class="r-section">
+        <div class="r-section-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Synchronized CCTV Video Evidence</span>
+            <a href="/recordings/cctv_recording.webm" download="ProctorAI_CCTV_Evidence_Recording.webm" style="color:#38bdf8;text-decoration:none;font-size:0.75rem;font-weight:600;padding:0.25rem 0.65rem;border-radius:4px;border:1px solid rgba(56,189,248,0.3);background:rgba(56,189,248,0.08);">
+                Download Session Video Recording &darr;
+            </a>
+        </div>
+        <div class="insights-body" style="padding:1rem 1.5rem;">
+            <video controls style="width:100%;max-height:420px;border-radius:8px;background:#000;" preload="metadata">
+                <source src="/recordings/cctv_recording.webm" type="video/webm">
+                <source src="/recordings/cctv_recording.mp4" type="video/mp4">
+                <source src="/cctv_recording.webm" type="video/webm">
+                <source src="/exam_room.mp4" type="video/mp4">
+                Your browser does not support HTML5 video playback.
+            </video>
         </div>
     </div>
 

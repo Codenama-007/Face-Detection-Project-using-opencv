@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="replay.css">
     <link rel="stylesheet" href="theme.css">
     <script src="theme.js"></script>
+    <script src="recording_storage.js"></script>
     <script src="https://unpkg.com/lucide@0.462.0"></script>
 </head>
 <body>
@@ -47,6 +48,9 @@
                 <div class="replay-controls-header">
                     <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light mode" title="Toggle theme">
                         <span data-theme-icon><i data-lucide="sun" style="width:15px;height:15px;"></i></span>
+                    </button>
+                    <button class="btn-primary" id="downloadRecordingHeaderBtn" onclick="downloadRecordedVideo()" style="background:linear-gradient(135deg,#0284c7,#0369a1);border:1px solid rgba(56,189,248,0.4);">
+                        <i data-lucide="video"></i> Download Recording
                     </button>
                     <button class="btn-primary" id="exportTimelineBtn" onclick="exportTimelineData()">
                         <i data-lucide="download"></i> Export Timeline Log
@@ -398,8 +402,9 @@
                             <button class="btn-control btn-play" id="btnPlayPause" aria-label="Play/Pause Video" title="Play / Pause"><i data-lucide="play"></i></button>
                             <button class="btn-control" id="btnNext" aria-label="Next Event" title="Next Event (j / ↓)"><i data-lucide="skip-forward"></i></button>
                         </div>
-                        <div class="volume-control">
+                        <div class="volume-control" style="display:flex;gap:0.4rem;align-items:center;">
                             <button class="btn-control" id="btnVolume" aria-label="Toggle Audio" title="Audio"><i data-lucide="volume-2"></i></button>
+                            <button class="btn-control" id="btnDownloadRecording" aria-label="Download CCTV Recording" title="Download CCTV Recording" onclick="downloadRecordedVideo()"><i data-lucide="download"></i></button>
                         </div>
                     </div>
                 </div>

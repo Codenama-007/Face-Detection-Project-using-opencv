@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="theme.css">
     <script src="theme.js"></script>
+    <script src="recording_storage.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -2317,11 +2318,19 @@ body::after {
             </div>
         </div>
 
-        <div class="pem-footer">
-            <button class="btn btn-outline" id="pemCloseBtn" style="cursor:pointer;padding:0.6rem 1.25rem;border-radius:var(--r-sm);font-size:0.78rem;font-weight:600;display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.05);color:#F5F7FA;border:1px solid rgba(255,255,255,0.12);">
+        <div class="pem-footer" style="display:flex; flex-wrap:wrap; gap:0.6rem; justify-content:flex-end;">
+            <button class="btn btn-outline" id="pemCloseBtn" style="cursor:pointer;padding:0.6rem 1.15rem;border-radius:var(--r-sm);font-size:0.78rem;font-weight:600;display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.05);color:#F5F7FA;border:1px solid rgba(255,255,255,0.12);">
                 <i data-lucide="rotate-ccw" style="width:13px;height:13px;"></i>
                 Start New Session
             </button>
+            <button class="btn btn-outline" id="pemDownloadVideoBtn" onclick="downloadRecordedVideo()" style="cursor:pointer;padding:0.6rem 1.15rem;border-radius:var(--r-sm);font-size:0.78rem;font-weight:600;display:inline-flex;align-items:center;gap:0.4rem;background:rgba(56,189,248,0.08);color:var(--cyan);border:1px solid rgba(56,189,248,0.35);">
+                <i data-lucide="download" style="width:13px;height:13px;"></i>
+                Download Recording
+            </button>
+            <a href="replay.html" class="btn btn-outline" id="pemReplayBtn" style="text-decoration:none;cursor:pointer;padding:0.6rem 1.15rem;border-radius:var(--r-sm);font-size:0.78rem;font-weight:600;display:inline-flex;align-items:center;gap:0.4rem;background:rgba(255,255,255,0.05);color:#F5F7FA;border:1px solid rgba(255,255,255,0.12);">
+                <i data-lucide="video" style="width:13px;height:13px;"></i>
+                CCTV Evidence Replay
+            </a>
             <button class="btn btn-primary" id="pemReportBtn" style="cursor:pointer;padding:0.6rem 1.35rem;border-radius:var(--r-sm);font-size:0.78rem;font-weight:700;display:inline-flex;align-items:center;gap:0.4rem;background:linear-gradient(135deg,#0284c7,#0369a1);color:#fff;border:1px solid rgba(56,189,248,0.4);box-shadow:0 4px 14px rgba(2,132,199,0.35);">
                 <i data-lucide="file-text" style="width:13px;height:13px;"></i>
                 View Detailed Report
@@ -2602,6 +2611,105 @@ const CLASS_COLORS = {
     face_missing:    { main: '#eab308', bg: 'rgba(234, 179, 8, 0.16)',  border: '#eab308', label: '👤 FACE MISSING' }
 };
 
+// MediaRecorder Live Camera Video Recording Engine
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordedVideoBlob = null;
+let recordedVideoUrl = null;
+
+function startMediaRecording() {
+    if (!webcamStream || webcamStream.getVideoTracks().length === 0) {
+        console.warn('[MediaRecorder] No webcam stream available to record');
+        return;
+    }
+
+    try {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            return;
+        }
+
+        let options = { mimeType: 'video/webm;codecs=vp8,opus' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/webm;codecs=vp8' };
+        }
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/webm' };
+        }
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/mp4' };
+        }
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = {};
+        }
+
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(webcamStream, options);
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data && event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = async () => {
+            const mimeType = mediaRecorder.mimeType || 'video/webm';
+            if (recordedChunks.length > 0) {
+                recordedVideoBlob = new Blob(recordedChunks, { type: mimeType });
+                recordedVideoUrl = URL.createObjectURL(recordedVideoBlob);
+                window.latestSessionVideoBlob = recordedVideoBlob;
+                window.latestSessionVideoUrl = recordedVideoUrl;
+
+                console.log('[MediaRecorder] Session recording completed, size:', (recordedVideoBlob.size / (1024 * 1024)).toFixed(2), 'MB');
+
+                if (window.saveSessionRecording) {
+                    await window.saveSessionRecording(recordedVideoBlob, {
+                        mimeType: mimeType,
+                        size: recordedVideoBlob.size,
+                        duration: sessionElapsed,
+                        candidateName: sessionStats.candidateName || 'Candidate',
+                        candidateId: sessionStats.candidateId || 'STU-1002'
+                    });
+                }
+
+                uploadRecordingToServer(recordedVideoBlob, mimeType);
+            }
+        };
+
+        mediaRecorder.start(1000);
+        console.log('[MediaRecorder] Live camera recording active.');
+    } catch (err) {
+        console.warn('[MediaRecorder] Start recording notice:', err);
+    }
+}
+
+function stopMediaRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try {
+            mediaRecorder.stop();
+        } catch (e) {
+            console.warn('[MediaRecorder] Stop recording error:', e);
+        }
+    }
+}
+
+async function uploadRecordingToServer(blob, mimeType) {
+    try {
+        const formData = new FormData();
+        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+        formData.append('video', blob, `cctv_recording.${ext}`);
+        formData.append('session_id', 'latest');
+        formData.append('duration', String(sessionElapsed));
+
+        await fetch(`${BASE}/api/recording/save`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        });
+    } catch (err) {
+        console.warn('[MediaRecorder] Server upload notice:', err);
+    }
+}
+
 async function initLiveWebcam() {
     try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -2637,6 +2745,7 @@ async function initLiveWebcam() {
                 $backendText.textContent = 'ArcFace + YOLO11s Active';
                 logActivity('Live optical feed active — Real-time AI detection engaged');
 
+                startMediaRecording();
                 startDetectionLoop();
                 startRenderLoop();
             };
@@ -3554,6 +3663,7 @@ async function fetchLiveStatus() {
 $startSessionBtn.addEventListener('click', async () => {
     sessionActive = true;
     startSessionTimer();
+    startMediaRecording();
     $startSessionBtn.style.display = 'none';
     $endSessionBtn.style.display   = 'inline-flex';
     if (!$globalBanner.classList.contains('threat')) {
@@ -3579,6 +3689,7 @@ $endSessionBtn.addEventListener('click', async () => {
     sessionActive = false;
     const finalElapsed = sessionElapsed;
     stopSessionTimer();
+    stopMediaRecording();
     sessionElapsed = 0;
     $timerDisplay.textContent = '00:00:00';
     $startSessionBtn.style.display = 'inline-flex';

@@ -515,12 +515,64 @@ function initCCTVVideoPlayer() {
         }
     });
 
-    // Initial check on load
-    setTimeout(() => {
-        if (cctvVideo.error || (!cctvVideo.currentSrc && cctvVideo.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) {
-            setUnavailableState();
+    // Asynchronously load real recorded session video from IndexedDB or server
+    async function loadRecordedVideoSource() {
+        // 1. Check in-memory session recording blob
+        if (window.latestSessionVideoUrl || window.latestSessionVideoBlob) {
+            const url = window.latestSessionVideoUrl || URL.createObjectURL(window.latestSessionVideoBlob);
+            cctvVideo.src = url;
+            cctvVideo.load();
+            setReadyState();
+            console.log('[Replay] Loaded in-memory session recording');
+            return true;
         }
-    }, 200);
+
+        // 2. Check IndexedDB
+        if (window.getLatestSessionRecording) {
+            try {
+                const record = await window.getLatestSessionRecording();
+                if (record && record.blob && record.blob.size > 0) {
+                    const url = URL.createObjectURL(record.blob);
+                    cctvVideo.src = url;
+                    cctvVideo.load();
+                    setReadyState();
+                    console.log('[Replay] Loaded session recording from IndexedDB, size:', (record.blob.size / (1024 * 1024)).toFixed(2), 'MB');
+                    return true;
+                }
+            } catch (err) {
+                console.warn('[Replay] IndexedDB load notice:', err);
+            }
+        }
+
+        // 3. Check server for latest recorded video
+        try {
+            const res = await fetch('/api/recording/latest');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.has_recording && data.url) {
+                    cctvVideo.src = data.url;
+                    cctvVideo.load();
+                    setReadyState();
+                    console.log('[Replay] Loaded recording from server:', data.url);
+                    return true;
+                }
+            }
+        } catch (err) {
+            console.warn('[Replay] Server recording fetch notice:', err);
+        }
+
+        return false;
+    }
+
+    loadRecordedVideoSource().then((loaded) => {
+        if (!loaded) {
+            setTimeout(() => {
+                if (cctvVideo.error || (!cctvVideo.currentSrc && cctvVideo.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) {
+                    setUnavailableState();
+                }
+            }, 300);
+        }
+    });
 
     // 5. Continuous Time Update (Optimized with RAF & Neural Detection)
     cctvVideo.addEventListener('timeupdate', () => {
