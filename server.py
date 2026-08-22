@@ -16,7 +16,6 @@ from datetime import datetime, timedelta
 import base64
 import struct
 from ultralytics import YOLO
-from deep_sort_realtime.deepsort_tracker import DeepSort
 
 # ---------------- CONFIG ----------------
 # Prefer the environment variable; the hardcoded fallback should be rotated
@@ -353,10 +352,8 @@ PHONE_ENABLED = os.environ.get("PHONE_DETECTION", "on").lower() != "off"
 phone_detector = (phone_detect.PhoneDetector(
     os.environ.get("PHONE_MODEL", "yolo11s.pt")) if PHONE_ENABLED else None)
 
-# DeepSort Tracker
-tracker = DeepSort(max_age=30)
-
-# Track ID to Student ID mapping
+# Track ID to Student ID mapping (retained for the absent-student cleanup
+# pass below; population via a person tracker was removed -- see _ai_worker_loop)
 track_to_student = {}
 track_votes = {} # track_id -> {student_id: count}
 historical_risk_scores = {}
@@ -3383,10 +3380,226 @@ def _render_gaze_arrow(img, start, end, color):
             cv2.arrowedLine(img, p1, p2, color, 1, tipLength=0.35, line_type=cv2.LINE_AA)
 
 
+def _tier_color(tier):
+    if tier == "LOW":
+        return (0, 230, 115)       # Emerald Green
+    elif tier == "MEDIUM":
+        return (0, 165, 255)       # Amber
+    else:
+        return (0, 0, 255)         # Red Violation
+
+
+# How long a registered face keeps its on-frame tag (at the last known
+# position) after MediaPipe stops reporting landmarks for it. Fast head
+# turns and glances away cause motion blur that drops landmark detection
+# for a handful of frames even though the student never left the camera;
+# without this the tag flickered out and back in on every quick movement.
+# Also doubles as the spatial re-linking window below, so a face that
+# reappears mid-grace-window snaps back onto the same identity instead of
+# briefly registering as a new/unknown face.
+FACE_TRACK_GRACE_SECONDS = 2.5
+
+
+# ===========================================================================
+# REAL-TIME FACE TRACKING LAYER  (decoupled from detection)
+# ===========================================================================
+# Detection -- YOLO + MediaPipe + ArcFace in _ai_worker_loop -- is expensive
+# and runs SLOWER than the camera frame rate. On its own the on-frame box only
+# moves at detection speed, which produces the three symptoms reported:
+#   * lag       -- the box trails the head between detections
+#   * blink-out -- a single missed detection frame (fast turn, glance away,
+#                  motion blur) drops the box entirely
+#   * snapping  -- when the next detection lands the box jumps to it
+#
+# This layer fixes all three WITHOUT touching the recognition or risk models.
+# A cheap per-frame tracker runs inside the stream compositor (_stream_worker,
+# which already runs at the native frame rate -- it is our "render loop"):
+#   1. Lucas-Kanade optical flow shifts each face box along the REAL pixel
+#      motion of the head on EVERY rendered frame -> no lag, tracks fast turns.
+#   2. Each fresh detection is FUSED into the tracked box (a weighted pull),
+#      not swapped in -> no snap.
+#   3. A TRACKING / PREDICTED / LOST state machine keeps the tag visible
+#      through detection gaps and only drops it once optical flow can no longer
+#      find the head or the box leaves the frame -> "stays until out of frame".
+#
+# --- Tunables (edit these, not the loops below) ---------------------------
+TRACK_FRESH_MS        = 200    # detection newer than this -> TRACKING, else PREDICTED
+TRACK_HOLD_MS         = 700    # keep the box even with NO optical flow this long
+                               # (bridges a slow detection cadence / low-texture face)
+TRACK_MAX_PREDICT_MS  = 4000   # hard cap on flow-only prediction with zero detections
+TRACK_CORRECT_BLEND   = 0.55   # how hard a new detection pulls the box toward itself
+TRACK_MAX_POINTS      = 24     # optical-flow keypoints seeded inside each face
+TRACK_MIN_POINTS      = 4      # below this the flow track has failed -> LOST
+TRACK_FLOW_WIN        = 15     # Lucas-Kanade search window (px)
+TRACK_FLOW_LEVELS     = 2      # optical-flow pyramid levels
+TRACK_UNKNOWN_LINK_PX = 90     # max centre distance to re-link an unknown face
+# --------------------------------------------------------------------------
+
+_LK_PARAMS = dict(
+    winSize=(TRACK_FLOW_WIN, TRACK_FLOW_WIN),
+    maxLevel=TRACK_FLOW_LEVELS,
+    criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03),
+)
+
+_tracks_lock = threading.Lock()
+_face_tracks = {}          # key (sid or "unk::N") -> track dict
+_unknown_track_seq = 0
+
+
+def _box_center(b):
+    return ((b[0] + b[2]) * 0.5, (b[1] + b[3]) * 0.5)
+
+
+def _match_unknown_key(box, claimed):
+    """Re-link an unregistered detection to the nearest existing unknown track
+    so anonymous faces keep a stable tag instead of churning every frame."""
+    cx, cy = _box_center(box)
+    best_key, best_d = None, float(TRACK_UNKNOWN_LINK_PX ** 2)
+    for k, t in _face_tracks.items():
+        if not k.startswith("unk::") or k in claimed:
+            continue
+        tcx, tcy = _box_center(t["box"])
+        d = (cx - tcx) ** 2 + (cy - tcy) ** 2
+        if d < best_d:
+            best_d, best_key = d, k
+    return best_key
+
+
+def _seed_face_tracks(face_dets, now):
+    """Called by the DETECTION loop. Hands authoritative boxes + labels to the
+    tracker as CORRECTIONS. The stream worker fuses them and re-seeds optical
+    flow on its own frame. This never draws anything itself."""
+    global _unknown_track_seq
+    with _tracks_lock:
+        claimed = set()
+        for det in face_dets:
+            sid = det["sid"]
+            if sid:
+                key = sid
+            else:
+                key = _match_unknown_key(det["box"], claimed)
+                if key is None:
+                    key = f"unk::{_unknown_track_seq}"
+                    _unknown_track_seq += 1
+            claimed.add(key)
+
+            t = _face_tracks.get(key)
+            if t is None:
+                t = {"box": np.array(det["box"], dtype=np.float32), "pts": None}
+                _face_tracks[key] = t
+            t["det_box"] = np.array(det["box"], dtype=np.float32)
+            t["det_center"] = _box_center(det["box"])
+            t["title"] = det["title"]
+            t["sub"] = det["sub"]
+            t["color"] = det["color"]
+            t["iris"] = det["iris"]          # [(x,y), ...] at detection time
+            t["gaze"] = det["gaze"]          # [((x,y),(x,y)), ...] arrows
+            t["last_det_ts"] = now
+            t["needs_reseed"] = True
+
+        # Drop stale unknown tracks the detector no longer reports and that the
+        # flow layer will not have re-seeded (registered tracks persist by sid).
+        for key in list(_face_tracks.keys()):
+            if key.startswith("unk::") and key not in claimed:
+                if (now - _face_tracks[key].get("last_det_ts", 0)) * 1000.0 > TRACK_MAX_PREDICT_MS:
+                    del _face_tracks[key]
+
+
+def _seed_points(gray, box):
+    """Pick strong corners inside the face box to drive optical flow."""
+    x1, y1, x2, y2 = [int(v) for v in box]
+    x1, y1 = max(0, x1), max(0, y1)
+    x2, y2 = min(gray.shape[1], x2), min(gray.shape[0], y2)
+    if x2 - x1 < 8 or y2 - y1 < 8:
+        return None
+    roi = gray[y1:y2, x1:x2]
+    corners = cv2.goodFeaturesToTrack(roi, maxCorners=TRACK_MAX_POINTS,
+                                      qualityLevel=0.01, minDistance=4)
+    if corners is None or len(corners) < TRACK_MIN_POINTS:
+        return None
+    corners = corners.reshape(-1, 2) + np.array([x1, y1], dtype=np.float32)
+    return corners.astype(np.float32)
+
+
+def _update_face_tracks(prev_gray, gray, now):
+    """Called by the RENDER loop every frame. Advances each track by optical
+    flow, fuses any pending detection, runs the TRACKING/PREDICTED/LOST state
+    machine, and returns the render list. Removes tracks once LOST."""
+    h, w = gray.shape[:2]
+    flow_ok = (prev_gray is not None and prev_gray.shape == gray.shape)
+    render = []
+    with _tracks_lock:
+        for key in list(_face_tracks.keys()):
+            t = _face_tracks[key]
+            dx = dy = 0.0
+
+            # 1. Optical-flow advance along the real head motion
+            if flow_ok and t.get("pts") is not None and len(t["pts"]) >= TRACK_MIN_POINTS:
+                p0 = t["pts"].reshape(-1, 1, 2)
+                p1, stt, _err = cv2.calcOpticalFlowPyrLK(prev_gray, gray, p0, None, **_LK_PARAMS)
+                if p1 is not None and stt is not None:
+                    good = stt.reshape(-1).astype(bool)
+                    new_pts = p1.reshape(-1, 2)[good]
+                    old_pts = p0.reshape(-1, 2)[good]
+                    if len(new_pts) >= TRACK_MIN_POINTS:
+                        motion = new_pts - old_pts
+                        dx = float(np.median(motion[:, 0]))
+                        dy = float(np.median(motion[:, 1]))
+                        t["pts"] = new_pts.astype(np.float32)
+                    else:
+                        t["pts"] = None      # flow collapsed
+                else:
+                    t["pts"] = None
+
+            box = t["box"].copy()
+            box[0] += dx; box[2] += dx
+            box[1] += dy; box[3] += dy
+
+            # 2. Fuse a pending detection (weighted pull removes the snap)
+            if t.get("needs_reseed"):
+                a = TRACK_CORRECT_BLEND
+                box = (1.0 - a) * box + a * t["det_box"]
+                t["pts"] = _seed_points(gray, box)
+                t["needs_reseed"] = False
+            t["box"] = box
+
+            # 3. State machine
+            age_ms = (now - t.get("last_det_ts", 0)) * 1000.0
+            cx, cy = _box_center(box)
+            in_bounds = (0 <= cx < w and 0 <= cy < h)
+            flow_alive = t.get("pts") is not None and len(t["pts"]) >= TRACK_MIN_POINTS
+
+            lost = ((not in_bounds)
+                    or (age_ms > TRACK_MAX_PREDICT_MS)
+                    or (age_ms > TRACK_HOLD_MS and not flow_alive))
+            if lost:
+                del _face_tracks[key]
+                continue
+
+            state = "TRACKING" if age_ms <= TRACK_FRESH_MS else "PREDICTED"
+
+            # Carry the accumulated box shift onto the eye markers so the iris
+            # dots / gaze arrows move with the head between detections too.
+            sx = cx - t["det_center"][0]
+            sy = cy - t["det_center"][1]
+            render.append({
+                "box": tuple(int(v) for v in box),
+                "title": t["title"], "sub": t["sub"], "color": t["color"],
+                "state": state,
+                "iris": [(int(ix + sx), int(iy + sy)) for (ix, iy) in t.get("iris") or []],
+                "gaze": [((int(a0 + sx), int(a1 + sy)), (int(b0 + sx), int(b1 + sy)))
+                         for ((a0, a1), (b0, b1)) in t.get("gaze") or []],
+            })
+    return render
+
+
 def _stream_worker():
-    """Real-Time Stream Compositor Thread.
-    Applies current AI draw operations to fresh camera frames and encodes JPEG at maximum FPS."""
+    """Real-Time Stream Compositor Thread (the RENDER loop).
+    Runs on every fresh camera frame: advances the per-frame face tracker,
+    composites the tracked boxes + the detection loop's static overlays
+    (phones/devices), and encodes JPEG at the native frame rate."""
     last_processed_ts = 0.0
+    prev_gray = None
 
     while True:
         _raw_frame_event.wait(timeout=0.1)
@@ -3402,7 +3615,16 @@ def _stream_worker():
         last_processed_ts = ts
         annotated = frame.copy()
 
-        # Fetch active AI draw operations atomically
+        # Per-frame optical-flow face tracking (independent of detection cadence)
+        try:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            tracked_faces = _update_face_tracks(prev_gray, gray, time.time())
+            prev_gray = gray
+        except Exception as exc:
+            print(f"[TRACK] per-frame tracker error: {type(exc).__name__}: {exc}")
+            tracked_faces = []
+
+        # Static overlays from the detection loop (phones/devices etc.)
         with _ai_overlay_lock:
             current_ops = list(_shared_draw_ops)
 
@@ -3418,6 +3640,16 @@ def _stream_worker():
             elif op_type == 'gaze_arrow':
                 _, start, end, color = op
                 _render_gaze_arrow(annotated, start, end, color=color)
+
+        # Tracked face boxes + eye markers, drawn at the native frame rate
+        for tf in tracked_faces:
+            x1, y1, x2, y2 = tf["box"]
+            _render_hud_box(annotated, (x1, y1), (x2, y2), tf["color"],
+                            thickness=2, title=tf["title"], subtitle=tf["sub"])
+            for (ix, iy) in tf["iris"]:
+                _render_iris_marker(annotated, (ix, iy), radius=2, color=(255, 220, 0))
+            for (gp1, gp2) in tf["gaze"]:
+                _render_gaze_arrow(annotated, gp1, gp2, color=(255, 220, 0))
 
         ret, buffer = cv2.imencode('.jpg', annotated, [
             int(cv2.IMWRITE_JPEG_QUALITY), 80,
@@ -3529,12 +3761,10 @@ def _ai_worker_loop():
             id_faces = (_id_output["faces"]
                         if (now - _id_output["ts"]) <= ID_RESULT_TTL else [])
 
-        # 5. Tracking update (persons)
-        tracker.update_tracks(person_detections, frame=frame)
-
         current_students_in_frame = set()
         unknown_count = 0
         used_face_indices = set()
+        face_dets = []   # authoritative face boxes handed to the per-frame tracker
 
         # Match face observations with recognized identities
         for idx, obs in enumerate(face_obs_list):
@@ -3555,10 +3785,11 @@ def _ai_worker_loop():
             sid = matched_idf["sid"] if (matched_idf and matched_idf["sid"]) else None
             sname = matched_idf["name"] if matched_idf else None
 
-            # Short-term spatial retention (1.5s smoothing window to prevent blinking)
+            # Short-term spatial retention (prevents a brief landmark-detection
+            # gap from registering as a new/unknown face)
             if sid is None:
                 for past_sid, past_data in tracked_students.items():
-                    if past_data.get("status") == "Active" and now - past_data.get("last_seen", 0) < 1.5:
+                    if now - past_data.get("last_seen", 0) < FACE_TRACK_GRACE_SECONDS:
                         prev_fb = smooth_face_boxes.get(past_sid)
                         if prev_fb is not None:
                             pfx1, pfy1, pfx2, pfy2 = prev_fb
@@ -3677,14 +3908,7 @@ def _ai_worker_loop():
                     )
                 tracked_students[sid]["_logged_event"] = le
 
-                tier = snap["tier"]
-
-                if tier == "LOW":
-                    color = (0, 230, 115)       # Emerald Green
-                elif tier == "MEDIUM":
-                    color = (0, 165, 255)       # Amber
-                else:
-                    color = (0, 0, 255)         # Red Violation
+                color = _tier_color(snap["tier"])
 
                 # On-frame tag: name above the box, roll number + live risk
                 # score below it. ASCII separator only -- the OpenCV Hershey
@@ -3692,30 +3916,45 @@ def _ai_worker_loop():
                 risk_val = int(round(snap.get("suspicion_score", 0)))
                 title = snap['name']
                 sub = f"Roll {sid} | Risk {risk_val}"
-                draw_ops.append(('hud_box', (sfx1, sfy1), (sfx2, sfy2), color, 2, title, sub))
 
-                # Subtle Iris Markers and Gaze Direction Indicator
+                # Eye markers + gaze arrows are captured at detection time and
+                # carried along by the tracker between detections.
+                iris_pts, gaze_arrows = [], []
                 if obs.left_iris_xy and obs.right_iris_xy:
-                    draw_ops.append(('iris', obs.left_iris_xy, 2, (255, 220, 0)))
-                    draw_ops.append(('iris', obs.right_iris_xy, 2, (255, 220, 0)))
-
+                    iris_pts = [obs.left_iris_xy, obs.right_iris_xy]
                     if abs(obs.gaze_h - 0.5) > 0.12 or abs(obs.gaze_v - 0.5) > 0.12:
-                        dx = int((obs.gaze_h - 0.5) * 16)
-                        dy = int((obs.gaze_v - 0.5) * 16)
-                        draw_ops.append(('gaze_arrow', obs.left_iris_xy,
-                                         (obs.left_iris_xy[0] + dx, obs.left_iris_xy[1] + dy),
-                                         (255, 220, 0)))
-                        draw_ops.append(('gaze_arrow', obs.right_iris_xy,
-                                         (obs.right_iris_xy[0] + dx, obs.right_iris_xy[1] + dy),
-                                         (255, 220, 0)))
+                        gdx = int((obs.gaze_h - 0.5) * 16)
+                        gdy = int((obs.gaze_v - 0.5) * 16)
+                        gaze_arrows = [
+                            (obs.left_iris_xy,
+                             (obs.left_iris_xy[0] + gdx, obs.left_iris_xy[1] + gdy)),
+                            (obs.right_iris_xy,
+                             (obs.right_iris_xy[0] + gdx, obs.right_iris_xy[1] + gdy)),
+                        ]
+
+                # Hand this detection to the per-frame tracker instead of
+                # drawing a static box -- the render loop moves it every frame.
+                face_dets.append({
+                    "sid": sid, "box": (sfx1, sfy1, sfx2, sfy2),
+                    "title": title, "sub": sub, "color": color,
+                    "iris": iris_pts, "gaze": gaze_arrows,
+                })
             else:
                 # Unregistered face
                 unknown_count += 1
-                draw_ops.append(('hud_box', (sfx1, sfy1), (sfx2, sfy2), (0, 0, 255), 2,
-                                 "UNKNOWN PERSON", "UNREGISTERED PARTICIPANT"))
+                iris_pts = []
                 if obs.left_iris_xy and obs.right_iris_xy:
-                    draw_ops.append(('iris', obs.left_iris_xy, 2, (255, 220, 0)))
-                    draw_ops.append(('iris', obs.right_iris_xy, 2, (255, 220, 0)))
+                    iris_pts = [obs.left_iris_xy, obs.right_iris_xy]
+                face_dets.append({
+                    "sid": None, "box": (sfx1, sfy1, sfx2, sfy2),
+                    "title": "UNKNOWN PERSON", "sub": "UNREGISTERED PARTICIPANT",
+                    "color": (0, 0, 255), "iris": iris_pts, "gaze": [],
+                })
+
+        # Publish this cycle's detections to the per-frame tracker. The render
+        # loop advances them by optical flow between now and the next cycle,
+        # so the box tracks the head and the tag persists at native frame rate.
+        _seed_face_tracks(face_dets, now)
 
         # Handle absent students
         for sid in list(tracked_students.keys()):
@@ -3729,6 +3968,10 @@ def _ai_worker_loop():
                     snap["status"] = "Away"
                     tracked_students[sid] = snap
 
+                # Tag persistence through brief detection gaps (fast turns,
+                # glances away) is now handled by the per-frame tracker's
+                # PREDICTED state in _update_face_tracks -- not by re-drawing a
+                # static box here. This block only maintains the roster.
                 time_away = now - tracked_students[sid].get("last_seen", 0)
                 if time_away > 60.0:
                     historical_risk_scores[sid] = tracked_students[sid].get("suspicion_score", 0)
