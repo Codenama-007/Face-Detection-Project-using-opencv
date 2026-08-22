@@ -64,6 +64,12 @@ let isScrubbing = false;
 let isSeekingVideo = false;
 let animationFrameId = null;
 
+// Neural Frame Detector State
+let offscreenDetectCanvas = null;
+let offscreenDetectCtx = null;
+let isDetectingFrame = false;
+let lastDetectTimestamp = 0;
+
 const SESSION_START_TIME = "09:58:01";
 const SESSION_END_TIME   = "11:30:00";
 
@@ -308,6 +314,100 @@ function setupEventListeners() {
     });
 }
 
+// ─── Real-Time Neural CCTV Frame Detection Engine ───────────
+function sampleAndDetectVideoFrame() {
+    if (!cctvVideo || cctvVideo.paused || cctvVideo.ended || isDetectingFrame) return;
+    if (cctvVideo.videoWidth === 0 || cctvVideo.videoHeight === 0) return;
+
+    const now = performance.now();
+    if (now - lastDetectTimestamp < 320) return; // Sample at ~3 fps for optimal responsiveness without CPU burden
+    lastDetectTimestamp = now;
+
+    runNeuralFrameDetection();
+}
+
+async function runNeuralFrameDetection() {
+    if (!cctvVideo || cctvVideo.videoWidth === 0 || cctvVideo.videoHeight === 0) return;
+    if (isDetectingFrame) return;
+
+    try {
+        isDetectingFrame = true;
+        if (!offscreenDetectCanvas) {
+            offscreenDetectCanvas = document.createElement('canvas');
+            offscreenDetectCtx = offscreenDetectCanvas.getContext('2d', { willReadFrequently: true });
+        }
+
+        // Downscale to 640x360 for high accuracy & fast inference
+        const targetW = 640;
+        const targetH = Math.round(targetW * (cctvVideo.videoHeight / cctvVideo.videoWidth));
+        offscreenDetectCanvas.width = targetW;
+        offscreenDetectCanvas.height = targetH;
+
+        offscreenDetectCtx.drawImage(cctvVideo, 0, 0, targetW, targetH);
+        const dataUrl = offscreenDetectCanvas.toDataURL('image/jpeg', 0.70);
+
+        const res = await fetch('/api/replay/detect_frame', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: dataUrl })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.detections && data.detections.length > 0) {
+                const det = data.detections[0]; // Primary device detection
+                const bbox = det.bbox; // [x1, y1, x2, y2]
+                const fW = data.frame_shape ? data.frame_shape[0] : targetW;
+                const fH = data.frame_shape ? data.frame_shape[1] : targetH;
+
+                const leftPct = (bbox[0] / fW) * 100;
+                const topPct = (bbox[1] / fH) * 100;
+                const widthPct = ((bbox[2] - bbox[0]) / fW) * 100;
+                const heightPct = ((bbox[3] - bbox[1]) / fH) * 100;
+
+                if (DOM.cctvDetectionBox && DOM.cctvDetectionLabel) {
+                    DOM.cctvDetectionBox.style.display = 'block';
+                    DOM.cctvDetectionBox.style.left = `${leftPct.toFixed(1)}%`;
+                    DOM.cctvDetectionBox.style.top = `${topPct.toFixed(1)}%`;
+                    DOM.cctvDetectionBox.style.width = `${Math.max(8, widthPct).toFixed(1)}%`;
+                    DOM.cctvDetectionBox.style.height = `${Math.max(8, heightPct).toFixed(1)}%`;
+
+                    if (det.device_type === 'phone') {
+                        DOM.cctvDetectionBox.style.borderColor = 'var(--danger)';
+                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
+                        DOM.cctvDetectionLabel.style.background = 'var(--danger)';
+                    } else if (det.device_type === 'smartwatch') {
+                        DOM.cctvDetectionBox.style.borderColor = 'var(--warning)';
+                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(245, 158, 11, 0.5)';
+                        DOM.cctvDetectionLabel.style.background = 'var(--warning)';
+                    } else if (det.device_type === 'earbud') {
+                        DOM.cctvDetectionBox.style.borderColor = 'var(--cyan)';
+                        DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(6, 182, 212, 0.5)';
+                        DOM.cctvDetectionLabel.style.background = 'var(--cyan)';
+                    }
+
+                    DOM.cctvDetectionLabel.textContent = det.label;
+                }
+
+                if (DOM.playbackOverlayTag && DOM.playbackOverlayText) {
+                    DOM.playbackOverlayTag.className = 'status-overlay danger-bg';
+                    DOM.playbackOverlayTag.style.display = 'flex';
+                    DOM.playbackOverlayText.textContent = det.label;
+                    lucide.createIcons();
+                }
+            } else {
+                // Clear bounding box and active overlay when no device in frame
+                if (DOM.cctvDetectionBox) DOM.cctvDetectionBox.style.display = 'none';
+                if (DOM.playbackOverlayTag) DOM.playbackOverlayTag.style.display = 'none';
+            }
+        }
+    } catch (err) {
+        // Silent failover to prevent UI stutter
+    } finally {
+        isDetectingFrame = false;
+    }
+}
+
 // ─── High-Performance HTML5 CCTV Video Engine ─────────────────
 function initCCTVVideoPlayer() {
     cctvVideo = document.getElementById('cctvVideoPlayer');
@@ -367,6 +467,7 @@ function initCCTVVideoPlayer() {
         if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="play"></i>';
         if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED';
         lucide.createIcons();
+        runNeuralFrameDetection();
     });
 
     cctvVideo.addEventListener('waiting', () => {
@@ -396,9 +497,12 @@ function initCCTVVideoPlayer() {
         }
     }, 200);
 
-    // 5. Continuous Time Update (Optimized with RAF)
+    // 5. Continuous Time Update (Optimized with RAF & Neural Detection)
     cctvVideo.addEventListener('timeupdate', () => {
         if (isScrubbing || isSeekingVideo || !cctvVideo.duration) return;
+
+        // Sample frame for real-time neural detection
+        sampleAndDetectVideoFrame();
 
         if (animationFrameId) cancelAnimationFrame(animationFrameId);
         animationFrameId = requestAnimationFrame(() => {
@@ -478,6 +582,7 @@ function initCCTVVideoPlayer() {
             if (isScrubbing) {
                 isScrubbing = false;
                 DOM.progressBarBg.releasePointerCapture(e.pointerId);
+                runNeuralFrameDetection();
             }
         });
 
@@ -848,75 +953,6 @@ function synchronizePlayback(ev, index) {
     }
     if (DOM.playbackTimestamp) DOM.playbackTimestamp.textContent = ev.timestamp;
 
-    // Real event notification banner
-    if (DOM.playbackOverlayTag) {
-        if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') {
-            DOM.playbackOverlayTag.className = 'status-overlay danger-bg';
-            DOM.playbackOverlayTag.style.display = 'flex';
-            if (DOM.playbackOverlayText) DOM.playbackOverlayText.textContent = ev.title;
-        } else if (ev.severity === 'SUSPICIOUS') {
-            DOM.playbackOverlayTag.className = 'status-overlay warning-bg';
-            DOM.playbackOverlayTag.style.display = 'flex';
-            if (DOM.playbackOverlayText) DOM.playbackOverlayText.textContent = ev.title;
-        } else {
-            DOM.playbackOverlayTag.style.display = 'none';
-        }
-        lucide.createIcons();
-    }
-
-    // Synchronize Genuine AI Detection Bounding Box Overlay
-    if (DOM.cctvDetectionBox && DOM.cctvDetectionLabel) {
-        const evType = String(ev.event_type || '').toUpperCase();
-        const evCat = String(ev.category || '').toUpperCase();
-        const meta = ev.metadata || {};
-
-        if (evType.includes('PHONE') || evCat === 'DEVICE') {
-            DOM.cctvDetectionBox.style.display = 'block';
-            DOM.cctvDetectionBox.style.top = '48%';
-            DOM.cctvDetectionBox.style.left = '42%';
-            DOM.cctvDetectionBox.style.width = '140px';
-            DOM.cctvDetectionBox.style.height = '160px';
-            DOM.cctvDetectionBox.style.borderColor = 'var(--danger)';
-            DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
-            DOM.cctvDetectionLabel.style.background = 'var(--danger)';
-            const pconf = meta.confidence ? (meta.confidence * 100).toFixed(0) : '89';
-            DOM.cctvDetectionLabel.textContent = `PHONE DETECTED · ${pconf}%`;
-        } else if (evType.includes('MULTIPLE') || (meta.faces_count && meta.faces_count > 1)) {
-            DOM.cctvDetectionBox.style.display = 'block';
-            DOM.cctvDetectionBox.style.top = '25%';
-            DOM.cctvDetectionBox.style.left = '64%';
-            DOM.cctvDetectionBox.style.width = '170px';
-            DOM.cctvDetectionBox.style.height = '240px';
-            DOM.cctvDetectionBox.style.borderColor = 'var(--danger)';
-            DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
-            DOM.cctvDetectionLabel.style.background = 'var(--danger)';
-            DOM.cctvDetectionLabel.textContent = 'UNKNOWN PERSON DETECTED';
-        } else if (evType.includes('BIOMETRIC') || evType.includes('ENTERED')) {
-            DOM.cctvDetectionBox.style.display = 'block';
-            DOM.cctvDetectionBox.style.top = '28%';
-            DOM.cctvDetectionBox.style.left = '38%';
-            DOM.cctvDetectionBox.style.width = '150px';
-            DOM.cctvDetectionBox.style.height = '180px';
-            DOM.cctvDetectionBox.style.borderColor = 'var(--success)';
-            DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(16, 185, 129, 0.5)';
-            DOM.cctvDetectionLabel.style.background = 'var(--success)';
-            const bconf = meta.confidence ? (meta.confidence * 100).toFixed(0) : '96';
-            DOM.cctvDetectionLabel.textContent = `CANDIDATE IDENTIFIED · ${bconf}%`;
-        } else if (evCat === 'GAZE') {
-            DOM.cctvDetectionBox.style.display = 'block';
-            DOM.cctvDetectionBox.style.top = '28%';
-            DOM.cctvDetectionBox.style.left = ev.title.includes('Left') ? '32%' : '44%';
-            DOM.cctvDetectionBox.style.width = '150px';
-            DOM.cctvDetectionBox.style.height = '180px';
-            DOM.cctvDetectionBox.style.borderColor = 'var(--warning)';
-            DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(245, 158, 11, 0.5)';
-            DOM.cctvDetectionLabel.style.background = 'var(--warning)';
-            DOM.cctvDetectionLabel.textContent = `GAZE · ${meta.gaze || 'OFF-SCREEN'}`;
-        } else {
-            DOM.cctvDetectionBox.style.display = 'none';
-        }
-    }
-
     // Mathematical Session Offset to Video Position Mapping
     const startSec = timeStrToSeconds(SESSION_START_TIME);
     const endSec = timeStrToSeconds(SESSION_END_TIME);
@@ -936,7 +972,10 @@ function synchronizePlayback(ev, index) {
         cctvVideo.currentTime = progressRatio * cctvVideo.duration;
         cctvVideo.pause();
         if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED (FORENSIC FRAME)';
-        setTimeout(() => { isSeekingVideo = false; }, 50);
+        setTimeout(() => { 
+            isSeekingVideo = false;
+            runNeuralFrameDetection();
+        }, 50);
     }
 }
 

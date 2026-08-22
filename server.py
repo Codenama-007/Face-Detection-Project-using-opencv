@@ -16,6 +16,21 @@ from datetime import datetime, timedelta
 import base64
 import struct
 from ultralytics import YOLO
+from phone_detect import PhoneDetector
+
+global_replay_detector = None
+replay_detector_lock = threading.Lock()
+
+def get_replay_detector():
+    global global_replay_detector
+    if global_replay_detector is None:
+        with replay_detector_lock:
+            if global_replay_detector is None:
+                try:
+                    global_replay_detector = PhoneDetector(weights="yolo11n.pt", conf=0.25)
+                except Exception as err:
+                    print(f"[REPLAY DETECTOR] Init error: {err}")
+    return global_replay_detector
 
 # ---------------- CONFIG ----------------
 # Prefer the environment variable; the hardcoded fallback should be rotated
@@ -189,6 +204,7 @@ PUBLIC_API = {
     "/api/timeline",
     "/api/timeline/resolve",
     "/api/timeline/event",
+    "/api/replay/detect_frame",
 }
 
 REQUIRE_LOGIN = False
@@ -3011,6 +3027,55 @@ def create_timeline_event():
         metadata=metadata
     )
     return jsonify({"success": True, "event": ev})
+
+# ---------------- REPLAY FRAME DEVICE DETECTION API ----------------
+@app.route('/api/replay/detect_frame', methods=['POST'])
+def replay_detect_frame():
+    """
+    Real-time neural detection on raw video frames for the synchronized CCTV replay.
+    Detects mobile phones (full/partial), smartwatches, and earbuds using YOLO11.
+    """
+    try:
+        data = request.json or {}
+        img_b64 = data.get("image", "")
+        if not img_b64:
+            return jsonify({"success": False, "detections": []})
+
+        if "," in img_b64:
+            img_b64 = img_b64.split(",", 1)[1]
+
+        img_bytes = base64.b64decode(img_b64)
+        np_arr = np.frombuffer(img_bytes, np.uint8)
+        frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+        if frame is None or frame.size == 0:
+            return jsonify({"success": False, "detections": []})
+
+        det_engine = get_replay_detector()
+        detections = []
+        if det_engine is not None:
+            results = det_engine.detect(frame, whole_frame=True)
+            for r in results:
+                bbox = r["bbox"]
+                conf = r["conf"]
+                dtype = r.get("device_type", "phone")
+                label = "PHONE DETECTED"
+                if dtype == "smartwatch":
+                    label = "SMARTWATCH DETECTED"
+                elif dtype == "earbud":
+                    label = "EARBUD DETECTED"
+
+                detections.append({
+                    "bbox": [int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])],
+                    "conf": round(float(conf), 3),
+                    "device_type": dtype,
+                    "label": f"{label} · {int(conf * 100)}%"
+                })
+
+        return jsonify({"success": True, "detections": detections, "count": len(detections), "frame_shape": [frame.shape[1], frame.shape[0]]})
+    except Exception as e:
+        print(f"[REPLAY DETECT] Error: {e}")
+        return jsonify({"success": False, "error": str(e), "detections": []})
 
 # ---------------- STATE ----------------
 # Track state of the room globally
