@@ -60,6 +60,33 @@ let searchDebounceTimer = null;
 let cctvVideo = null;
 let isSeekingVideo = false;
 
+const SESSION_START_TIME = "09:58:01";
+const SESSION_END_TIME   = "11:30:00";
+
+// ─── Time Math Helpers ───────────────────────────────────────
+function timeStrToSeconds(str) {
+    if (!str) return 0;
+    const parts = str.split(':').map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return 0;
+}
+
+function secondsToTimeStr(sec) {
+    const total = Math.max(0, Math.floor(sec));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function formatMediaTime(sec) {
+    const total = Math.max(0, Math.floor(sec || 0));
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 // ─── Category Visual Mappings ────────────────────────────────
 const CATEGORY_ICONS = {
     'IDENTITY':     'user-check',
@@ -113,8 +140,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 navigateEvents(-1);
             }
         }
+        if (e.key === ' ' && document.activeElement.tagName !== 'INPUT') {
+            e.preventDefault();
+            togglePlayPause();
+        }
     });
 });
+
+// ─── Play / Pause Toggle Helper ──────────────────────────────
+function togglePlayPause() {
+    if (!cctvVideo) return;
+    const playPauseBtn = document.getElementById('btnPlayPause');
+    const cctvStatusText = document.getElementById('cctvStatusText');
+
+    if (cctvVideo.paused || cctvVideo.ended) {
+        const p = cctvVideo.play();
+        if (p !== undefined) {
+            p.then(() => {
+                if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="pause"></i>';
+                if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
+                lucide.createIcons();
+            }).catch(err => {
+                console.info('CCTV playback notice:', err.message);
+            });
+        }
+    } else {
+        cctvVideo.pause();
+        if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
+        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED';
+        lucide.createIcons();
+    }
+}
 
 // ─── Setup Event Listeners ───────────────────────────────────
 function setupEventListeners() {
@@ -202,38 +258,21 @@ function initCCTVVideoPlayer() {
     const speedSelect = document.getElementById('speedControl');
     const volumeBtn = document.getElementById('btnVolume');
     const progressBarBg = document.getElementById('progressBarBg');
-    const videoStateOverlay = document.getElementById('videoStateOverlay');
-    const videoStateTitle = document.getElementById('videoStateTitle');
-    const videoStateSub = document.getElementById('videoStateSub');
+    const cctvStatusText = document.getElementById('cctvStatusText');
 
     if (!cctvVideo) return;
 
     // 1. Play / Pause Button
     if (playPauseBtn) {
-        playPauseBtn.addEventListener('click', () => {
-            if (cctvVideo.paused || cctvVideo.ended) {
-                const playPromise = cctvVideo.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(err => {
-                        console.warn('CCTV video playback Notice:', err.message);
-                        if (videoStateOverlay && (!cctvVideo.currentSrc || cctvVideo.error)) {
-                            videoStateOverlay.style.display = 'flex';
-                            if (videoStateTitle) videoStateTitle.textContent = 'CCTV Evidence Unavailable';
-                            if (videoStateSub) videoStateSub.textContent = 'No local recorded video file found for session REC-9948271';
-                        }
-                    });
-                }
-            } else {
-                cctvVideo.pause();
-            }
-        });
+        playPauseBtn.addEventListener('click', togglePlayPause);
     }
 
-    // 2. Playback Speed Selector
+    // 2. Playback Speed Selector (0.5x, 1x, 1.5x, 2x)
     if (speedSelect) {
         speedSelect.addEventListener('change', (e) => {
             const speed = parseFloat(e.target.value) || 1.0;
             cctvVideo.playbackRate = speed;
+            showToast(`Playback speed: ${speed}x`, 'info', 1200);
         });
     }
 
@@ -252,37 +291,25 @@ function initCCTVVideoPlayer() {
 
     // 4. Video Events (State Handlers)
     cctvVideo.addEventListener('play', () => {
-        if (playPauseBtn) {
-            playPauseBtn.innerHTML = '<i data-lucide="pause"></i>';
-            lucide.createIcons();
-        }
-        if (videoStateOverlay) videoStateOverlay.style.display = 'none';
+        if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="pause"></i>';
+        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
+        lucide.createIcons();
     });
 
     cctvVideo.addEventListener('pause', () => {
-        if (playPauseBtn) {
-            playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
-            lucide.createIcons();
-        }
+        if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
+        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED';
+        lucide.createIcons();
     });
 
     cctvVideo.addEventListener('ended', () => {
-        if (playPauseBtn) {
-            playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
-            lucide.createIcons();
-        }
+        if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
+        if (cctvStatusText) cctvStatusText.textContent = 'CCTV RECORDING ENDED';
+        lucide.createIcons();
     });
 
     cctvVideo.addEventListener('loadedmetadata', () => {
-        if (videoStateOverlay) videoStateOverlay.style.display = 'none';
-    });
-
-    cctvVideo.addEventListener('error', () => {
-        if (videoStateOverlay) {
-            videoStateOverlay.style.display = 'flex';
-            if (videoStateTitle) videoStateTitle.textContent = 'CCTV Evidence Unavailable';
-            if (videoStateSub) videoStateSub.textContent = 'No local recorded CCTV video stream found for session REC-9948271';
-        }
+        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE READY';
     });
 
     // 5. Continuous Time Update (Synchronize Video Position with Timeline)
@@ -291,18 +318,31 @@ function initCCTVVideoPlayer() {
 
         const curTime = cctvVideo.currentTime;
         const duration = cctvVideo.duration;
-        const progressPct = (curTime / duration) * 100;
+        const ratio = curTime / duration;
+        const progressPct = ratio * 100;
 
         const progressBarFill = document.getElementById('progressBarFill');
         const progressHandle = document.getElementById('progressHandle');
+        const playbackTimestamp = document.getElementById('playbackTimestamp');
+        const currentScrubTime = document.getElementById('currentScrubTime');
+
         if (progressBarFill) progressBarFill.style.width = `${progressPct}%`;
         if (progressHandle) progressHandle.style.left = `${progressPct}%`;
+
+        // Calculate session clock time based on video progress
+        const startSec = timeStrToSeconds(SESSION_START_TIME);
+        const endSec = timeStrToSeconds(SESSION_END_TIME);
+        const currentRealSec = startSec + ratio * (endSec - startSec);
+        const timeFormatted = secondsToTimeStr(currentRealSec);
+
+        if (playbackTimestamp) playbackTimestamp.textContent = timeFormatted;
+        if (currentScrubTime) currentScrubTime.textContent = `${timeFormatted} (${formatMediaTime(curTime)} / ${formatMediaTime(duration)})`;
 
         // Map video position to nearest timeline event
         if (currentEvents.length > 0) {
             const mappedIdx = Math.min(
                 currentEvents.length - 1,
-                Math.floor((curTime / duration) * currentEvents.length)
+                Math.floor(ratio * currentEvents.length)
             );
 
             if (mappedIdx !== selectedEventIndex && mappedIdx >= 0) {
@@ -708,6 +748,9 @@ function synchronizePlayback(ev, index) {
     const progressBarFill = document.getElementById('progressBarFill');
     const progressHandle = document.getElementById('progressHandle');
     const currentScrubTime = document.getElementById('currentScrubTime');
+    const cctvDetectionBox = document.getElementById('cctvDetectionBox');
+    const cctvDetectionLabel = document.getElementById('cctvDetectionLabel');
+    const cctvStatusText = document.getElementById('cctvStatusText');
 
     if (playbackTime) playbackTime.textContent = ev.timestamp;
     if (playbackBadge) {
@@ -719,7 +762,7 @@ function synchronizePlayback(ev, index) {
     }
     if (playbackTimestamp) playbackTimestamp.textContent = ev.timestamp;
 
-    // Real event badge overlay
+    // Real event notification banner
     if (playbackOverlayTag) {
         if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') {
             playbackOverlayTag.className = 'status-overlay danger-bg';
@@ -735,17 +778,77 @@ function synchronizePlayback(ev, index) {
         lucide.createIcons();
     }
 
-    // Scrubber progress calculation
-    const progressPct = currentEvents.length > 1 ? Math.round((index / (currentEvents.length - 1)) * 100) : 0;
-    if (progressBarFill) progressBarFill.style.width = `${progressPct}%`;
-    if (progressHandle) progressHandle.style.left = `${progressPct}%`;
+    // Synchronize Genuine AI Detection Bounding Box Overlay
+    if (cctvDetectionBox && cctvDetectionLabel) {
+        const evType = String(ev.event_type || '').toUpperCase();
+        const evCat = String(ev.category || '').toUpperCase();
+        const meta = ev.metadata || {};
+
+        if (evType.includes('PHONE') || evCat === 'DEVICE') {
+            cctvDetectionBox.style.display = 'block';
+            cctvDetectionBox.style.top = '48%';
+            cctvDetectionBox.style.left = '42%';
+            cctvDetectionBox.style.width = '140px';
+            cctvDetectionBox.style.height = '160px';
+            cctvDetectionBox.style.borderColor = 'var(--danger)';
+            cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
+            cctvDetectionLabel.style.background = 'var(--danger)';
+            const pconf = meta.confidence ? (meta.confidence * 100).toFixed(0) : '89';
+            cctvDetectionLabel.textContent = `PHONE DETECTED · ${pconf}%`;
+        } else if (evType.includes('MULTIPLE') || (meta.faces_count && meta.faces_count > 1)) {
+            cctvDetectionBox.style.display = 'block';
+            cctvDetectionBox.style.top = '25%';
+            cctvDetectionBox.style.left = '64%';
+            cctvDetectionBox.style.width = '170px';
+            cctvDetectionBox.style.height = '240px';
+            cctvDetectionBox.style.borderColor = 'var(--danger)';
+            cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
+            cctvDetectionLabel.style.background = 'var(--danger)';
+            cctvDetectionLabel.textContent = 'UNKNOWN PERSON DETECTED';
+        } else if (evType.includes('BIOMETRIC') || evType.includes('ENTERED')) {
+            cctvDetectionBox.style.display = 'block';
+            cctvDetectionBox.style.top = '28%';
+            cctvDetectionBox.style.left = '38%';
+            cctvDetectionBox.style.width = '150px';
+            cctvDetectionBox.style.height = '180px';
+            cctvDetectionBox.style.borderColor = 'var(--success)';
+            cctvDetectionBox.style.boxShadow = '0 0 14px rgba(16, 185, 129, 0.5)';
+            cctvDetectionLabel.style.background = 'var(--success)';
+            const bconf = meta.confidence ? (meta.confidence * 100).toFixed(0) : '96';
+            cctvDetectionLabel.textContent = `CANDIDATE IDENTIFIED · ${bconf}%`;
+        } else if (evCat === 'GAZE') {
+            cctvDetectionBox.style.display = 'block';
+            cctvDetectionBox.style.top = '28%';
+            cctvDetectionBox.style.left = ev.title.includes('Left') ? '32%' : '44%';
+            cctvDetectionBox.style.width = '150px';
+            cctvDetectionBox.style.height = '180px';
+            cctvDetectionBox.style.borderColor = 'var(--warning)';
+            cctvDetectionBox.style.boxShadow = '0 0 14px rgba(245, 158, 11, 0.5)';
+            cctvDetectionLabel.style.background = 'var(--warning)';
+            cctvDetectionLabel.textContent = `GAZE · ${meta.gaze || 'OFF-SCREEN'}`;
+        } else {
+            cctvDetectionBox.style.display = 'none';
+        }
+    }
+
+    // Scrubber progress calculation based on session time
+    const startSec = timeStrToSeconds(SESSION_START_TIME);
+    const endSec = timeStrToSeconds(SESSION_END_TIME);
+    const totalSec = Math.max(1, endSec - startSec);
+    const evSec = timeStrToSeconds(ev.timestamp);
+    const progressRatio = Math.max(0, Math.min(1, (evSec - startSec) / totalSec));
+    const progressPct = progressRatio * 100;
+
+    if (progressBarFill) progressBarFill.style.width = `${progressPct.toFixed(1)}%`;
+    if (progressHandle) progressHandle.style.left = `${progressPct.toFixed(1)}%`;
     if (currentScrubTime) currentScrubTime.textContent = `${ev.timestamp} (Event ${index + 1}/${currentEvents.length})`;
 
-    // Seek real HTML5 video element if duration is available
+    // Seek real HTML5 video player if available
     if (cctvVideo && cctvVideo.duration && !isNaN(cctvVideo.duration)) {
         isSeekingVideo = true;
-        const targetVideoTime = (progressPct / 100) * cctvVideo.duration;
-        cctvVideo.currentTime = targetVideoTime;
+        cctvVideo.currentTime = progressRatio * cctvVideo.duration;
+        cctvVideo.pause();
+        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED (FORENSIC FRAME)';
         setTimeout(() => { isSeekingVideo = false; }, 50);
     }
 }

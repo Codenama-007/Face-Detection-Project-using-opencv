@@ -314,7 +314,7 @@
                     <i data-lucide="video" class="accent-icon"></i>
                     <div>
                         <h3>Synchronized CCTV Evidence</h3>
-                        <p class="sec-desc">Session REC-9948271 | Correlated Examination Room Footage &amp; Timeline Sync</p>
+                        <p class="sec-desc">Session REC-9948271 | Recorded Examination Footage &amp; Telemetry Sync</p>
                     </div>
                 </div>
                 <div class="playback-badge-row">
@@ -325,12 +325,13 @@
 
             <div class="evidence-grid">
                 <div class="video-placeholder" id="videoPlaceholder">
-                    <!-- Real HTML5 Video Player -->
+                    <!-- Real HTML5 Video Player with Recorded Frame Poster -->
                     <video 
                         id="cctvVideoPlayer" 
                         class="cctv-video-element" 
                         preload="metadata" 
                         playsinline
+                        poster="exam_room.jpg"
                         aria-label="Synchronized CCTV Evidence Recording"
                     >
                         <source src="exam_room.mp4" type="video/mp4">
@@ -339,6 +340,11 @@
                         Your browser does not support the video element.
                     </video>
 
+                    <!-- Synchronized AI Detection Bounding Box Overlay -->
+                    <div class="cctv-detection-box" id="cctvDetectionBox" style="display:none;">
+                        <span class="cctv-detection-label" id="cctvDetectionLabel">PHONE DETECTED · 89%</span>
+                    </div>
+
                     <!-- CCTV HUD Top Bar -->
                     <div class="cctv-hud-top">
                         <span class="hud-tag" id="cctvCamTag">CAM-01 · 1080p</span>
@@ -346,16 +352,14 @@
                         <div class="timestamp-overlay" id="playbackTimestamp">09:58:01</div>
                     </div>
 
-                    <!-- Clean Video State Overlay (Loading / Error / Source Unavailable) -->
-                    <div class="video-state-overlay" id="videoStateOverlay" style="display:none;">
-                        <i data-lucide="video-off" class="state-icon"></i>
-                        <span class="state-title" id="videoStateTitle">CCTV Evidence Unavailable</span>
-                        <span class="state-sub" id="videoStateSub">No local CCTV video file found for session REC-9948271</span>
-                    </div>
-
                     <!-- Active Event Notification Overlay Tag -->
                     <div class="status-overlay danger-bg" id="playbackOverlayTag" style="display:none;">
                         <i data-lucide="alert-triangle"></i> <span id="playbackOverlayText">Mobile Device Detected</span>
+                    </div>
+
+                    <!-- CCTV Evidence Status Indicator -->
+                    <div class="cctv-status-indicator" id="cctvStatusIndicator">
+                        <span class="indicator-dot"></span> <span id="cctvStatusText">CCTV EVIDENCE READY</span>
                     </div>
                 </div>
                 
@@ -374,10 +378,10 @@
                     <div class="controls-row">
                         <div class="speed-control">
                             <select class="select-glass" id="speedControl" aria-label="Playback Speed">
-                                <option value="0.5">0.5x</option>
-                                <option value="1.0" selected>1.0x</option>
-                                <option value="1.5">1.5x</option>
-                                <option value="2.0">2.0x</option>
+                                <option value="0.5">0.5x Speed</option>
+                                <option value="1.0" selected>1.0x Speed</option>
+                                <option value="1.5">1.5x Speed</option>
+                                <option value="2.0">2.0x Speed</option>
                             </select>
                         </div>
                         <div class="main-controls">

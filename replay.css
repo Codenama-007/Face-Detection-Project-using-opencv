@@ -1568,6 +1568,63 @@ body::before {
     color: #ffffff;
 }
 
+/* AI Detection Bounding Box Overlay */
+.cctv-detection-box {
+    position: absolute;
+    border: 2px solid var(--danger);
+    border-radius: 6px;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.45);
+    pointer-events: none;
+    z-index: 2;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cctv-detection-label {
+    position: absolute;
+    top: -24px;
+    left: -2px;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    background: var(--danger);
+    color: #ffffff;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/* Real-Time CCTV Status Pill */
+.cctv-status-indicator {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.80);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--t2);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.cctv-status-indicator .indicator-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+}
+
 .playback-controls {
     display: flex;
     flex-direction: column;
