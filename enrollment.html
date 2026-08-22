@@ -1715,7 +1715,7 @@ p.subtitle {
                     </div>
 
                     <!-- Primary Call to Action Button directly below Camera -->
-                    <div class="start-cta-wrap" style="margin-top: 1rem;">
+                    <div class="start-cta-wrap" style="margin-top: 1rem; margin-bottom: 1.25rem;">
                         <div class="cta-warning" id="ctaWarning">
                             <i data-lucide="alert-triangle" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
                             ENROLLMENT REQUIRED: Complete student identity enrollment before starting the monitoring session.
@@ -1726,6 +1726,22 @@ p.subtitle {
                             Start Examination Monitoring
                         </button>
                         <span class="cta-subtext">Launches real-time SOC proctoring with live identity recognition, gaze telemetry, and object defense.</span>
+                    </div>
+
+                    <!-- Enrolled Candidates Roster Section (Directly below Monitoring button) -->
+                    <div class="roster-header" style="border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+                        <div class="roster-title">
+                            <i data-lucide="user-check" style="width:14px;height:14px;color:var(--success);"></i>
+                            Enrolled Candidates Roster
+                        </div>
+                        <input type="text" class="roster-search" id="rosterSearch" placeholder="Search candidate..." oninput="filterRoster(this.value)">
+                    </div>
+
+                    <div class="roster-scroll" id="rosterList">
+                        <div class="roster-empty" id="rosterEmpty">
+                            <i data-lucide="loader" class="lucide-spin" style="width:20px;height:20px;margin-bottom:0.5rem;display:inline-block;"></i>
+                            <div>Loading enrolled candidates...</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2019,24 +2035,6 @@ p.subtitle {
             </div>
 
             <div class="stage-status-sub" id="timelineStatus">Enter student full name & identification ID</div>
-        </div>
-
-        <!-- ══ 3. ENROLLED CANDIDATES ROSTER & CTA ════════════════════ -->
-        <div class="panel-container">
-            <div class="roster-header">
-                <div class="roster-title">
-                    <i data-lucide="user-check" style="width:14px;height:14px;color:var(--success);"></i>
-                    Enrolled Candidates Roster
-                </div>
-                <input type="text" class="roster-search" id="rosterSearch" placeholder="Search candidate..." oninput="filterRoster(this.value)">
-            </div>
-
-            <div class="roster-scroll" id="rosterList">
-                <div class="roster-empty" id="rosterEmpty">
-                    <i data-lucide="loader" class="lucide-spin" style="width:20px;height:20px;margin-bottom:0.5rem;display:inline-block;"></i>
-                    <div>Loading enrolled candidates...</div>
-                </div>
-            </div>
         </div>
 
     </div>
