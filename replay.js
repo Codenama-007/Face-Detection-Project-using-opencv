@@ -335,7 +335,7 @@ function renderTimelineList(events) {
             sevLabel = 'Suspicious';
         }
 
-        const resolvedPill = ev.resolved ? `<span class="badge badge-success" style="font-size:0.6rem;">✓ RESOLVED</span>` : '';
+        const resolvedPill = ev.resolved ? `<span class="badge badge-success" style="font-size:0.58rem;">✓ RESOLVED</span>` : '';
 
         return `
             <div class="t-event-card severity-${sevClass} ${isSelected ? 'active' : ''}" 
@@ -356,7 +356,7 @@ function renderTimelineList(events) {
                             <span class="t-time-pill">${ev.timestamp}</span>
                             <div class="t-student-pill">
                                 <span>${escapeHtml(ev.student_name || 'System')}</span>
-                                <span class="stu-id">${ev.student_id ? `(${escapeHtml(ev.student_id)})` : ''}</span>
+                                <span class="stu-id">${ev.student_id ? `· ${escapeHtml(ev.student_id)}` : ''}</span>
                             </div>
                             <span class="t-category-badge">${escapeHtml(ev.category)}</span>
                         </div>
@@ -374,11 +374,9 @@ function renderTimelineList(events) {
                     <div class="t-event-footer">
                         <div class="t-meta-tags">
                             <span>Type: ${escapeHtml(ev.event_type)}</span>
-                            <span>•</span>
-                            <span>Tenant: ${escapeHtml(ev.institution_id || 'INST-001')}</span>
                         </div>
                         <button type="button" class="btn-inspect-sm" onclick="event.stopPropagation(); inspectEvent(${idx});">
-                            Inspect <i data-lucide="chevron-right" style="width:12px;height:12px;"></i>
+                            Inspect <i data-lucide="chevron-right" style="width:11px;height:11px;"></i>
                         </button>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 /* ═════════════════════════════════════════════════════════════════════
    PROCTORAI — REVIEWABLE ACTION TIMELINE (replay.css)
-   Clean, Focused, Forensic Search & Discovery Investigation Interface
-   Seamless Dark Mode (Night Ops) & High-Contrast Light Mode (Day Ops)
+   Enterprise Forensic Audit Interface for Search & Action Discovery
+   Restrained, Professional Security Aesthetic with Dark & Light Modes
    ═════════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
@@ -9,18 +9,18 @@
 /* ── 1. DESIGN TOKENS & SYSTEM VARIABLES ── */
 :root {
     /* Base Surfaces */
-    --bg-base:        #070b12;
-    --bg-surface:     #0b101b;
-    --bg-elevated:    #101726;
+    --bg-base:        #080c14;
+    --bg-surface:     #0c121e;
+    --bg-elevated:    #121a2a;
 
     /* Panels & Cards */
-    --panel-glass:    rgba(14, 20, 32, 0.85);
-    --panel-card:     rgba(18, 26, 42, 0.70);
-    --panel-hover:    rgba(24, 34, 56, 0.85);
-    --sub-panel-bg:   rgba(8, 12, 20, 0.75);
-    --sub-item-bg:    rgba(255, 255, 255, 0.025);
+    --panel-glass:    rgba(14, 20, 32, 0.90);
+    --panel-card:     rgba(18, 26, 42, 0.75);
+    --panel-hover:    rgba(24, 34, 54, 0.85);
+    --sub-panel-bg:   rgba(9, 14, 24, 0.80);
+    --sub-item-bg:    rgba(255, 255, 255, 0.03);
 
-    /* Clean Enterprise Borders */
+    /* Restrained Enterprise Borders */
     --border-subtle:  rgba(255, 255, 255, 0.08);
     --border-light:   rgba(255, 255, 255, 0.14);
     --border-hover:   rgba(56, 189, 248, 0.35);
@@ -28,7 +28,7 @@
 
     /* Accent & Brand Colors */
     --cyan:           #00e5ff;
-    --cyan-glow:      rgba(0, 229, 255, 0.25);
+    --cyan-glow:      rgba(0, 229, 255, 0.20);
     --accent:         #38bdf8;
     --accent-dim:     rgba(56, 189, 248, 0.10);
     --accent-bd:      rgba(56, 189, 248, 0.25);
@@ -44,7 +44,7 @@
 
     --danger:         #ef4444;
     --danger-dim:     rgba(239, 68, 68, 0.12);
-    --danger-bd:      rgba(239, 68, 68, 0.32);
+    --danger-bd:      rgba(239, 68, 68, 0.30);
 
     --purple:         #a855f7;
     --purple-dim:     rgba(168, 85, 247, 0.12);
@@ -57,26 +57,26 @@
     --t4:             #334155;
 
     /* Input & Control Specifics */
-    --input-bg:       rgba(8, 12, 20, 0.85);
+    --input-bg:       rgba(9, 14, 24, 0.85);
     --input-text:     #ffffff;
     --input-border:   rgba(255, 255, 255, 0.12);
-    --select-bg:      rgba(8, 12, 20, 0.85);
+    --select-bg:      rgba(9, 14, 24, 0.85);
     --select-text:    #cbd5e1;
-    --card-bg:        rgba(14, 20, 32, 0.70);
-    --card-hover-bg:  rgba(20, 28, 46, 0.85);
-    --card-active-bg: rgba(18, 30, 52, 0.95);
-    --node-circle-bg: #070b12;
+    --card-bg:        rgba(14, 20, 32, 0.75);
+    --card-hover-bg:  rgba(20, 28, 44, 0.88);
+    --card-active-bg: rgba(16, 28, 48, 0.95);
+    --node-circle-bg: #080c14;
 
-    --radius-sm:      8px;
-    --radius-md:      12px;
-    --radius-lg:      16px;
-    --radius-xl:      20px;
+    --radius-sm:      6px;
+    --radius-md:      10px;
+    --radius-lg:      14px;
+    --radius-xl:      18px;
 
     --font-family:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --mono:           'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
-    --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-    --transition-med:  0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-fast: 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-med:  0.20s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── 2. GLOBAL RESET & BASE ── */
@@ -108,9 +108,8 @@ body::before {
     position: fixed;
     inset: 0;
     background:
-        radial-gradient(ellipse 65% 45% at 50% 8%, rgba(14, 42, 80, 0.25) 0%, transparent 65%),
-        radial-gradient(ellipse 50% 35% at 90% 90%, rgba(239, 68, 68, 0.04) 0%, transparent 65%),
-        radial-gradient(ellipse 45% 35% at 10% 85%, rgba(56, 189, 248, 0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 50% 5%, rgba(14, 42, 80, 0.22) 0%, transparent 65%),
+        radial-gradient(ellipse 45% 30% at 90% 90%, rgba(239, 68, 68, 0.03) 0%, transparent 65%),
         var(--bg-base);
     pointer-events: none;
     z-index: 0;
@@ -119,66 +118,65 @@ body::before {
 /* ── 3. BACK BUTTON ── */
 .back-btn {
     position: fixed;
-    top: 1rem;
-    left: 1.25rem;
+    top: 0.9rem;
+    left: 1.15rem;
     z-index: 100;
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.45rem 0.85rem;
+    gap: 0.4rem;
+    padding: 0.42rem 0.8rem;
     border-radius: var(--radius-md);
-    background: rgba(14, 20, 32, 0.88);
+    background: rgba(14, 20, 32, 0.90);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-light);
     color: var(--t2);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 600;
     text-decoration: none;
     transition: all var(--transition-fast);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .back-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     stroke: currentColor;
     transition: transform var(--transition-fast);
 }
 
 .back-btn:hover {
-    background: rgba(56, 189, 248, 0.15);
+    background: rgba(56, 189, 248, 0.12);
     border-color: var(--cyan);
     color: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(0, 229, 255, 0.2);
 }
 
 .back-btn:hover svg {
-    transform: translateX(-3px);
+    transform: translateX(-2px);
 }
 
 /* ── 4. APP CONTAINER ── */
 .app-container {
     position: relative;
     z-index: 1;
-    max-width: 1680px;
+    max-width: 1640px;
     margin: 0 auto;
-    padding: 1.1rem 1.6rem 2.5rem;
+    padding: 1rem 1.4rem 2.2rem;
     display: flex;
     flex-direction: column;
-    gap: 1.1rem;
+    gap: 0.95rem;
     min-height: 100vh;
 }
 
 /* ── 5. GLASS PANEL FOUNDATION ── */
 .glass-panel {
     background: var(--panel-glass);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     transition: border-color var(--transition-med), background-color var(--transition-med);
     position: relative;
 }
@@ -191,7 +189,7 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.8rem 1.25rem;
+    padding: 0.75rem 1.15rem;
     border-bottom: 1px solid var(--border-subtle);
     background: rgba(255, 255, 255, 0.015);
 }
@@ -199,18 +197,18 @@ body::before {
 .header-title-flex {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 0.6rem;
 }
 
 .section-header h2, .section-header h3 {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
     color: var(--t1);
 }
 
 .sec-desc {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--t3);
     font-weight: 400;
     margin-top: 1px;
@@ -221,27 +219,27 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.8rem 1.35rem;
+    padding: 0.75rem 1.25rem;
     border-radius: var(--radius-lg);
-    background: rgba(14, 20, 32, 0.88);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(14, 20, 32, 0.90);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--border-subtle);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    margin-top: 0.25rem;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+    margin-top: 0.15rem;
 }
 
 .header-left {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.75rem;
 }
 
 .brand-badge-box {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border-radius: var(--radius-sm);
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(0, 229, 255, 0.06));
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(0, 229, 255, 0.05));
     border: 1px solid var(--accent-bd);
     display: flex;
     align-items: center;
@@ -251,7 +249,7 @@ body::before {
 .title-with-badge {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 0.6rem;
     flex-wrap: wrap;
 }
 
@@ -270,28 +268,28 @@ body::before {
 
 .accent-icon {
     color: var(--cyan);
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
 }
 
 .header-right {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.7rem;
 }
 
 .session-status {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.7rem;
+    gap: 0.45rem;
+    font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     color: var(--success);
     background: var(--success-dim);
     border: 1px solid var(--success-bd);
-    padding: 0.32rem 0.75rem;
+    padding: 0.3rem 0.7rem;
     border-radius: 99px;
     font-family: var(--mono);
 }
@@ -304,55 +302,55 @@ body::before {
 
 .status-dot.green {
     background: var(--success);
-    box-shadow: 0 0 6px var(--success);
+    box-shadow: 0 0 5px var(--success);
 }
 
 .replay-controls-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.45rem;
 }
 
 .btn-primary {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.45rem 0.88rem;
+    gap: 0.4rem;
+    padding: 0.42rem 0.85rem;
     background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     border: 1px solid rgba(56, 189, 248, 0.35);
     border-radius: var(--radius-sm);
     color: #ffffff;
-    font-size: 0.76rem;
+    font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
     transition: all var(--transition-fast);
-    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
 }
 
 .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
     background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
 }
 
 /* ── 7. LEVEL 2: SEARCH & DISCOVERY COMMAND DECK ── */
 .search-discovery-deck {
-    padding: 0.95rem 1.25rem;
+    padding: 0.85rem 1.15rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.65rem;
 }
 
 .search-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.65rem;
     flex-wrap: wrap;
 }
 
 .search-input-wrap {
     flex: 1;
-    min-width: 300px;
+    min-width: 280px;
     position: relative;
     display: flex;
     align-items: center;
@@ -360,7 +358,7 @@ body::before {
 
 .search-icon {
     position: absolute;
-    left: 14px;
+    left: 13px;
     width: 15px;
     height: 15px;
     color: var(--accent);
@@ -369,13 +367,13 @@ body::before {
 
 .search-input {
     width: 100%;
-    height: 40px;
+    height: 38px;
     background: var(--input-bg);
     border: 1px solid var(--input-border);
     border-radius: var(--radius-md);
-    padding: 0 80px 0 38px;
+    padding: 0 75px 0 36px;
     color: var(--input-text);
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     font-family: var(--font-family);
     transition: all var(--transition-fast);
     outline: none;
@@ -388,12 +386,12 @@ body::before {
 
 .search-input::placeholder {
     color: var(--t3);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
 }
 
 .clear-search-btn {
     position: absolute;
-    right: 52px;
+    right: 50px;
     background: transparent;
     border: none;
     color: var(--t3);
@@ -417,8 +415,8 @@ body::before {
 }
 
 .clear-search-btn svg {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
 }
 
 .search-shortcut-hint {
@@ -432,7 +430,7 @@ body::before {
     border: 1px solid var(--border-light);
     border-radius: 4px;
     padding: 2px 5px;
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-family: var(--mono);
     color: var(--t3);
 }
@@ -440,7 +438,7 @@ body::before {
 .search-aux-controls {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.55rem;
 }
 
 .control-group {
@@ -450,7 +448,7 @@ body::before {
 }
 
 .control-label {
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     font-weight: 700;
     color: var(--t3);
     letter-spacing: 0.04em;
@@ -461,10 +459,10 @@ body::before {
     background: var(--select-bg);
     border: 1px solid var(--input-border);
     color: var(--select-text);
-    padding: 0.42rem 0.7rem;
+    padding: 0.38rem 0.65rem;
     border-radius: var(--radius-sm);
     font-family: var(--font-family);
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 600;
     cursor: pointer;
     outline: none;
@@ -480,8 +478,8 @@ body::before {
     background: var(--sub-item-bg);
     border: 1px solid var(--border-light);
     color: var(--t2);
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
@@ -497,22 +495,22 @@ body::before {
 }
 
 .btn-refresh svg {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
 }
 
 /* Category Filter Chips */
 .category-filters-row {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.55rem;
     flex-wrap: wrap;
-    padding-top: 0.3rem;
+    padding-top: 0.25rem;
     border-top: 1px solid var(--border-subtle);
 }
 
 .filter-group-label {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: var(--t3);
     letter-spacing: 0.04em;
@@ -525,7 +523,7 @@ body::before {
 .category-chips {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.35rem;
     flex-wrap: wrap;
 }
 
@@ -533,12 +531,12 @@ body::before {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.28rem 0.65rem;
+    padding: 0.25rem 0.6rem;
     border-radius: 99px;
     background: var(--sub-item-bg);
     border: 1px solid var(--border-subtle);
     color: var(--t2);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -551,7 +549,7 @@ body::before {
 }
 
 .cat-chip.active {
-    background: rgba(2, 132, 199, 0.2);
+    background: rgba(2, 132, 199, 0.22);
     border-color: var(--cyan);
     color: #ffffff;
 }
@@ -560,7 +558,7 @@ body::before {
     background: rgba(0, 0, 0, 0.3);
     padding: 1px 5px;
     border-radius: 99px;
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-family: var(--mono);
     font-weight: 700;
     color: var(--cyan);
@@ -590,17 +588,17 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--t3);
     flex-wrap: wrap;
-    gap: 0.6rem;
-    padding-top: 0.2rem;
+    gap: 0.55rem;
+    padding-top: 0.15rem;
 }
 
 .results-summary {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.4rem;
     font-family: var(--mono);
 }
 
@@ -608,20 +606,20 @@ body::before {
     background: var(--accent-dim);
     border: 1px solid var(--accent-bd);
     color: var(--cyan);
-    padding: 2px 7px;
+    padding: 1px 6px;
     border-radius: 4px;
-    font-size: 0.64rem;
+    font-size: 0.62rem;
     font-weight: 700;
 }
 
 .quick-chips {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.3rem;
 }
 
 .quick-lbl {
-    font-size: 0.66rem;
+    font-size: 0.64rem;
     font-weight: 700;
     color: var(--t3);
     text-transform: uppercase;
@@ -631,9 +629,9 @@ body::before {
     background: var(--sub-item-bg);
     border: 1px solid var(--border-subtle);
     color: var(--t2);
-    border-radius: 5px;
-    padding: 2px 7px;
-    font-size: 0.66rem;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.65rem;
     font-family: var(--mono);
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -645,11 +643,11 @@ body::before {
     color: var(--t1);
 }
 
-/* ── 8. MAIN WORKSPACE: TIMELINE (HERO) & INSPECTOR ── */
+/* ── 8. MAIN WORKSPACE: TIMELINE (HERO) & INSPECTOR (60/40) ── */
 .main-grid {
     display: grid;
-    grid-template-columns: 1.4fr 0.95fr;
-    gap: 1.15rem;
+    grid-template-columns: 1.45fr 1fr;
+    gap: 1rem;
     align-items: start;
 }
 
@@ -672,8 +670,8 @@ body::before {
 .timeline-legend {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    font-size: 0.66rem;
+    gap: 0.75rem;
+    font-size: 0.65rem;
     color: var(--t3);
     font-family: var(--mono);
 }
@@ -695,11 +693,11 @@ body::before {
 .legend-dot.red   { background: var(--danger); }
 
 .timeline-track {
-    padding: 1.15rem 1.35rem;
+    padding: 1rem 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
-    max-height: 720px;
+    gap: 0.75rem;
+    max-height: 680px;
     overflow-y: auto;
     position: relative;
 }
@@ -708,9 +706,9 @@ body::before {
 .timeline-track::before {
     content: '';
     position: absolute;
-    left: 29px;
-    top: 1.6rem;
-    bottom: 1.6rem;
+    left: 28px;
+    top: 1.4rem;
+    bottom: 1.4rem;
     width: 2px;
     background: linear-gradient(
         to bottom,
@@ -724,11 +722,11 @@ body::before {
 /* Timeline Event Card */
 .t-event-card {
     display: flex;
-    gap: 0.95rem;
+    gap: 0.85rem;
     background: var(--card-bg);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
-    padding: 0.85rem 1.05rem;
+    padding: 0.8rem 1rem;
     cursor: pointer;
     transition: all var(--transition-fast);
     position: relative;
@@ -738,13 +736,13 @@ body::before {
 .t-event-card:hover {
     background: var(--card-hover-bg);
     border-color: var(--border-hover);
-    transform: translateX(3px);
+    transform: translateX(2px);
 }
 
 .t-event-card.active {
     background: var(--card-active-bg);
     border-color: var(--cyan);
-    box-shadow: 0 0 16px var(--cyan-glow);
+    box-shadow: 0 0 12px var(--cyan-glow);
     transform: translateX(4px);
 }
 
@@ -769,8 +767,8 @@ body::before {
 }
 
 .t-node-circle {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     background: var(--node-circle-bg);
     border: 2px solid var(--accent);
@@ -791,8 +789,8 @@ body::before {
 .t-node-circle.purple  { border-color: var(--purple);  color: var(--purple); }
 
 .t-node-circle svg {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
 }
 
 /* Timeline Content */
@@ -800,7 +798,7 @@ body::before {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.35rem;
 }
 
 .t-header-row {
@@ -808,29 +806,29 @@ body::before {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.35rem;
+    gap: 0.3rem;
 }
 
 .t-header-left {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.45rem;
     flex-wrap: wrap;
 }
 
 .t-time-pill {
     font-family: var(--mono);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: var(--cyan);
     background: var(--accent-dim);
     border: 1px solid var(--accent-bd);
-    padding: 1px 6px;
-    border-radius: 4px;
+    padding: 1px 5px;
+    border-radius: 3px;
 }
 
 .t-student-pill {
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--t1);
     display: flex;
@@ -840,7 +838,7 @@ body::before {
 
 .t-student-pill .stu-id {
     font-family: var(--mono);
-    font-size: 0.65rem;
+    font-size: 0.64rem;
     color: var(--t3);
     font-weight: 500;
 }
@@ -851,18 +849,18 @@ body::before {
     letter-spacing: 0.05em;
     text-transform: uppercase;
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: 3px;
     background: var(--sub-item-bg);
     border: 1px solid var(--border-subtle);
     color: var(--t2);
 }
 
 .t-severity-badge {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    padding: 1px 7px;
+    padding: 1px 6px;
     border-radius: 99px;
     font-family: var(--mono);
 }
@@ -872,23 +870,23 @@ body::before {
 .t-severity-badge.success { background: var(--success-dim); color: var(--success); border: 1px solid var(--success-bd); }
 
 .t-event-title {
-    font-size: 0.88rem;
+    font-size: 0.86rem;
     font-weight: 700;
     color: var(--t1);
     letter-spacing: -0.01em;
 }
 
 .t-event-desc {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     color: var(--t2);
-    line-height: 1.5;
+    line-height: 1.45;
 }
 
 /* State Change Badges (X → Y) */
 .t-state-changes-pill-row {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.35rem;
     flex-wrap: wrap;
     margin-top: 1px;
 }
@@ -900,8 +898,8 @@ body::before {
     background: var(--sub-panel-bg);
     border: 1px solid var(--border-light);
     border-radius: 4px;
-    padding: 2px 7px;
-    font-size: 0.66rem;
+    padding: 2px 6px;
+    font-size: 0.64rem;
     font-family: var(--mono);
     font-weight: 600;
     color: var(--t2);
@@ -932,14 +930,14 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 0.3rem;
+    padding-top: 0.25rem;
     border-top: 1px solid var(--border-subtle);
 }
 
 .t-meta-tags {
     display: flex;
-    gap: 0.4rem;
-    font-size: 0.65rem;
+    gap: 0.35rem;
+    font-size: 0.64rem;
     color: var(--t3);
     font-family: var(--mono);
 }
@@ -948,15 +946,15 @@ body::before {
     background: var(--accent-dim);
     border: 1px solid var(--accent-bd);
     color: var(--cyan);
-    font-size: 0.66rem;
+    font-size: 0.64rem;
     font-weight: 700;
-    padding: 2px 7px;
+    padding: 2px 6px;
     border-radius: 4px;
     cursor: pointer;
     transition: all var(--transition-fast);
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.2rem;
 }
 
 .btn-inspect-sm:hover {
@@ -971,21 +969,21 @@ body::before {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem 1.5rem;
+    padding: 2.5rem 1.25rem;
     text-align: center;
-    gap: 0.65rem;
+    gap: 0.6rem;
     color: var(--t3);
 }
 
 .timeline-empty svg {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     color: var(--cyan);
     opacity: 0.6;
 }
 
 .timeline-empty h4 {
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--t1);
 }
@@ -997,10 +995,10 @@ body::before {
 }
 
 .details-content {
-    padding: 1.1rem 1.3rem;
+    padding: 1rem 1.2rem;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.7rem;
 }
 
 .inspector-meta-row {
@@ -1011,7 +1009,7 @@ body::before {
 
 .detail-time {
     font-family: var(--mono);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 800;
 }
 
@@ -1020,7 +1018,7 @@ body::before {
 .success-text { color: var(--success) !important; }
 
 .detail-title {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 800;
     color: var(--t1);
     letter-spacing: -0.01em;
@@ -1030,23 +1028,23 @@ body::before {
 .inspector-student-card {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    padding: 0.65rem 0.85rem;
+    gap: 0.75rem;
+    padding: 0.6rem 0.8rem;
     background: var(--sub-panel-bg);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
 }
 
 .stu-avatar-box {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
     background: linear-gradient(135deg, #1e3a8a, #0284c7);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     color: #ffffff;
     flex-shrink: 0;
 }
@@ -1058,30 +1056,30 @@ body::before {
 }
 
 .stu-info-box strong {
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     color: var(--t1);
 }
 
 .stu-id-tag {
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     font-family: var(--mono);
     color: var(--accent);
     font-weight: 600;
 }
 
 .inst-tag {
-    font-size: 0.64rem;
+    font-size: 0.62rem;
     color: var(--t3);
 }
 
 .inspector-desc-wrap {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.25rem;
 }
 
 .inspector-lbl {
-    font-size: 0.66rem;
+    font-size: 0.65rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -1089,11 +1087,11 @@ body::before {
 }
 
 .detail-desc {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--t2);
-    line-height: 1.55;
+    line-height: 1.5;
     background: var(--sub-panel-bg);
-    padding: 0.6rem 0.8rem;
+    padding: 0.55rem 0.75rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-subtle);
 }
@@ -1103,17 +1101,17 @@ body::before {
     background: var(--sub-panel-bg);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
-    padding: 0.75rem 0.9rem;
+    padding: 0.7rem 0.85rem;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 0.5rem;
 }
 
 .sc-header {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.7rem;
+    gap: 0.35rem;
+    font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -1123,28 +1121,28 @@ body::before {
 .sc-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.45rem;
+    gap: 0.4rem;
 }
 
 .sc-item {
     background: var(--sub-item-bg);
     border: 1px solid var(--border-subtle);
-    border-radius: 6px;
-    padding: 0.45rem 0.65rem;
+    border-radius: 5px;
+    padding: 0.4rem 0.6rem;
     display: flex;
     flex-direction: column;
     gap: 1px;
 }
 
 .sc-label {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     font-weight: 700;
     color: var(--t3);
     text-transform: uppercase;
 }
 
 .sc-val {
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     font-family: var(--mono);
     font-weight: 700;
     color: var(--t1);
@@ -1159,17 +1157,17 @@ body::before {
     background: var(--sub-panel-bg);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
-    padding: 0.75rem 0.9rem;
+    padding: 0.7rem 0.85rem;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 0.5rem;
 }
 
 .tel-header {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.7rem;
+    gap: 0.35rem;
+    font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -1179,14 +1177,14 @@ body::before {
 .tel-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.4rem;
+    gap: 0.35rem;
 }
 
 .tel-item {
     display: flex;
     justify-content: space-between;
-    font-size: 0.7rem;
-    padding: 0.2rem 0;
+    font-size: 0.68rem;
+    padding: 0.18rem 0;
     border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -1195,30 +1193,30 @@ body::before {
 
 /* Action Resolution Button */
 .inspector-action-row {
-    margin-top: 0.2rem;
+    margin-top: 0.15rem;
 }
 
 .btn-resolve {
     width: 100%;
-    padding: 0.6rem 1rem;
+    padding: 0.55rem 0.9rem;
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.28) 100%);
     border: 1px solid var(--success-bd);
     border-radius: var(--radius-sm);
     color: var(--success);
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.45rem;
+    gap: 0.4rem;
     transition: all var(--transition-fast);
 }
 
 .btn-resolve:hover {
     background: var(--success);
     color: #000000;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .btn-resolve.resolved {
@@ -1229,26 +1227,26 @@ body::before {
     box-shadow: none;
 }
 
-/* ── 11. LEVEL 5: SYNCHRONIZED CCTV & EVIDENCE REVIEW (DEDICATED SECTION) ── */
+/* ── 11. LEVEL 5: SYNCHRONIZED CCTV & EVIDENCE REVIEW ── */
 .evidence-section {
     display: flex;
     flex-direction: column;
 }
 
 .evidence-hdr {
-    background: rgba(8, 12, 20, 0.6);
+    background: rgba(9, 14, 24, 0.6);
 }
 
 .evidence-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.15rem;
-    padding: 1.15rem 1.35rem;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
     align-items: center;
 }
 
 .video-placeholder {
-    height: 230px;
+    height: 220px;
     background: #000000;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
@@ -1268,11 +1266,11 @@ body::before {
 
 .face-box {
     position: absolute;
-    width: 100px;
-    height: 120px;
+    width: 95px;
+    height: 115px;
     border: 2px solid var(--danger);
-    border-radius: 6px;
-    box-shadow: 0 0 14px var(--danger-bd);
+    border-radius: 5px;
+    box-shadow: 0 0 12px var(--danger-bd);
     pointer-events: none;
 }
 
@@ -1284,9 +1282,9 @@ body::before {
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: #38bdf8;
     font-family: var(--mono);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    padding: 0.25rem 0.55rem;
+    padding: 0.22rem 0.5rem;
     border-radius: var(--radius-sm);
     backdrop-filter: blur(8px);
     z-index: 12;
@@ -1296,13 +1294,13 @@ body::before {
     position: absolute;
     bottom: 10px;
     left: 10px;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
     font-family: var(--mono);
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    padding: 0.28rem 0.7rem;
+    padding: 0.25rem 0.65rem;
     border-radius: var(--radius-sm);
     z-index: 12;
     backdrop-filter: blur(8px);
@@ -1329,9 +1327,9 @@ body::before {
 .playback-controls {
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: 0.75rem;
     background: var(--sub-panel-bg);
-    padding: 1.1rem 1.25rem;
+    padding: 1rem 1.15rem;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-subtle);
 }
@@ -1339,11 +1337,11 @@ body::before {
 .progress-container {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.3rem;
 }
 
 .progress-bar-bg {
-    height: 6px;
+    height: 5px;
     background: rgba(255, 255, 255, 0.08);
     border-radius: 99px;
     position: relative;
@@ -1361,8 +1359,8 @@ body::before {
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     background: #ffffff;
     border: 2px solid var(--cyan);
     border-radius: 50%;
@@ -1372,7 +1370,7 @@ body::before {
 .time-labels {
     display: flex;
     justify-content: space-between;
-    font-size: 0.65rem;
+    font-size: 0.64rem;
     font-family: var(--mono);
     color: var(--t3);
 }
@@ -1386,15 +1384,15 @@ body::before {
 .main-controls {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.55rem;
 }
 
 .btn-control {
     background: var(--sub-item-bg);
     border: 1px solid var(--border-subtle);
     color: var(--t2);
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
@@ -1410,13 +1408,13 @@ body::before {
 }
 
 .btn-control.btn-play {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: linear-gradient(135deg, #0284c7, #0369a1);
     color: #ffffff;
     border: none;
-    box-shadow: 0 2px 12px rgba(2, 132, 199, 0.35);
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
 }
 
 /* ── 12. LEVEL 6: ANALYTICS & SUMMARY (COLLAPSIBLE ACCORDION) ── */
@@ -1430,7 +1428,7 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.85rem 1.25rem;
+    padding: 0.75rem 1.15rem;
     background: transparent;
     border: none;
     color: var(--t1);
@@ -1445,8 +1443,8 @@ body::before {
 .accordion-title-flex {
     display: flex;
     align-items: center;
-    gap: 0.55rem;
-    font-size: 0.86rem;
+    gap: 0.5rem;
+    font-size: 0.84rem;
     font-weight: 700;
     color: var(--t1);
 }
@@ -1454,13 +1452,13 @@ body::before {
 .accordion-right-flex {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 0.6rem;
 }
 
 .kpi-mini-pill {
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     font-family: var(--mono);
-    padding: 2px 8px;
+    padding: 2px 7px;
     border-radius: 99px;
     background: var(--sub-panel-bg);
     border: 1px solid var(--border-subtle);
@@ -1474,31 +1472,31 @@ body::before {
 }
 
 .accordion-chevron {
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     color: var(--t3);
     transition: transform var(--transition-fast);
 }
 
 .analytics-collapsible-content {
-    padding: 0.85rem 1.25rem 1.15rem;
+    padding: 0.75rem 1.15rem 1rem;
     border-top: 1px solid var(--border-subtle);
 }
 
 .analytics-kpi-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.85rem;
+    gap: 0.75rem;
 }
 
 .kpi-box {
     background: var(--sub-panel-bg);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
-    padding: 0.85rem 1rem;
+    padding: 0.75rem 0.9rem;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
 }
 
 .kpi-box.danger { border-left: 3px solid var(--danger); }
@@ -1506,7 +1504,7 @@ body::before {
 .kpi-box.cyan { border-left: 3px solid var(--cyan); }
 
 .kpi-label {
-    font-size: 0.64rem;
+    font-size: 0.62rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
@@ -1514,7 +1512,7 @@ body::before {
 }
 
 .kpi-value {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 800;
     font-family: var(--mono);
     color: var(--t1);
@@ -1522,9 +1520,9 @@ body::before {
 }
 
 .kpi-sub {
-    font-size: 0.65rem;
+    font-size: 0.64rem;
     color: var(--t3);
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 /* ── 13. BADGES ── */
@@ -1532,9 +1530,9 @@ body::before {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.2rem 0.55rem;
+    padding: 0.18rem 0.5rem;
     border-radius: 99px;
-    font-size: 0.64rem;
+    font-size: 0.62rem;
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -1571,16 +1569,16 @@ body::before {
     color: var(--success);
 }
 
-/* ── 14. FOOTER ── */
+/* ── 14. SMALL AUDIT FOOTER ── */
 .glass-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.8rem 1.35rem;
+    padding: 0.7rem 1.25rem;
     border-radius: var(--radius-md);
     background: var(--panel-glass);
     border: 1px solid var(--border-subtle);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     color: var(--t3);
     font-family: var(--mono);
 }
@@ -1588,14 +1586,14 @@ body::before {
 .footer-left {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.45rem;
     color: var(--t2);
     font-weight: 600;
 }
 
 .footer-right {
     display: flex;
-    gap: 1.25rem;
+    gap: 1.15rem;
 }
 
 /* ═════════════════════════════════════════════════════════════════
@@ -1693,7 +1691,7 @@ html[data-theme="light"] .analytics-accordion-section,
 html[data-theme="light"] .glass-footer {
     background: #ffffff;
     border-color: #cbd5e1;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 html[data-theme="light"] .glass-panel:hover {
@@ -1809,13 +1807,13 @@ html[data-theme="light"] .timeline-track::before {
 html[data-theme="light"] .t-event-card {
     background: #ffffff;
     border-color: #e2e8f0;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 html[data-theme="light"] .t-event-card:hover {
     background: #f8fafc;
     border-color: #93c5fd;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
 }
 
 html[data-theme="light"] .t-event-card.active {
