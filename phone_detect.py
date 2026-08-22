@@ -173,10 +173,22 @@ class PhoneDetector:
             cls_name = str(b_data[6])
 
             if all(_iou(box, f["bbox"]) < 0.40 for f in final):
+                bw = box[2] - box[0]
+                bh = box[3] - box[1]
+                barea = bw * bh
+                baspect = bw / max(bh, 1)
+
                 # Strict class identification
                 if cls_id == CLASS_PHONE or cls_name == "cell phone":
-                    dev_type = "phone"
-                    label = "PHONE DETECTED"
+                    if barea < 1200 and 0.65 <= baspect <= 1.5:
+                        dev_type = "smartwatch"
+                        label = "SMARTWATCH DETECTED"
+                    elif barea < 500:
+                        dev_type = "earbuds"
+                        label = "EARBUDS DETECTED"
+                    else:
+                        dev_type = "phone"
+                        label = "PHONE DETECTED"
                 elif cls_id == CLASS_CLOCK or cls_name == "clock":
                     dev_type = "smartwatch"
                     label = "SMARTWATCH DETECTED"
@@ -190,8 +202,12 @@ class PhoneDetector:
                     dev_type = "tablet"
                     label = "TABLET / SCREEN DETECTED"
                 elif cls_id == CLASS_REMOTE or cls_name == "remote":
-                    dev_type = "device"
-                    label = "PROHIBITED DEVICE DETECTED"
+                    if barea < 900:
+                        dev_type = "earbuds"
+                        label = "EARBUDS DETECTED"
+                    else:
+                        dev_type = "device"
+                        label = "PROHIBITED DEVICE DETECTED"
                 else:
                     dev_type = "device"
                     label = f"{cls_name.upper()} DETECTED"

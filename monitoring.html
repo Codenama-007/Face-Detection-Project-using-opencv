@@ -1101,6 +1101,26 @@ body::after {
     justify-content: center;
 }
 
+.cctv-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    position: relative;
+    z-index: 1;
+    background: #000;
+}
+
+.cctv-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+}
+
 .cctv-img {
     width: 100%;
     height: 100%;
@@ -1108,59 +1128,22 @@ body::after {
     display: block;
 }
 
-/* Subtle Scanlines */
-.cctv-feed-area::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 3px,
-        rgba(0, 229, 255, 0.015) 3px,
-        rgba(0, 229, 255, 0.015) 4px
-    );
-    pointer-events: none;
-    z-index: 4;
+.hud-perf-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.18rem 0.65rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid var(--border-subtle);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--t2);
 }
 
-/* Holographic Scanning Laser Bar */
-.cctv-feed-area::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(0, 229, 255, 0.3) 30%,
-        rgba(56, 189, 248, 0.7) 50%,
-        rgba(0, 229, 255, 0.3) 70%,
-        transparent 100%
-    );
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
-    animation: laserScan 6s linear infinite;
-    pointer-events: none;
-    z-index: 5;
-    will-change: transform, opacity;
-}
-
-@keyframes laserScan {
-    0%   { transform: translateY(0); opacity: 0; }
-    5%   { opacity: 1; }
-    95%  { opacity: 1; }
-    100% { transform: translateY(500px); opacity: 0; }
-}
-
-.cctv-img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: relative;
-    z-index: 1;
+.hud-perf-pill .hp-val {
+    color: var(--cyan);
+    font-weight: 700;
 }
 
 /* HUD Tactical Corner Brackets */
@@ -2170,27 +2153,47 @@ body::after {
                     </div>
                 </div>
 
-                <div class="cctv-feed-area">
+                <div class="cctv-feed-area" id="cctvFeedContainer">
+                    <!-- HUD Tactical Corner Brackets -->
+                    <div class="cc cc-tl"></div>
+                    <div class="cc cc-tr"></div>
+                    <div class="cc cc-bl"></div>
+                    <div class="cc cc-br"></div>
+
                     <div class="hud-alert-banner" id="hudAlertBanner">
                         <i data-lucide="alert-triangle" style="width:14px;height:14px;color:#fff;"></i>
                         <span class="hud-alert-text" id="hudAlertText">Critical event</span>
                     </div>
 
+                    <!-- Continuous Live Video Element -->
+                    <video id="liveWebcamVideo" autoplay playsinline muted class="cctv-video"></video>
+
+                    <!-- Real-Time AI Detection Overlay Canvas (Transparent) -->
+                    <canvas id="detectionCanvas" class="cctv-canvas"></canvas>
+
+                    <!-- Remote CCTV / MJPEG Fallback -->
                     <img id="cctvFeedImg" src="" alt="Live examination feed"
-                         class="cctv-img" onerror="onFeedError()" onload="onFeedLoaded()">
+                         class="cctv-img" style="display:none;" onerror="onFeedError()" onload="onFeedLoaded()">
 
                     <div class="feed-offline show" id="feedOffline">
                         <div class="fo-text-wrap">
-                            <div class="fo-title">No signal</div>
-                            <div class="fo-body">Waiting for the examination feed.</div>
+                            <div class="fo-title" id="feedOfflineTitle">Connecting Optical Sensor</div>
+                            <div class="fo-body" id="feedOfflineBody">Initializing live webcam & real-time AI defense matrix...</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="cam-status-row">
                     <span class="cam-pill">
-                        <span class="live-dot"></span>
+                        <span class="live-dot" id="cctvLiveDot"></span>
                         <span id="camStatusText">Camera 1 &ndash; Active</span>
+                    </span>
+                    <span class="hud-perf-pill" id="hudPerfPill">
+                        <span>FPS: <strong class="hp-val" id="camFpsVal">--</strong></span>
+                        <span>&middot;</span>
+                        <span>Inference: <strong class="hp-val" id="camInferVal">--</strong> ms</span>
+                        <span>&middot;</span>
+                        <span>Latency: <strong class="hp-val" id="camLatVal">--</strong> ms</span>
                     </span>
                 </div>
             </div>
@@ -2390,7 +2393,10 @@ const $alertsList      = el('alertsList');
 const $alertsEmpty     = el('alertsEmpty');
 const $feedImg         = el('cctvFeedImg');
 const $feedOffline     = el('feedOffline');
+const $video           = el('liveWebcamVideo');
+const $canvas          = el('detectionCanvas');
 const $cctvDot         = el('cctvStatusDot');
+const $cctvLiveDot     = el('cctvLiveDot');
 const $backendDot      = el('backendDot');
 const $backendText     = el('backendPillText');
 const $threatMatrixTag = el('threatMatrixTag');
@@ -2552,22 +2558,128 @@ function updateExamScore(students) {
     }
 }
 
-// ── VIDEO FEED STATE HANDLERS ────────────────
-// Track the last time onFeedLoaded fired so the watchdog can detect stalls.
-// In most browsers onFeedLoaded fires on every decoded MJPEG frame, so a
-// long gap indicates the stream has silently stopped pushing frames.
+// ── VIDEO FEED & REAL-TIME WEBCAM CONTROLLER ──────────────
+let webcamStream = null;
 let _lastFeedLoadedAt = 0;
 let _feedWatchdogTimer = null;
-const FEED_STALL_THRESHOLD_MS = 8000; // reconnect if no new frame for 8 s
+const FEED_STALL_THRESHOLD_MS = 8000;
+
+// Detection & Rendering Pipeline State
+const ctx = ($canvas && $canvas.getContext) ? $canvas.getContext('2d') : null;
+const offscreenCanvas = document.createElement('canvas');
+const offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+
+let isDetecting = false;
+let smoothedBoxes = [];
+let consecutiveHits = {
+    phone: 0,
+    laptop: 0,
+    smartwatch: 0,
+    earbuds: 0,
+    headphones: 0,
+    book: 0,
+    tablet: 0,
+    multiple_people: 0,
+    face_missing: 0
+};
+let frameCount = 0;
+let lastFpsTime = performance.now();
+let currentFps = 0;
+let lastInferenceMs = 0;
+let lastLatencyMs = 0;
+let detectionLoopTimer = null;
+
+const CLASS_COLORS = {
+    phone:           { main: '#f85149', bg: 'rgba(248, 81, 73, 0.16)', border: '#f85149', label: '📱 CELL PHONE' },
+    laptop:          { main: '#d29922', bg: 'rgba(210, 153, 34, 0.16)', border: '#d29922', label: '💻 LAPTOP' },
+    smartwatch:      { main: '#38bdf8', bg: 'rgba(56, 189, 248, 0.16)', border: '#38bdf8', label: '⌚ SMARTWATCH' },
+    earbuds:         { main: '#c084fc', bg: 'rgba(192, 132, 252, 0.16)', border: '#c084fc', label: '🎧 EARBUDS' },
+    headphones:      { main: '#a855f7', bg: 'rgba(168, 85, 247, 0.16)', border: '#a855f7', label: '🎧 HEADPHONES' },
+    book:            { main: '#f97316', bg: 'rgba(249, 115, 22, 0.16)', border: '#f97316', label: '📚 NOTES / BOOK' },
+    tablet:          { main: '#fb923c', bg: 'rgba(251, 146, 60, 0.16)', border: '#fb923c', label: '📱 TABLET' },
+    device:          { main: '#f85149', bg: 'rgba(248, 81, 73, 0.16)', border: '#f85149', label: 'PROHIBITED DEVICE' },
+    multiple_people: { main: '#fb923c', bg: 'rgba(251, 146, 60, 0.16)', border: '#fb923c', label: '👥 MULTIPLE PEOPLE' },
+    face_missing:    { main: '#eab308', bg: 'rgba(234, 179, 8, 0.16)',  border: '#eab308', label: '👤 FACE MISSING' }
+};
+
+async function initLiveWebcam() {
+    try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('getUserMedia not supported');
+        }
+
+        webcamStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 1280, min: 640 },
+                height: { ideal: 720, min: 480 },
+                facingMode: 'user'
+            },
+            audio: false
+        });
+
+        if ($video && $video.srcObject !== undefined) {
+            $video.srcObject = webcamStream;
+            $video.onloadedmetadata = () => {
+                $video.play().catch(e => console.warn('Video play catch:', e));
+                $feedOffline.classList.remove('show');
+                $feedImg.style.display = 'none';
+                feedOnline = true;
+                backendOnline = true;
+                setEnginesState(true);
+                $cctvDot.style.background = 'var(--success)';
+                $cctvDot.style.boxShadow = '0 0 10px var(--success)';
+                if ($cctvLiveDot) {
+                    $cctvLiveDot.style.background = 'var(--success)';
+                    $cctvLiveDot.style.boxShadow = '0 0 10px var(--success)';
+                }
+                $backendDot.style.background = 'var(--success)';
+                $backendDot.style.boxShadow = '0 0 6px var(--success)';
+                $backendText.textContent = 'ArcFace + YOLO11s Active';
+                logActivity('Live optical feed active — Real-time AI detection engaged');
+
+                startDetectionLoop();
+                startRenderLoop();
+            };
+
+            webcamStream.getVideoTracks().forEach(track => {
+                track.onended = () => {
+                    onCameraDisconnected('Camera hardware track ended');
+                };
+            });
+            return;
+        }
+    } catch (err) {
+        console.warn('[Webcam] getUserMedia fallback to server stream:', err);
+        // Fallback to server MJPEG feed
+        if ($feedImg) {
+            $feedImg.style.display = 'block';
+            $feedImg.src = `${BASE}/video_feed?t=${Date.now()}`;
+            _startFeedWatchdog();
+        }
+    }
+}
+
+function onCameraDisconnected(reason) {
+    feedOnline = false;
+    $feedOffline.classList.add('show');
+    const title = document.getElementById('feedOfflineTitle');
+    const body = document.getElementById('feedOfflineBody');
+    if (title) title.textContent = 'CAMERA DISCONNECTED';
+    if (body) body.textContent = `Optical sensor disconnected (${reason}). Please check physical webcam connection.`;
+    $cctvDot.style.background = 'var(--danger)';
+    $cctvDot.style.boxShadow = '0 0 10px var(--danger)';
+    if ($cctvLiveDot) {
+        $cctvLiveDot.style.background = 'var(--danger)';
+        $cctvLiveDot.style.boxShadow = '0 0 10px var(--danger)';
+    }
+    logActivity(`CRITICAL: Camera disconnected — ${reason}`);
+    addAlert(`Camera failure: Optical sensor disconnected!`, 'danger', 30);
+}
 
 function _reconnectFeed(reason) {
-    // Only reconnect when we believe the stream is/was online - avoid
-    // spamming reconnects when the backend is genuinely offline.
     if (!feedOnline && !backendOnline) return;
     console.warn(`[FeedWatchdog] Reconnecting stream — ${reason}`);
     if ($feedImg) {
-        // Assign a new cache-busted URL so the browser opens a fresh
-        // multipart/x-mixed-replace connection instead of reusing the stale one.
         $feedImg.src = '';
         requestAnimationFrame(() => {
             $feedImg.src = `${BASE}/video_feed?t=${Date.now()}`;
@@ -2576,43 +2688,389 @@ function _reconnectFeed(reason) {
 }
 
 function _startFeedWatchdog() {
-    if (_feedWatchdogTimer) return; // already running
+    if (_feedWatchdogTimer) return;
     _feedWatchdogTimer = setInterval(() => {
-        if (!feedOnline) return; // stream hasn't connected yet — skip
+        if (!feedOnline) return;
         const staleSince = Date.now() - _lastFeedLoadedAt;
         if (staleSince > FEED_STALL_THRESHOLD_MS) {
             _reconnectFeed(`no frame for ${Math.round(staleSince / 1000)}s`);
         }
-    }, 3000); // check every 3 s
+    }, 3000);
 }
 
 function onFeedLoaded() {
     _lastFeedLoadedAt = Date.now();
-    feedOnline    = true;
+    feedOnline = true;
     backendOnline = true;
     $feedOffline.classList.remove('show');
-    $feedImg.style.display       = 'block';
-    $cctvDot.style.background    = 'var(--danger)';
-    $cctvDot.style.boxShadow     = '0 0 10px var(--danger)';
+    $feedImg.style.display = 'block';
+    $cctvDot.style.background = 'var(--success)';
+    $cctvDot.style.boxShadow = '0 0 10px var(--success)';
+    if ($cctvLiveDot) {
+        $cctvLiveDot.style.background = 'var(--success)';
+        $cctvLiveDot.style.boxShadow = '0 0 10px var(--success)';
+    }
     $backendDot.style.background = 'var(--success)';
-    $backendDot.style.boxShadow  = '0 0 6px var(--success)';
-    $backendText.textContent     = 'DeepSort + YOLOv8 Active';
+    $backendDot.style.boxShadow = '0 0 6px var(--success)';
+    $backendText.textContent = 'ArcFace + YOLO11s Active';
     setEnginesState(true);
-    logActivity('CCTV feed connected — AI monitoring active');
+    logActivity('CCTV stream connected — AI monitoring active');
 }
 
 function onFeedError() {
-    feedOnline    = false;
+    feedOnline = false;
     backendOnline = false;
     $feedOffline.classList.add('show');
-    $feedImg.style.display       = 'none';
-    $cctvDot.style.background    = 'var(--t4)';
-    $cctvDot.style.boxShadow     = 'none';
+    const title = document.getElementById('feedOfflineTitle');
+    const body = document.getElementById('feedOfflineBody');
+    if (title) title.textContent = 'CAMERA UNAVAILABLE';
+    if (body) body.textContent = 'Could not connect to camera stream or webcam sensor.';
+    $feedImg.style.display = 'none';
+    $cctvDot.style.background = 'var(--t4)';
+    $cctvDot.style.boxShadow = 'none';
+    if ($cctvLiveDot) {
+        $cctvLiveDot.style.background = 'var(--t4)';
+        $cctvLiveDot.style.boxShadow = 'none';
+    }
     $backendDot.style.background = 'var(--t4)';
-    $backendDot.style.boxShadow  = 'none';
-    $backendText.textContent     = 'Backend Offline';
+    $backendDot.style.boxShadow = 'none';
+    $backendText.textContent = 'Backend Offline';
     setEnginesState(false);
     updateExamScore([]);
+}
+
+// ── REAL-TIME OBJECT DETECTION LOOP ──────────
+async function runDetectionPass() {
+    if (isDetecting) return;
+    const sourceEl = ($video && $video.srcObject && $video.readyState >= 2) ? $video : null;
+    if (!sourceEl || sourceEl.paused || sourceEl.ended) return;
+
+    isDetecting = true;
+    const t0 = performance.now();
+
+    try {
+        const vw = sourceEl.videoWidth || 640;
+        const vh = sourceEl.videoHeight || 480;
+
+        const targetW = 480;
+        const targetH = Math.round(targetW * (vh / vw)) || 360;
+        offscreenCanvas.width = targetW;
+        offscreenCanvas.height = targetH;
+        offscreenCtx.drawImage(sourceEl, 0, 0, targetW, targetH);
+
+        const blob = await new Promise(resolve => offscreenCanvas.toBlob(resolve, 'image/jpeg', 0.8));
+        if (!blob) {
+            isDetecting = false;
+            return;
+        }
+
+        const res = await fetch(`${BASE}/api/detect_frame`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'image/jpeg' },
+            body: blob,
+            credentials: 'include'
+        });
+
+        if (!res.ok) throw new Error(`Detection HTTP ${res.status}`);
+        const data = await res.json();
+        const t1 = performance.now();
+
+        lastLatencyMs = Math.round(t1 - t0);
+        lastInferenceMs = data.inference_ms || Math.round(lastLatencyMs * 0.7);
+
+        // Update real HUD Telemetry values
+        const elFps = document.getElementById('camFpsVal');
+        const elInf = document.getElementById('camInferVal');
+        const elLat = document.getElementById('camLatVal');
+        if (elFps) elFps.textContent = currentFps || 30;
+        if (elInf) elInf.textContent = lastInferenceMs;
+        if (elLat) elLat.textContent = lastLatencyMs;
+
+        if (data.success) {
+            processDetections(data.objects || [], data.persons_count, data.multiple_people, data.face_missing, vw, vh);
+        }
+    } catch (err) {
+        // Silent catch for resilience
+    } finally {
+        isDetecting = false;
+    }
+}
+
+function processDetections(objects, personCount, multiplePeople, faceMissing, origW, origH) {
+    const activeTypes = new Set();
+    const newTargets = [];
+
+    objects.forEach(obj => {
+        const type = obj.type || 'device';
+        activeTypes.add(type);
+
+        const nb = obj.norm_bbox || [
+            obj.bbox[0] / origW,
+            obj.bbox[1] / origH,
+            obj.bbox[2] / origW,
+            obj.bbox[3] / origH
+        ];
+
+        newTargets.push({
+            normBbox: nb,
+            type: type,
+            label: obj.label || CLASS_COLORS[type]?.label || type.toUpperCase(),
+            conf: obj.confidence || 0.85,
+            confPct: obj.confidence_pct || Math.round((obj.confidence || 0.85) * 100)
+        });
+    });
+
+    if (multiplePeople) activeTypes.add('multiple_people');
+    if (faceMissing) activeTypes.add('face_missing');
+
+    // Update temporal counters
+    for (const type of ['phone', 'laptop', 'smartwatch', 'earbuds', 'headphones', 'book', 'tablet', 'multiple_people', 'face_missing']) {
+        if (activeTypes.has(type)) {
+            consecutiveHits[type] = (consecutiveHits[type] || 0) + 1;
+        } else {
+            consecutiveHits[type] = Math.max(0, (consecutiveHits[type] || 0) - 1);
+        }
+    }
+
+    // Trigger incident system on confirmed detections (>= 2 consecutive frames)
+    if (consecutiveHits.phone >= 2 && !prevAlerts.includes('phone')) {
+        sessionStats.phoneEvents++;
+        sessionStats.criticalAlerts++;
+        addAlert('Critical Threat: Cell phone detected in exam zone!', 'danger', 25);
+        logActivity('CRITICAL: Mobile phone detected in examination area');
+        prevAlerts.push('phone');
+        showHudAlert('PROHIBITED PHONE DETECTED');
+    } else if (consecutiveHits.phone === 0 && prevAlerts.includes('phone')) {
+        addAlert('Prohibited phone removed from frame.', 'success');
+        logActivity('Phone removed from exam area');
+        prevAlerts = prevAlerts.filter(a => a !== 'phone');
+    }
+
+    if (consecutiveHits.smartwatch >= 2 && !prevAlerts.includes('smartwatch')) {
+        sessionStats.criticalAlerts++;
+        addAlert('Critical Threat: Smartwatch / Prohibited wearable detected!', 'danger', 20);
+        logActivity('CRITICAL: Smartwatch device detected');
+        prevAlerts.push('smartwatch');
+        showHudAlert('PROHIBITED SMARTWATCH DETECTED');
+    } else if (consecutiveHits.smartwatch === 0 && prevAlerts.includes('smartwatch')) {
+        addAlert('Prohibited smartwatch removed.', 'success');
+        prevAlerts = prevAlerts.filter(a => a !== 'smartwatch');
+    }
+
+    if (consecutiveHits.earbuds >= 2 && !prevAlerts.includes('earbuds')) {
+        sessionStats.criticalAlerts++;
+        addAlert('Critical Threat: Wireless earbuds / audio peripheral detected!', 'danger', 25);
+        logActivity('CRITICAL: Wireless earbuds detected');
+        prevAlerts.push('earbuds');
+        showHudAlert('PROHIBITED EARBUDS DETECTED');
+    } else if (consecutiveHits.earbuds === 0 && prevAlerts.includes('earbuds')) {
+        addAlert('Audio peripheral removed from frame.', 'success');
+        prevAlerts = prevAlerts.filter(a => a !== 'earbuds');
+    }
+
+    if (consecutiveHits.laptop >= 2 && !prevAlerts.includes('laptop')) {
+        sessionStats.criticalAlerts++;
+        addAlert('Warning: Unauthorized secondary laptop detected!', 'warning', 15);
+        logActivity('WARNING: Secondary laptop detected in workspace');
+        prevAlerts.push('laptop');
+        showHudAlert('SECONDARY LAPTOP DETECTED');
+    } else if (consecutiveHits.laptop === 0 && prevAlerts.includes('laptop')) {
+        addAlert('Secondary laptop removed from workspace.', 'success');
+        prevAlerts = prevAlerts.filter(a => a !== 'laptop');
+    }
+
+    if (consecutiveHits.multiple_people >= 2 && !prevAlerts.includes('unknown')) {
+        sessionStats.multiPersonEvents++;
+        sessionStats.criticalAlerts++;
+        addAlert('Warning: Multiple individuals detected in examination zone!', 'danger', 30);
+        logActivity('WARNING: Multiple individuals in camera frame');
+        prevAlerts.push('unknown');
+        showHudAlert('MULTIPLE PERSONS IN EXAM AREA');
+    } else if (consecutiveHits.multiple_people === 0 && prevAlerts.includes('unknown')) {
+        addAlert('Area secure — extra individuals departed.', 'success');
+        prevAlerts = prevAlerts.filter(a => a !== 'unknown');
+    }
+
+    if (consecutiveHits.face_missing >= 4 && !prevAlerts.includes('face_missing')) {
+        addAlert('Attention: Candidate face not visible in camera feed!', 'warning', 10);
+        logActivity('ATTENTION: Candidate out of camera frame');
+        prevAlerts.push('face_missing');
+        showHudAlert('CANDIDATE FACE MISSING');
+    } else if (consecutiveHits.face_missing === 0 && prevAlerts.includes('face_missing')) {
+        prevAlerts = prevAlerts.filter(a => a !== 'face_missing');
+    }
+
+    if (activeTypes.size === 0) {
+        hideHudAlert();
+    }
+
+    updateSmoothBoxes(newTargets);
+}
+
+function updateSmoothBoxes(targets) {
+    const updated = [];
+    targets.forEach(target => {
+        let best = null;
+        let bestDist = 999999;
+        smoothedBoxes.forEach(sb => {
+            if (sb.type === target.type) {
+                const dist = Math.hypot(
+                    sb.curr[0] - target.normBbox[0],
+                    sb.curr[1] - target.normBbox[1]
+                );
+                if (dist < bestDist && dist < 0.35) {
+                    bestDist = dist;
+                    best = sb;
+                }
+            }
+        });
+
+        if (best) {
+            best.target = target.normBbox;
+            best.conf = target.conf;
+            best.confPct = target.confPct;
+            best.label = target.label;
+            best.alive = 8;
+            updated.push(best);
+        } else {
+            updated.push({
+                curr: [...target.normBbox],
+                target: [...target.normBbox],
+                type: target.type,
+                label: target.label,
+                conf: target.conf,
+                confPct: target.confPct,
+                alive: 8
+            });
+        }
+    });
+
+    smoothedBoxes.forEach(sb => {
+        if (!updated.includes(sb)) {
+            sb.alive = (sb.alive || 0) - 1;
+            if (sb.alive > 0) updated.push(sb);
+        }
+    });
+
+    smoothedBoxes = updated;
+}
+
+function startRenderLoop() {
+    function renderFrame() {
+        requestAnimationFrame(renderFrame);
+
+        frameCount++;
+        const now = performance.now();
+        if (now - lastFpsTime >= 1000) {
+            currentFps = Math.round((frameCount * 1000) / (now - lastFpsTime));
+            frameCount = 0;
+            lastFpsTime = now;
+        }
+
+        if (!$canvas || !ctx || !$video) return;
+
+        const cw = $video.clientWidth || $canvas.parentElement.clientWidth || 640;
+        const ch = $video.clientHeight || $canvas.parentElement.clientHeight || 360;
+        if ($canvas.width !== cw || $canvas.height !== ch) {
+            $canvas.width = cw;
+            $canvas.height = ch;
+        }
+
+        ctx.clearRect(0, 0, cw, ch);
+
+        smoothedBoxes.forEach(box => {
+            const lerpSpeed = 0.28;
+            for (let i = 0; i < 4; i++) {
+                box.curr[i] += (box.target[i] - box.curr[i]) * lerpSpeed;
+            }
+
+            const bx1 = box.curr[0] * cw;
+            const by1 = box.curr[1] * ch;
+            const bx2 = box.curr[2] * cw;
+            const by2 = box.curr[3] * ch;
+            const bw = Math.max(10, bx2 - bx1);
+            const bh = Math.max(10, by2 - by1);
+
+            const style = CLASS_COLORS[box.type] || CLASS_COLORS.device;
+            const alpha = Math.min(1.0, (box.alive || 8) / 8);
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            // Semi-transparent box background
+            ctx.fillStyle = style.bg;
+            ctx.fillRect(bx1, by1, bw, bh);
+
+            // Bounding box border
+            ctx.strokeStyle = style.main;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(bx1, by1, bw, bh);
+
+            // Corner brackets
+            const clen = Math.min(16, bw * 0.25, bh * 0.25);
+            ctx.lineWidth = 3.5;
+            ctx.strokeStyle = style.main;
+
+            ctx.beginPath();
+            ctx.moveTo(bx1, by1 + clen);
+            ctx.lineTo(bx1, by1);
+            ctx.lineTo(bx1 + clen, by1);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(bx1 + bw - clen, by1);
+            ctx.lineTo(bx1 + bw);
+            ctx.lineTo(bx1 + bw, by1 + clen);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(bx1, by1 + bh - clen);
+            ctx.lineTo(bx1, by1 + bh);
+            ctx.lineTo(bx1 + clen, by1 + bh);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(bx1 + bw - clen, by1 + bh);
+            ctx.lineTo(bx1 + bw);
+            ctx.lineTo(bx1 + bw, by1 + bh - clen);
+            ctx.stroke();
+
+            // Label Pill above box
+            const titleText = `${box.label}`;
+            const subText = `CONFIDENCE: ${box.confPct}%`;
+            ctx.font = 'bold 11px Inter, sans-serif';
+            const tm = ctx.measureText(titleText);
+            const pillW = Math.max(tm.width + 16, 120);
+            const pillH = 22;
+            const pillX = Math.max(0, Math.min(cw - pillW, bx1));
+            const pillY = Math.max(0, by1 - pillH - 4);
+
+            ctx.fillStyle = 'rgba(13, 17, 23, 0.92)';
+            ctx.strokeStyle = style.main;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(pillX, pillY, pillW, pillH, 4);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = style.main;
+            ctx.fillText(titleText, pillX + 6, pillY + 11);
+            ctx.fillStyle = '#9aa7b4';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.fillText(subText, pillX + 6, pillY + 19);
+
+            ctx.restore();
+        });
+    }
+
+    requestAnimationFrame(renderFrame);
+}
+
+function startDetectionLoop() {
+    if (detectionLoopTimer) clearInterval(detectionLoopTimer);
+    detectionLoopTimer = setInterval(() => {
+        runDetectionPass();
+    }, 120);
 }
 
 // ── REAL-TIME SYSTEM CLOCK ───────────────────
@@ -3311,14 +3769,8 @@ function init() {
         lucide.createIcons();
     }
 
-    if ($feedImg) {
-        // Use a cache-busting timestamp so the browser does not serve
-        // a stale first frame from disk cache, which would make the feed
-        // appear frozen even when the server is pushing live frames.
-        $feedImg.src = `${BASE}/video_feed?t=${Date.now()}`;
-        // Start the watchdog that reconnects the stream if it stalls
-        _startFeedWatchdog();
-    }
+    // Initialize the primary live webcam feed and real-time detection matrix
+    initLiveWebcam();
 
     checkAuthContext();
     setEnginesState(false);

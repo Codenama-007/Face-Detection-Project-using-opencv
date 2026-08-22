@@ -207,6 +207,7 @@ PUBLIC_API = {
     "/api/timeline/resolve",
     "/api/timeline/event",
     "/api/replay/detect_frame",
+    "/api/detect_frame",
 }
 
 REQUIRE_LOGIN = False
@@ -3100,6 +3101,206 @@ def replay_detect_frame():
     except Exception as e:
         print(f"[REPLAY DETECT] Error: {e}")
         return jsonify({"success": False, "error": str(e), "detections": []})
+
+
+@app.route('/api/detect_frame', methods=['POST'])
+def api_detect_frame():
+    """
+    High-performance real-time neural object detection on video frames.
+    Accepts raw JPEG bytes (Content-Type: image/jpeg or application/octet-stream)
+    or JSON payload with base64 encoded 'image'.
+    Detects mobile phones, laptops, smartwatches, earbuds/headphones, books,
+    multiple persons, and face missing with precise bounding boxes and measured latency.
+    """
+    t_start = time.time()
+    try:
+        raw_bytes = None
+        if request.content_type in ('image/jpeg', 'image/png', 'application/octet-stream'):
+            raw_bytes = request.get_data()
+        elif request.is_json:
+            data = request.get_json(silent=True) or {}
+            img_b64 = data.get("image", "")
+            if "," in img_b64:
+                img_b64 = img_b64.split(",", 1)[1]
+            if img_b64:
+                raw_bytes = base64.b64decode(img_b64)
+        else:
+            raw_bytes = request.get_data()
+
+        if not raw_bytes:
+            return jsonify({"success": False, "error": "No image data received", "objects": []}), 400
+
+        np_arr = np.frombuffer(raw_bytes, np.uint8)
+        frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+        if frame is None or frame.size == 0:
+            return jsonify({"success": False, "error": "Failed to decode frame", "objects": []}), 400
+
+        H, W = frame.shape[:2]
+
+        t_infer_start = time.time()
+        # Primary YOLO detection for Person (0), TV/Tablet (62), Laptop (63), Remote/Earbuds (65), Phone (67), Book (73), Clock/Watch (74)
+        results = yolo_model(frame, stream=True, verbose=False, imgsz=YOLO_IMGSZ,
+                             conf=0.22, classes=[0, 62, 63, 65, 67, 73, 74])
+
+        raw_boxes = []
+        persons = []
+        for r in results:
+            for b in r.boxes:
+                cls_id = int(b.cls[0])
+                conf_val = float(b.conf[0])
+                x1, y1, x2, y2 = map(int, b.xyxy[0])
+                if cls_id == 0:
+                    if conf_val >= 0.35:
+                        persons.append((x1, y1, x2, y2, conf_val))
+                else:
+                    raw_boxes.append((x1, y1, x2, y2, conf_val, cls_id))
+
+        # Run PhoneDetector for magnified ROI passes on person areas if present
+        det_engine = get_replay_detector()
+        if det_engine is not None and persons:
+            p_boxes_only = [(p[0], p[1], p[2], p[3]) for p in persons]
+            try:
+                secondary_hits = det_engine.detect(frame, person_boxes=p_boxes_only, whole_frame=False)
+                for sh in secondary_hits:
+                    bx = sh["bbox"]
+                    raw_boxes.append((bx[0], bx[1], bx[2], bx[3], sh["conf"], sh.get("class_id", 67)))
+            except Exception:
+                pass
+
+        t_infer_end = time.time()
+        inference_ms = round((t_infer_end - t_infer_start) * 1000, 1)
+
+        # Deduplicate overlapping bounding boxes (NMS)
+        raw_boxes.sort(key=lambda b: -b[4])
+        dedup_boxes = []
+        for b in raw_boxes:
+            bx = (b[0], b[1], b[2], b[3])
+            def _calc_iou(b1, b2):
+                ix1, iy1 = max(b1[0], b2[0]), max(b1[1], b2[1])
+                ix2, iy2 = min(b1[2], b2[2]), min(b1[3], b2[3])
+                inter = max(0, ix2 - ix1) * max(0, iy2 - iy1)
+                u = (b1[2] - b1[0]) * (b1[3] - b1[1]) + (b2[2] - b2[0]) * (b2[3] - b2[1]) - inter
+                return inter / u if u > 0 else 0.0
+
+            if all(_calc_iou(bx, (d[0], d[1], d[2], d[3])) < 0.40 for d in dedup_boxes):
+                dedup_boxes.append(b)
+
+        detected_objects = []
+        phone_count = 0
+        laptop_count = 0
+        smartwatch_count = 0
+        earbud_count = 0
+        book_count = 0
+        tablet_count = 0
+
+        for (x1, y1, x2, y2, conf, cls_id) in dedup_boxes:
+            w = max(1, x2 - x1)
+            h = max(1, y2 - y1)
+            area = w * h
+            aspect = w / h
+
+            if cls_id == 67:  # Cell Phone
+                if area < 1200 and 0.65 <= aspect <= 1.5:
+                    dtype = "smartwatch"
+                    label = "SMARTWATCH"
+                    smartwatch_count += 1
+                elif area < 500:
+                    dtype = "earbuds"
+                    label = "EARBUDS"
+                    earbud_count += 1
+                else:
+                    dtype = "phone"
+                    label = "PHONE"
+                    phone_count += 1
+            elif cls_id == 74:  # Clock / Watch
+                dtype = "smartwatch"
+                label = "SMARTWATCH"
+                smartwatch_count += 1
+            elif cls_id == 63:  # Laptop
+                dtype = "laptop"
+                label = "LAPTOP"
+                laptop_count += 1
+            elif cls_id == 73:  # Book / Notes
+                dtype = "book"
+                label = "UNAUTHORIZED NOTES"
+                book_count += 1
+            elif cls_id == 62:  # TV / Secondary Screen / Tablet
+                dtype = "tablet"
+                label = "TABLET / SCREEN"
+                tablet_count += 1
+            elif cls_id == 65:  # Remote / Small wireless device
+                if area < 900:
+                    dtype = "earbuds"
+                    label = "EARBUDS"
+                    earbud_count += 1
+                else:
+                    dtype = "device"
+                    label = "PROHIBITED DEVICE"
+            else:
+                dtype = "device"
+                label = "PROHIBITED DEVICE"
+
+            detected_objects.append({
+                "type": dtype,
+                "label": label,
+                "confidence": round(float(conf), 3),
+                "confidence_pct": int(conf * 100),
+                "bbox": [x1, y1, x2, y2],
+                "norm_bbox": [
+                    round(x1 / W, 4),
+                    round(y1 / H, 4),
+                    round(x2 / W, 4),
+                    round(y2 / H, 4)
+                ]
+            })
+
+        person_count = len(persons)
+        multiple_people = person_count > 1
+        face_missing = person_count == 0
+
+        # Update global room state for synchronization with all clients and reports
+        global room_state
+        room_state["phone_detected"] = phone_count > 0
+        room_state["smartwatch_detected"] = smartwatch_count > 0
+        room_state["earbud_detected"] = earbud_count > 0
+        room_state["laptop_detected"] = laptop_count > 0
+        room_state["book_detected"] = book_count > 0
+        room_state["tablet_detected"] = tablet_count > 0
+        room_state["multiple_people_detected"] = multiple_people
+        room_state["face_missing"] = face_missing
+
+        if multiple_people:
+            room_state["unknown_count"] = person_count - 1
+            room_state["status"] = "HIGH RISK"
+        elif phone_count > 0 or smartwatch_count > 0 or earbud_count > 0 or book_count > 0:
+            room_state["status"] = "HIGH RISK"
+        elif face_missing:
+            room_state["status"] = "ATTENTION"
+        else:
+            room_state["unknown_count"] = 0
+            room_state["status"] = "NORMAL"
+
+        total_latency_ms = round((time.time() - t_start) * 1000, 1)
+
+        return jsonify({
+            "success": True,
+            "objects": detected_objects,
+            "count": len(detected_objects),
+            "persons_count": person_count,
+            "multiple_people": multiple_people,
+            "face_missing": face_missing,
+            "inference_ms": inference_ms,
+            "latency_ms": total_latency_ms,
+            "frame_width": W,
+            "frame_height": H,
+            "timestamp": time.time()
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e), "objects": []}), 500
+
 
 # ---------------- STATE ----------------
 # Track state of the room globally
