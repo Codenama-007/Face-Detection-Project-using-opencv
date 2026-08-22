@@ -214,16 +214,16 @@ body::after {
 }
 
 .enroll-camera-card {
-    height: 100%;
     display: flex;
     flex-direction: column;
     padding: 1.5rem;
 }
 
 .enroll-camera-card .video-container {
-    flex: 1;
     width: 100%;
-    min-height: 480px;
+    aspect-ratio: 16 / 9;
+    min-height: 360px;
+    max-height: 480px;
     background: #000;
     border-radius: 14px;
     overflow: hidden;
@@ -1713,6 +1713,20 @@ p.subtitle {
                             <span class="cs-lbl">Biometrics Engine: <strong>ArcFace 512D</strong></span>
                         </div>
                     </div>
+
+                    <!-- Primary Call to Action Button directly below Camera -->
+                    <div class="start-cta-wrap" style="margin-top: 1rem;">
+                        <div class="cta-warning" id="ctaWarning">
+                            <i data-lucide="alert-triangle" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+                            ENROLLMENT REQUIRED: Complete student identity enrollment before starting the monitoring session.
+                        </div>
+
+                        <button class="start-session-btn" id="startSessionBtn">
+                            <i data-lucide="play" style="width:16px;height:16px;fill:currentColor;"></i>
+                            Start Examination Monitoring
+                        </button>
+                        <span class="cta-subtext">Launches real-time SOC proctoring with live identity recognition, gaze telemetry, and object defense.</span>
+                    </div>
                 </div>
             </div>
 
@@ -2022,20 +2036,6 @@ p.subtitle {
                     <i data-lucide="loader" class="lucide-spin" style="width:20px;height:20px;margin-bottom:0.5rem;display:inline-block;"></i>
                     <div>Loading enrolled candidates...</div>
                 </div>
-            </div>
-
-            <!-- Primary Call to Action Footer -->
-            <div class="start-cta-wrap">
-                <div class="cta-warning" id="ctaWarning">
-                    <i data-lucide="alert-triangle" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
-                    ENROLLMENT REQUIRED: Complete student identity enrollment before starting the monitoring session.
-                </div>
-
-                <button class="start-session-btn" id="startSessionBtn">
-                    <i data-lucide="play" style="width:16px;height:16px;fill:currentColor;"></i>
-                    Start Examination Monitoring
-                </button>
-                <span class="cta-subtext">Launches real-time SOC proctoring with live identity recognition, gaze telemetry, and object defense.</span>
             </div>
         </div>
 
