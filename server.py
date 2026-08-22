@@ -17,6 +17,7 @@ import base64
 import struct
 from ultralytics import YOLO
 from phone_detect import PhoneDetector
+import id_stabilizer
 
 global_replay_detector = None
 replay_detector_lock = threading.Lock()
@@ -983,7 +984,23 @@ def load_students():
         cursor.close()
         conn.close()
         total_t = sum(len(p["templates"]) for p in gallery.people.values())
+        n_clusters = gallery.rebuild_identity_clusters()
         print(f"[FACE] Loaded {len(gallery)} enrolled students with ArcFace templates ({total_t} total) across institutions.")
+        print(f"[FACE] {len(gallery)} records grouped into {n_clusters} distinct identities by face similarity.")
+
+        # Flag duplicate enrolments (same person under several student ids). The
+        # recognition margin rule now tolerates these, but they should still be
+        # cleaned up: they inflate the gallery and their roll numbers are
+        # ambiguous. This is a heads-up, not a failure.
+        by_name = {}
+        for sid, p in gallery.people.items():
+            by_name.setdefault(face_recog._norm_name(p["name"]), []).append(sid)
+        dupes = {nm: ids for nm, ids in by_name.items() if len(ids) > 1}
+        if dupes:
+            print(f"[FACE] WARNING: {len(dupes)} name(s) are enrolled under multiple ids "
+                  f"(duplicate enrolments) -- consider de-duplicating the roster:")
+            for nm, ids in dupes.items():
+                print(f"        '{nm}': {', '.join(ids)}")
     except Exception as e:
         print(f"Error loading students: {e}")
 
@@ -3088,6 +3105,8 @@ def replay_detect_frame():
 # Track state of the room globally
 room_state = {
     "unknown_count": 0,
+    "unknown_severity": "none",
+    "unknown_seconds": 0.0,
     "status": "NORMAL"
 }
 
@@ -3127,6 +3146,17 @@ JPEG_PARAMS = [int(cv2.IMWRITE_JPEG_QUALITY), 75]
 ID_INTERVAL_FAST = float(os.environ.get("ID_FAST", 0.3))  # while unidentified
 ID_INTERVAL_SLOW = float(os.environ.get("ID_SLOW", 2.0))  # once everyone known
 FACE_ID_ENABLED = os.environ.get("FACE_ID", "on").lower() != "off"
+# Recognition diagnostics: with PROCTOR_DEBUG=1 the identification worker logs,
+# per detected face per pass, the top-3 gallery candidates + scores, the margin,
+# the threshold, whether it would match with institution scoping OFF, and the
+# final decision. The /api/debug/recognition endpoint dumps the enrolment audit.
+RECOG_DEBUG = os.environ.get("PROCTOR_DEBUG", "0").lower() in ("1", "true", "on")
+
+# Temporal identity stabiliser: holds a recognised identity across momentary
+# per-frame recognition misses so a continuously-present enrolled person never
+# flickers to UNKNOWN (and never spams entry/departure alerts). See id_stabilizer.
+identity_stabilizer = id_stabilizer.IdentityStabilizer()
+
 ID_VOTES_REQUIRED = 3    # consistent matches before an identity is locked
 ID_MAX_ATTEMPTS = 10     # give up on a track after this many failed passes
 ID_RETRY_AFTER = 30.0    # seconds before a given-up track is retried
@@ -3174,6 +3204,20 @@ def _identification_worker():
                 if emb is None:
                     continue
                 sid, sname, score, margin = gallery.identify(emb, institution_id=target_inst)
+
+                if RECOG_DEBUG:
+                    in_inst = gallery.candidates(emb, institution_id=target_inst, k=3)
+                    any_inst = gallery.candidates(emb, k=3, respect_institution=False)
+                    fx, fy, fw, fh = [int(v) for v in f["bbox"]]
+                    decision = f"MATCH {sid} ({sname})" if sid else "UNKNOWN"
+                    print(f"[RECOG] face @({fx},{fy}) {fw}x{fh} inst={target_inst} "
+                          f"thr={face_recog.MATCH_THRESHOLD} margin_req={face_recog.MARGIN_OVER_NEXT} "
+                          f"-> {decision} (score={score:.3f} margin={margin:.3f})")
+                    print("        top-3 in institution: " +
+                          (", ".join(f"{nm}[{si}/{inst}]={sc:.3f}" for sc, si, nm, inst in in_inst) or "none"))
+                    print("        top-3 any institution: " +
+                          (", ".join(f"{nm}[{si}/{inst}]={sc:.3f}" for sc, si, nm, inst in any_inst) or "none"))
+
                 x, y, w_, h_ = f["bbox"]
                 found.append({
                     "cx": x + w_ / 2,
@@ -3203,6 +3247,99 @@ def start_identification_worker():
     _id_thread_started = True
     threading.Thread(target=_identification_worker, name="face-id",
                      daemon=True).start()
+
+
+@app.route('/api/debug/recognition')
+def debug_recognition():
+    """Enrolment audit for diagnosing recognition problems. Gated behind
+    PROCTOR_DEBUG=1 because it exposes the roster (names/ids). Returns, per
+    enrolled student, their institution and template count, plus the institution
+    the monitor is currently scoping matches to -- so a student who can never be
+    recognised because they sit in a different institution than the active one
+    is immediately visible."""
+    if not RECOG_DEBUG:
+        return jsonify({"error": "debug disabled; start server with PROCTOR_DEBUG=1"}), 403
+
+    by_inst = {}
+    people = []
+    for sid, p in gallery.people.items():
+        inst = p.get("institution_id")
+        n = int(p["templates"].shape[0])
+        by_inst[inst] = by_inst.get(inst, 0) + 1
+        people.append({"student_id": sid, "name": p["name"],
+                       "institution_id": inst, "templates": n})
+    people.sort(key=lambda r: (str(r["institution_id"]), r["name"] or ""))
+    matchable = sum(1 for p in people
+                    if p["institution_id"] in (None, active_monitoring_institution))
+    return jsonify({
+        "active_monitoring_institution": active_monitoring_institution,
+        "gallery_size": len(gallery),
+        "match_threshold": face_recog.MATCH_THRESHOLD,
+        "margin_over_next": face_recog.MARGIN_OVER_NEXT,
+        "students_by_institution": by_inst,
+        "matchable_in_active_institution": matchable,
+        "not_matchable_here": len(people) - matchable,
+        "students": people,
+    })
+
+
+@app.route('/api/debug/selftest')
+def debug_selftest():
+    """Camera-free recognition regression test. For each enrolled person it
+    builds a representative probe (the normalised MEAN of their templates -- it
+    sits 'between' their photos like a live face does, instead of matching one
+    stored template exactly) and reports what the OLD margin rule (margin over
+    the next record) vs the NEW rule (margin over the next different PERSON)
+    would decide. Anyone flipping UNKNOWN->MATCH is a person the duplicate-
+    enrolment bug was wrongly rejecting."""
+    if not RECOG_DEBUG:
+        return jsonify({"error": "debug disabled; start server with PROCTOR_DEBUG=1"}), 403
+
+    thr = face_recog.MATCH_THRESHOLD
+    mreq = face_recog.MARGIN_OVER_NEXT
+    results = []
+    rescued = 0
+    for sid, p in gallery.people.items():
+        probe = p["templates"].mean(axis=0)
+        n = np.linalg.norm(probe)
+        if n < 1e-9:
+            continue
+        probe = probe / n
+        cands = gallery.candidates(probe, k=max(6, len(gallery) + 1), respect_institution=False)
+        if not cands:
+            continue
+        best_sc, best_sid, best_nm, _bi = cands[0]
+        old_runner = cands[1][0] if len(cands) > 1 else -1.0
+        best_cluster = gallery.people.get(best_sid, {}).get("cluster", best_sid)
+        new_runner = -1.0
+        for sc, si, nm, _inst in cands[1:]:
+            if gallery.people.get(si, {}).get("cluster", si) != best_cluster:
+                new_runner = sc
+                break
+        old_ok = best_sc >= thr and (best_sc - old_runner) >= mreq
+        new_ok = best_sc >= thr and (best_sc - new_runner) >= mreq
+        if (not old_ok) and new_ok:
+            rescued += 1
+        results.append({
+            "student_id": sid, "name": p["name"],
+            "best_match": f"{best_nm} [{best_sid}]", "best_score": round(best_sc, 3),
+            "old_rule": "MATCH" if old_ok else "UNKNOWN",
+            "new_rule": "MATCH" if new_ok else "UNKNOWN",
+            "old_margin": round(best_sc - old_runner, 3),
+            "new_margin": round(best_sc - new_runner, 3),
+            "misid": face_recog._norm_name(best_nm) != face_recog._norm_name(p["name"]),
+        })
+    old_unknown = sum(1 for r in results if r["old_rule"] == "UNKNOWN")
+    new_unknown = sum(1 for r in results if r["new_rule"] == "UNKNOWN")
+    misid = sum(1 for r in results if r["misid"])
+    return jsonify({
+        "threshold": thr, "margin_required": mreq, "count": len(results),
+        "self_rejected_old_rule": old_unknown,
+        "self_rejected_new_rule": new_unknown,
+        "rescued_by_fix": rescued,
+        "misidentified_to_wrong_name": misid,
+        "results": results,
+    })
     print("[FACE] identification worker started")
 
 
@@ -3373,9 +3510,25 @@ def _camera_capture_worker():
         _raw_frame_event.set()
 
 
-def _render_hud_box(img, pt1, pt2, color, thickness, title, subtitle=None):
+def _title_pill_rect(w, h, x1, y1, title, title_dy=0):
+    """Geometry of the title pill, shared by the collision solver and renderer
+    so the rectangle that is reserved is exactly the one that gets drawn."""
+    (tw, th), _ = cv2.getTextSize(title, cv2.FONT_HERSHEY_SIMPLEX, 0.44, 1)
+    px1 = max(0, x1)
+    py2 = max(0, y1 - 3 + title_dy)
+    py1 = max(0, py2 - th - 6)
+    px2 = min(w - 1, px1 + tw + 8)
+    return (px1, py1, px2, py2)
+
+
+def _rects_overlap(a, b):
+    return not (a[2] <= b[0] or b[2] <= a[0] or a[3] <= b[1] or b[3] <= a[1])
+
+
+def _render_hud_box(img, pt1, pt2, color, thickness, title, subtitle=None, title_dy=0):
     """Renders a clean, professional ProctorAI HUD bounding box with dark semi-transparent
-    header pills and crisp typography."""
+    header pills and crisp typography. title_dy shifts the name pill vertically so
+    the collision solver can keep two close faces' tags from merging."""
     x1, y1 = pt1
     x2, y2 = pt2
     h, w = img.shape[:2]
@@ -3404,7 +3557,7 @@ def _render_hud_box(img, pt1, pt2, color, thickness, title, subtitle=None):
         scale = 0.44
         (tw, th), baseline = cv2.getTextSize(title, font, scale, 1)
         px1 = x1
-        py2 = max(0, y1 - 3)
+        py2 = max(0, y1 - 3 + title_dy)
         py1 = max(0, py2 - th - 6)
         px2 = min(w - 1, px1 + tw + 8)
 
@@ -3713,11 +3866,34 @@ def _stream_worker():
                 _, start, end, color = op
                 _render_gaze_arrow(annotated, start, end, color=color)
 
-        # Tracked face boxes + eye markers, drawn at the native frame rate
-        for tf in tracked_faces:
+        # Tracked face boxes + eye markers, drawn at the native frame rate.
+        # Collision-aware label placement: larger (closer) faces keep the
+        # default name-pill position; any face whose pill would overlap an
+        # already-placed one is nudged upward so two close tags never merge.
+        Hh, Ww = annotated.shape[:2]
+        placed_rects = []
+        order = sorted(range(len(tracked_faces)),
+                       key=lambda i: -((tracked_faces[i]["box"][2] - tracked_faces[i]["box"][0]) *
+                                       (tracked_faces[i]["box"][3] - tracked_faces[i]["box"][1])))
+        title_dy_for = {}
+        for i in order:
+            bx1, by1, _bx2, _by2 = tracked_faces[i]["box"]
+            ttl = tracked_faces[i]["title"]
+            dy = 0
+            rect = _title_pill_rect(Ww, Hh, bx1, by1, ttl, dy)
+            for _ in range(6):
+                if not any(_rects_overlap(rect, pr) for pr in placed_rects):
+                    break
+                dy -= (rect[3] - rect[1]) + 2
+                rect = _title_pill_rect(Ww, Hh, bx1, by1, ttl, dy)
+            placed_rects.append(rect)
+            title_dy_for[i] = dy
+
+        for i, tf in enumerate(tracked_faces):
             x1, y1, x2, y2 = tf["box"]
             _render_hud_box(annotated, (x1, y1), (x2, y2), tf["color"],
-                            thickness=2, title=tf["title"], subtitle=tf["sub"])
+                            thickness=2, title=tf["title"], subtitle=tf["sub"],
+                            title_dy=title_dy_for.get(i, 0))
             for (ix, iy) in tf["iris"]:
                 _render_iris_marker(annotated, (ix, iy), radius=2, color=(255, 220, 0))
             for (gp1, gp2) in tf["gaze"]:
@@ -3855,37 +4031,63 @@ def _ai_worker_loop():
         used_face_indices = set()
         face_dets = []   # authoritative face boxes handed to the per-frame tracker
 
+        # One-to-one nearest assignment between MediaPipe face observations and
+        # the identification worker's recognised faces. A global greedy match on
+        # centre distance WITH MUTUAL EXCLUSION stops two observed faces from
+        # binding to the same identity -- the cause of labels swapping/merging
+        # when people stand close together. Each recognised identity attaches to
+        # exactly one observed face (its nearest), and vice versa.
+        obs_to_idf = {}
+        _pairs = []
+        for _oi, _obs in enumerate(face_obs_list):
+            _ox, _oy = _obs.nose_xy
+            _bx, _by, _bw, _bh = _obs.bbox
+            _reach = (max(_bw, _bh) * 1.2) ** 2
+            for _fi, _idf in enumerate(id_faces):
+                _ix, _iy = _idf["cx"], _idf["cy"]
+                _d = (_ox - _ix) ** 2 + (_oy - _iy) ** 2
+                if _d < _reach or (_bx <= _ix <= _bx + _bw and _by <= _iy <= _by + _bh):
+                    _pairs.append((_d, _oi, _fi))
+        _pairs.sort()
+        _used_idf = set()
+        for _d, _oi, _fi in _pairs:
+            if _oi in obs_to_idf or _fi in _used_idf:
+                continue
+            obs_to_idf[_oi] = _fi
+            _used_idf.add(_fi)
+
+        # Temporal identity hysteresis: feed this frame's RAW per-face
+        # recognition into the stabiliser, which holds a committed identity
+        # across momentary misses so a present enrolled person never flickers to
+        # UNKNOWN (and never spams entry/departure alerts). See id_stabilizer.
+        _stab_faces = []
+        for _oi, _obs in enumerate(face_obs_list):
+            _bx, _by, _bw, _bh = _obs.bbox
+            _idf = id_faces[obs_to_idf[_oi]] if _oi in obs_to_idf else None
+            _stab_faces.append({
+                "cx": _bx + _bw / 2.0, "cy": _by + _bh / 2.0,
+                "size": max(_bw, _bh),
+                "sid": _idf["sid"] if (_idf and _idf["sid"]) else None,
+                "name": _idf["name"] if _idf else None,
+            })
+        stab_out = identity_stabilizer.update(_stab_faces, now)
+        unknown_max_dur = 0.0
+
         # Match face observations with recognized identities
         for idx, obs in enumerate(face_obs_list):
             fcx, fcy = obs.nose_xy
             bx, by, bw, bh = obs.bbox
             
-            # Find matching identified face
-            matched_idf = None
-            best_d = 1e9
-            for idf in id_faces:
-                ix, iy = idf["cx"], idf["cy"]
-                d = (fcx - ix) ** 2 + (fcy - iy) ** 2
-                if d < (max(bw, bh) * 1.2) ** 2 or (bx <= ix <= bx + bw and by <= iy <= by + bh):
-                    if d < best_d:
-                        best_d = d
-                        matched_idf = idf
-
-            sid = matched_idf["sid"] if (matched_idf and matched_idf["sid"]) else None
-            sname = matched_idf["name"] if matched_idf else None
-
-            # Short-term spatial retention (prevents a brief landmark-detection
-            # gap from registering as a new/unknown face)
-            if sid is None:
-                for past_sid, past_data in tracked_students.items():
-                    if now - past_data.get("last_seen", 0) < FACE_TRACK_GRACE_SECONDS:
-                        prev_fb = smooth_face_boxes.get(past_sid)
-                        if prev_fb is not None:
-                            pfx1, pfy1, pfx2, pfy2 = prev_fb
-                            if (pfx1 - 35 <= fcx <= pfx2 + 35) and (pfy1 - 35 <= fcy <= pfy2 + 35):
-                                sid = past_sid
-                                sname = past_data.get("name")
-                                break
+            # Stabilised (hysteresis) identity for this face -- supersedes the
+            # old per-frame match + spatial-retention hack. sid stays committed
+            # across momentary recognition misses; face_state is one of
+            # 'known' | 'pending' | 'unknown'.
+            _st = stab_out[idx]
+            sid = _st["sid"]
+            sname = _st["name"]
+            face_state = _st["state"]
+            if face_state != "known" and _st["unknown_dur"] > unknown_max_dur:
+                unknown_max_dur = _st["unknown_dur"]
 
             # Smooth face bounding box
             pad_x, pad_y = int(bw * 0.08), int(bh * 0.10)
@@ -4029,15 +4231,21 @@ def _ai_worker_loop():
                     "iris": iris_pts, "gaze": gaze_arrows,
                 })
             else:
-                # Unregistered face
-                unknown_count += 1
+                # Not committed to an identity. 'pending' = present too briefly
+                # to flag (suppressed noise / just appeared); 'unknown' =
+                # sustained unidentified presence that actually counts.
                 iris_pts = []
                 if obs.left_iris_xy and obs.right_iris_xy:
                     iris_pts = [obs.left_iris_xy, obs.right_iris_xy]
+                if face_state == "unknown":
+                    unknown_count += 1
+                    _title, _sub, _color = "UNKNOWN PERSON", "UNREGISTERED PARTICIPANT", (0, 0, 255)
+                else:  # pending -- neutral, non-alarming, not counted
+                    _title, _sub, _color = "IDENTIFYING...", "Verifying identity", (0, 200, 255)
                 face_dets.append({
                     "sid": None, "box": (sfx1, sfy1, sfx2, sfy2),
-                    "title": "UNKNOWN PERSON", "sub": "UNREGISTERED PARTICIPANT",
-                    "color": (0, 0, 255), "iris": iris_pts, "gaze": [],
+                    "title": _title, "sub": _sub,
+                    "color": _color, "iris": iris_pts, "gaze": [],
                 })
 
         # Publish this cycle's detections to the per-frame tracker. The render
@@ -4077,6 +4285,10 @@ def _ai_worker_loop():
             cv2.resize(frame, (160, 120)), cv2.COLOR_BGR2GRAY)))
         room_events = room_behavior.update(unknown_count, gray_std, now)
         room_state["unknown_count"] = unknown_count
+        # Severity of the longest-standing unidentified presence, for the
+        # client's tiered alerting (none/caution/warning/critical).
+        room_state["unknown_severity"] = id_stabilizer.severity_for(unknown_max_dur)
+        room_state["unknown_seconds"] = round(unknown_max_dur, 1)
         room_state["camera_blocked"] = room_events["camera_blocked"]
         room_state["alerts"] = room_events["alerts"]
 
@@ -4251,6 +4463,8 @@ def api_status():
     return jsonify({
         "room_status": room_state.get("status", "NORMAL"),
         "unknown_count": room_state.get("unknown_count", 0),
+        "unknown_severity": room_state.get("unknown_severity", "none"),
+        "unknown_seconds": room_state.get("unknown_seconds", 0.0),
         "phone_detected": room_state.get("phone_detected", False),
         "smartwatch_detected": room_state.get("smartwatch_detected", False),
         "earbud_detected": room_state.get("earbud_detected", False),

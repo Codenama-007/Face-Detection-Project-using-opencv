@@ -3009,16 +3009,33 @@ async function fetchLiveStatus() {
             prevAlerts = prevAlerts.filter(a => a !== 'book');
         }
 
-        if (data.unknown_count > 0 && !prevAlerts.includes('unknown')) {
+        // Tiered, debounced unregistered-person alerting. Severity is decided
+        // server-side by the identity stabiliser (how long an unidentified
+        // person has ACTUALLY, continuously been present) -- not by raw
+        // per-frame recognition, so a present enrolled person momentarily
+        // failing to match no longer spams entered/departed alerts.
+        //   none/caution -> quiet log only (no banner, no risk weight)
+        //   warning       -> single banner + risk weight (fires once)
+        //   critical      -> escalated banner (fires once)
+        const sev = data.unknown_severity || 'none';
+        if (sev === 'caution' && !prevAlerts.includes('unknown_caution')) {
+            logActivity('Note: unidentified person in frame (verifying)');
+            prevAlerts.push('unknown_caution');
+        }
+        if ((sev === 'warning' || sev === 'critical') && !prevAlerts.includes('unknown')) {
             sessionStats.multiPersonEvents++;
             sessionStats.criticalAlerts++;
-            addAlert('Warning: Unregistered person entered exam zone!', 'danger', 30);
-            logActivity('WARNING: Unregistered individual detected');
+            const secs = Math.round(data.unknown_seconds || 0);
+            addAlert(`Warning: Unregistered person in exam zone (${secs}s)`,
+                     sev === 'critical' ? 'danger' : 'warning', sev === 'critical' ? 30 : 15);
+            logActivity(`WARNING: Unregistered individual sustained ${secs}s`);
             prevAlerts.push('unknown');
-        } else if (data.unknown_count === 0 && prevAlerts.includes('unknown')) {
-            addAlert('Area secure — unknown person departed.', 'success');
-            logActivity('Area secure — unknown person departed');
-            prevAlerts = prevAlerts.filter(a => a !== 'unknown');
+        } else if (sev === 'none' && (prevAlerts.includes('unknown') || prevAlerts.includes('unknown_caution'))) {
+            if (prevAlerts.includes('unknown')) {
+                addAlert('Area secure — unregistered person departed.', 'success');
+                logActivity('Area secure — unregistered person departed');
+            }
+            prevAlerts = prevAlerts.filter(a => a !== 'unknown' && a !== 'unknown_caution');
         }
 
         data.students.forEach(s => {
