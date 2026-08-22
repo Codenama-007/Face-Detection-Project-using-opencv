@@ -1427,41 +1427,115 @@ body::before {
     overflow: hidden;
     background: #000000;
     border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.video-bg-img {
+.cctv-video-element {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    background: #000000;
 }
 
-.face-box {
-    position: absolute;
-    top: 32%;
-    left: 44%;
-    width: 110px;
-    height: 130px;
-    border: 2px solid var(--danger);
-    border-radius: 6px;
-    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
-    transition: all 0.3s ease;
-    pointer-events: none;
-}
-
-.timestamp-overlay {
+.cctv-hud-top {
     position: absolute;
     top: 0.75rem;
     left: 0.75rem;
-    padding: 0.25rem 0.6rem;
+    right: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.hud-tag {
+    padding: 0.2rem 0.55rem;
     border-radius: 4px;
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #ffffff;
     font-family: var(--mono);
-    font-size: 0.74rem;
+    font-size: 0.70rem;
     font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.rec-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #ef4444;
+}
+
+.rec-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 6px #ef4444;
+    animation: recPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes recPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.timestamp-overlay {
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.video-state-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 12, 20, 0.92);
+    backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    color: var(--t3);
+    z-index: 3;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+[data-theme="light"] .video-state-overlay {
+    background: rgba(241, 245, 249, 0.95);
+}
+
+.video-state-overlay .state-icon {
+    width: 32px;
+    height: 32px;
+    color: var(--t3);
+    opacity: 0.7;
+}
+
+.video-state-overlay .state-title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--t1);
+}
+
+.video-state-overlay .state-sub {
+    font-size: 0.74rem;
+    color: var(--t3);
+    max-width: 280px;
+    line-height: 1.4;
 }
 
 .status-overlay {
@@ -1475,6 +1549,8 @@ body::before {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    z-index: 2;
+    pointer-events: none;
 }
 
 .status-overlay.danger-bg {

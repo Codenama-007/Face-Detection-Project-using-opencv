@@ -1,6 +1,7 @@
 /* ═════════════════════════════════════════════════════════════════════
    PROCTORAI — REVIEWABLE ACTION TIMELINE ENGINE (replay.js)
-   Search & Discovery, Chronological Timeline, State Transitions, Inspector
+   Search & Discovery, Chronological Timeline, State Transitions, 
+   Inspector, and Real HTML5 CCTV Video Evidence Synchronization
    ═════════════════════════════════════════════════════════════════════ */
 
 // ─── Toast System ────────────────────────────────────────────
@@ -56,6 +57,8 @@ let currentSearchQuery = '';
 let currentSeverity = 'ALL';
 let currentSortOrder = 'desc';
 let searchDebounceTimer = null;
+let cctvVideo = null;
+let isSeekingVideo = false;
 
 // ─── Category Visual Mappings ────────────────────────────────
 const CATEGORY_ICONS = {
@@ -81,6 +84,7 @@ const CATEGORY_COLORS = {
 // ─── DOM Ready ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    initCCTVVideoPlayer();
     fetchTimelineData();
 
     // Global keyboard shortcuts
@@ -191,6 +195,146 @@ function setupEventListeners() {
     });
 }
 
+// ─── Real HTML5 CCTV Video Engine ────────────────────────────
+function initCCTVVideoPlayer() {
+    cctvVideo = document.getElementById('cctvVideoPlayer');
+    const playPauseBtn = document.getElementById('btnPlayPause');
+    const speedSelect = document.getElementById('speedControl');
+    const volumeBtn = document.getElementById('btnVolume');
+    const progressBarBg = document.getElementById('progressBarBg');
+    const videoStateOverlay = document.getElementById('videoStateOverlay');
+    const videoStateTitle = document.getElementById('videoStateTitle');
+    const videoStateSub = document.getElementById('videoStateSub');
+
+    if (!cctvVideo) return;
+
+    // 1. Play / Pause Button
+    if (playPauseBtn) {
+        playPauseBtn.addEventListener('click', () => {
+            if (cctvVideo.paused || cctvVideo.ended) {
+                const playPromise = cctvVideo.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(err => {
+                        console.warn('CCTV video playback Notice:', err.message);
+                        if (videoStateOverlay && (!cctvVideo.currentSrc || cctvVideo.error)) {
+                            videoStateOverlay.style.display = 'flex';
+                            if (videoStateTitle) videoStateTitle.textContent = 'CCTV Evidence Unavailable';
+                            if (videoStateSub) videoStateSub.textContent = 'No local recorded video file found for session REC-9948271';
+                        }
+                    });
+                }
+            } else {
+                cctvVideo.pause();
+            }
+        });
+    }
+
+    // 2. Playback Speed Selector
+    if (speedSelect) {
+        speedSelect.addEventListener('change', (e) => {
+            const speed = parseFloat(e.target.value) || 1.0;
+            cctvVideo.playbackRate = speed;
+        });
+    }
+
+    // 3. Audio / Volume Mute Toggle
+    if (volumeBtn) {
+        volumeBtn.addEventListener('click', () => {
+            cctvVideo.muted = !cctvVideo.muted;
+            if (cctvVideo.muted) {
+                volumeBtn.innerHTML = '<i data-lucide="volume-x"></i>';
+            } else {
+                volumeBtn.innerHTML = '<i data-lucide="volume-2"></i>';
+            }
+            lucide.createIcons();
+        });
+    }
+
+    // 4. Video Events (State Handlers)
+    cctvVideo.addEventListener('play', () => {
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = '<i data-lucide="pause"></i>';
+            lucide.createIcons();
+        }
+        if (videoStateOverlay) videoStateOverlay.style.display = 'none';
+    });
+
+    cctvVideo.addEventListener('pause', () => {
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
+            lucide.createIcons();
+        }
+    });
+
+    cctvVideo.addEventListener('ended', () => {
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
+            lucide.createIcons();
+        }
+    });
+
+    cctvVideo.addEventListener('loadedmetadata', () => {
+        if (videoStateOverlay) videoStateOverlay.style.display = 'none';
+    });
+
+    cctvVideo.addEventListener('error', () => {
+        if (videoStateOverlay) {
+            videoStateOverlay.style.display = 'flex';
+            if (videoStateTitle) videoStateTitle.textContent = 'CCTV Evidence Unavailable';
+            if (videoStateSub) videoStateSub.textContent = 'No local recorded CCTV video stream found for session REC-9948271';
+        }
+    });
+
+    // 5. Continuous Time Update (Synchronize Video Position with Timeline)
+    cctvVideo.addEventListener('timeupdate', () => {
+        if (isSeekingVideo || !cctvVideo.duration) return;
+
+        const curTime = cctvVideo.currentTime;
+        const duration = cctvVideo.duration;
+        const progressPct = (curTime / duration) * 100;
+
+        const progressBarFill = document.getElementById('progressBarFill');
+        const progressHandle = document.getElementById('progressHandle');
+        if (progressBarFill) progressBarFill.style.width = `${progressPct}%`;
+        if (progressHandle) progressHandle.style.left = `${progressPct}%`;
+
+        // Map video position to nearest timeline event
+        if (currentEvents.length > 0) {
+            const mappedIdx = Math.min(
+                currentEvents.length - 1,
+                Math.floor((curTime / duration) * currentEvents.length)
+            );
+
+            if (mappedIdx !== selectedEventIndex && mappedIdx >= 0) {
+                selectedEventIndex = mappedIdx;
+                highlightTimelineCard(mappedIdx);
+                populateInspector(currentEvents[mappedIdx]);
+            }
+        }
+    });
+
+    // 6. Interactive Scrubber Seeking
+    if (progressBarBg) {
+        progressBarBg.addEventListener('click', (e) => {
+            const rect = progressBarBg.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const pct = Math.max(0, Math.min(1, clickX / rect.width));
+
+            if (cctvVideo.duration && !isNaN(cctvVideo.duration)) {
+                cctvVideo.currentTime = pct * cctvVideo.duration;
+            }
+
+            if (currentEvents.length > 0) {
+                const targetIdx = Math.min(
+                    currentEvents.length - 1,
+                    Math.round(pct * (currentEvents.length - 1))
+                );
+                inspectEvent(targetIdx);
+            }
+        });
+    }
+}
+
 // ─── Fetch Timeline Data from Backend API ────────────────────
 async function fetchTimelineData() {
     try {
@@ -237,7 +381,7 @@ function updateCategoryCounts(counts) {
     }
 }
 
-// ─── Update Analytics Section KPIs (Section 6) ───────────────
+// ─── Update Analytics Section KPIs ───────────────────────────
 function updateAnalyticsKPIs(events, totalCount) {
     const kpiTotal = document.getElementById('kpiTotalEvents');
     const kpiRisk = document.getElementById('kpiHighRisk');
@@ -261,7 +405,7 @@ function updateAnalyticsKPIs(events, totalCount) {
     if (kpiIdentity) kpiIdentity.textContent = identityCount;
 }
 
-// ─── Render Timeline List (Section 3: Hero Timeline) ─────────
+// ─── Render Timeline List ────────────────────────────────────
 function renderTimelineList(events) {
     const track = document.getElementById('actionTimelineTrack');
     if (!track) return;
@@ -387,13 +531,8 @@ function renderTimelineList(events) {
     lucide.createIcons();
 }
 
-// ─── Inspect Selected Event (Section 4) ──────────────────────
-function inspectEvent(index) {
-    if (index < 0 || index >= currentEvents.length) return;
-    selectedEventIndex = index;
-    const ev = currentEvents[index];
-
-    // Highlight card in timeline
+// ─── Highlight Active Timeline Card ──────────────────────────
+function highlightTimelineCard(index) {
     document.querySelectorAll('.t-event-card').forEach((card, idx) => {
         if (idx === index) {
             card.classList.add('active');
@@ -402,8 +541,21 @@ function inspectEvent(index) {
             card.classList.remove('active');
         }
     });
+}
 
-    // Populate Inspector Fields
+// ─── Inspect Selected Event ──────────────────────────────────
+function inspectEvent(index) {
+    if (index < 0 || index >= currentEvents.length) return;
+    selectedEventIndex = index;
+    const ev = currentEvents[index];
+
+    highlightTimelineCard(index);
+    populateInspector(ev);
+    synchronizePlayback(ev, index);
+}
+
+// ─── Populate Event Inspector Subsections ────────────────────
+function populateInspector(ev) {
     const inspectorTime = document.getElementById('inspectorTime');
     const inspectorSeverityBadge = document.getElementById('inspectorSeverityBadge');
     const inspectorCategoryBadge = document.getElementById('inspectorCategoryBadge');
@@ -544,18 +696,15 @@ function inspectEvent(index) {
             resolveBtn.disabled = false;
         }
     }
-
-    // Synchronize CCTV Evidence (Section 5)
-    synchronizePlayback(ev, index);
 }
 
-// ─── Synchronize CCTV Evidence (Section 5) ───────────────────
+// ─── Synchronize Real CCTV Video Evidence ─────────────────────
 function synchronizePlayback(ev, index) {
     const playbackTime = document.getElementById('playbackTimeDisplay');
     const playbackBadge = document.getElementById('playbackEventBadge');
     const playbackTimestamp = document.getElementById('playbackTimestamp');
     const playbackOverlayTag = document.getElementById('playbackOverlayTag');
-    const playbackFaceBox = document.getElementById('playbackFaceBox');
+    const playbackOverlayText = document.getElementById('playbackOverlayText');
     const progressBarFill = document.getElementById('progressBarFill');
     const progressHandle = document.getElementById('progressHandle');
     const currentScrubTime = document.getElementById('currentScrubTime');
@@ -564,44 +713,40 @@ function synchronizePlayback(ev, index) {
     if (playbackBadge) {
         playbackBadge.textContent = ev.title;
         playbackBadge.className = 'badge';
-        if (ev.severity === 'HIGH_RISK') playbackBadge.classList.add('badge-danger');
-        else if (ev.severity === 'SUSPICIOUS') playbackBadge.classList.add('badge-warning');
+        if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') playbackBadge.classList.add('badge-danger');
+        else if (ev.severity === 'SUSPICIOUS' || ev.severity === 'LOW') playbackBadge.classList.add('badge-warning');
         else playbackBadge.classList.add('badge-success');
     }
     if (playbackTimestamp) playbackTimestamp.textContent = ev.timestamp;
+
+    // Real event badge overlay
     if (playbackOverlayTag) {
-        playbackOverlayTag.className = 'status-overlay';
-        if (ev.severity === 'HIGH_RISK') {
-            playbackOverlayTag.classList.add('danger-bg');
-            playbackOverlayTag.innerHTML = `<i data-lucide="alert-triangle"></i> ${escapeHtml(ev.title)}`;
+        if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') {
+            playbackOverlayTag.className = 'status-overlay danger-bg';
+            playbackOverlayTag.style.display = 'flex';
+            if (playbackOverlayText) playbackOverlayText.textContent = ev.title;
         } else if (ev.severity === 'SUSPICIOUS') {
-            playbackOverlayTag.classList.add('warning-bg');
-            playbackOverlayTag.innerHTML = `<i data-lucide="eye"></i> ${escapeHtml(ev.title)}`;
+            playbackOverlayTag.className = 'status-overlay warning-bg';
+            playbackOverlayTag.style.display = 'flex';
+            if (playbackOverlayText) playbackOverlayText.textContent = ev.title;
         } else {
-            playbackOverlayTag.classList.add('success-bg');
-            playbackOverlayTag.innerHTML = `<i data-lucide="check-circle"></i> ${escapeHtml(ev.title)}`;
+            playbackOverlayTag.style.display = 'none';
         }
         lucide.createIcons();
     }
 
     // Scrubber progress calculation
-    const progressPct = currentEvents.length > 1 ? Math.round((index / (currentEvents.length - 1)) * 100) : 100;
+    const progressPct = currentEvents.length > 1 ? Math.round((index / (currentEvents.length - 1)) * 100) : 0;
     if (progressBarFill) progressBarFill.style.width = `${progressPct}%`;
     if (progressHandle) progressHandle.style.left = `${progressPct}%`;
     if (currentScrubTime) currentScrubTime.textContent = `${ev.timestamp} (Event ${index + 1}/${currentEvents.length})`;
 
-    // Facebox position animation
-    if (playbackFaceBox) {
-        if (ev.category === 'GAZE') {
-            playbackFaceBox.style.borderColor = 'var(--warning)';
-            playbackFaceBox.style.transform = 'translate(-25px, 0)';
-        } else if (ev.category === 'DEVICE' || ev.severity === 'HIGH_RISK') {
-            playbackFaceBox.style.borderColor = 'var(--danger)';
-            playbackFaceBox.style.transform = 'translate(0, 10px)';
-        } else {
-            playbackFaceBox.style.borderColor = 'var(--success)';
-            playbackFaceBox.style.transform = 'translate(0, 0)';
-        }
+    // Seek real HTML5 video element if duration is available
+    if (cctvVideo && cctvVideo.duration && !isNaN(cctvVideo.duration)) {
+        isSeekingVideo = true;
+        const targetVideoTime = (progressPct / 100) * cctvVideo.duration;
+        cctvVideo.currentTime = targetVideoTime;
+        setTimeout(() => { isSeekingVideo = false; }, 50);
     }
 }
 
