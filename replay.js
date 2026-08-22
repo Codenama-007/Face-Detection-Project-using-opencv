@@ -1,11 +1,11 @@
 /* ═════════════════════════════════════════════════════════════════════
    PROCTORAI — REVIEWABLE ACTION TIMELINE ENGINE (replay.js)
    Search & Discovery, Chronological Timeline, State Transitions, 
-   Inspector, and Real HTML5 CCTV Video Evidence Synchronization
+   Inspector, and High-Performance HTML5 CCTV Video Evidence Synchronization
    ═════════════════════════════════════════════════════════════════════ */
 
 // ─── Toast System ────────────────────────────────────────────
-function showToast(message, type = 'success', duration = 3000) {
+function showToast(message, type = 'success', duration = 2500) {
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -34,7 +34,7 @@ function showToast(message, type = 'success', duration = 3000) {
     requestAnimationFrame(() => requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; }));
     setTimeout(() => {
         toast.style.transform = 'translateX(120%)';
-        setTimeout(() => toast.remove(), 400);
+        setTimeout(() => toast.remove(), 350);
     }, duration);
 }
 
@@ -57,11 +57,18 @@ let currentSearchQuery = '';
 let currentSeverity = 'ALL';
 let currentSortOrder = 'desc';
 let searchDebounceTimer = null;
+
+// Video Player & Scrubber State
 let cctvVideo = null;
+let isScrubbing = false;
 let isSeekingVideo = false;
+let animationFrameId = null;
 
 const SESSION_START_TIME = "09:58:01";
 const SESSION_END_TIME   = "11:30:00";
+
+// Cached DOM Elements for high-performance updates
+const DOM = {};
 
 // ─── Time Math Helpers ───────────────────────────────────────
 function timeStrToSeconds(str) {
@@ -110,6 +117,7 @@ const CATEGORY_COLORS = {
 
 // ─── DOM Ready ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    cacheDOMElements();
     setupEventListeners();
     initCCTVVideoPlayer();
     fetchTimelineData();
@@ -118,14 +126,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('keydown', (e) => {
         if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
             e.preventDefault();
-            const searchInput = document.getElementById('timelineSearchInput');
-            if (searchInput) searchInput.focus();
+            if (DOM.searchInput) DOM.searchInput.focus();
         }
         if (e.key === 'Escape') {
-            const searchInput = document.getElementById('timelineSearchInput');
-            if (searchInput && searchInput.value) {
-                searchInput.value = '';
-                document.getElementById('clearSearchBtn').classList.remove('show');
+            if (DOM.searchInput && DOM.searchInput.value) {
+                DOM.searchInput.value = '';
+                if (DOM.clearBtn) DOM.clearBtn.classList.remove('show');
                 currentSearchQuery = '';
                 fetchTimelineData();
             }
@@ -147,18 +153,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// ─── Cache DOM Elements (Eliminate query overhead) ────────────
+function cacheDOMElements() {
+    DOM.searchInput = document.getElementById('timelineSearchInput');
+    DOM.clearBtn = document.getElementById('clearSearchBtn');
+    DOM.sortSelect = document.getElementById('sortOrderSelect');
+    DOM.severitySelect = document.getElementById('severityFilterSelect');
+    DOM.refreshBtn = document.getElementById('refreshTimelineBtn');
+    DOM.btnPrev = document.getElementById('btnPrev');
+    DOM.btnNext = document.getElementById('btnNext');
+    DOM.btnPlayPause = document.getElementById('btnPlayPause');
+    DOM.speedControl = document.getElementById('speedControl');
+    DOM.btnVolume = document.getElementById('btnVolume');
+    DOM.progressBarBg = document.getElementById('progressBarBg');
+    DOM.progressBarFill = document.getElementById('progressBarFill');
+    DOM.progressHandle = document.getElementById('progressHandle');
+    DOM.currentScrubTime = document.getElementById('currentScrubTime');
+    DOM.playbackTimestamp = document.getElementById('playbackTimestamp');
+    DOM.playbackTimeDisplay = document.getElementById('playbackTimeDisplay');
+    DOM.playbackEventBadge = document.getElementById('playbackEventBadge');
+    DOM.playbackOverlayTag = document.getElementById('playbackOverlayTag');
+    DOM.playbackOverlayText = document.getElementById('playbackOverlayText');
+    DOM.cctvDetectionBox = document.getElementById('cctvDetectionBox');
+    DOM.cctvDetectionLabel = document.getElementById('cctvDetectionLabel');
+    DOM.cctvStatusText = document.getElementById('cctvStatusText');
+    DOM.actionTimelineTrack = document.getElementById('actionTimelineTrack');
+    DOM.inspectorTime = document.getElementById('inspectorTime');
+    DOM.inspectorSeverityBadge = document.getElementById('inspectorSeverityBadge');
+    DOM.inspectorCategoryBadge = document.getElementById('inspectorCategoryBadge');
+    DOM.inspectorTitle = document.getElementById('inspectorTitle');
+    DOM.inspectorStudentName = document.getElementById('inspectorStudentName');
+    DOM.inspectorStudentId = document.getElementById('inspectorStudentId');
+    DOM.inspectorInst = document.getElementById('inspectorInst');
+    DOM.inspectorAvatar = document.getElementById('inspectorAvatar');
+    DOM.inspectorDesc = document.getElementById('inspectorDesc');
+    DOM.stateTransitionsGrid = document.getElementById('stateTransitionsGrid');
+    DOM.telConf = document.getElementById('telConf');
+    DOM.telDevice = document.getElementById('telDevice');
+    DOM.telGaze = document.getElementById('telGaze');
+    DOM.telCam = document.getElementById('telCam');
+    DOM.resolveBtn = document.getElementById('resolveIncidentBtn');
+    DOM.resolveBtnText = document.getElementById('resolveBtnText');
+}
+
 // ─── Play / Pause Toggle Helper ──────────────────────────────
 function togglePlayPause() {
     if (!cctvVideo) return;
-    const playPauseBtn = document.getElementById('btnPlayPause');
-    const cctvStatusText = document.getElementById('cctvStatusText');
 
     if (cctvVideo.paused || cctvVideo.ended) {
         const p = cctvVideo.play();
         if (p !== undefined) {
             p.then(() => {
-                if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="pause"></i>';
-                if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
+                if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="pause"></i>';
+                if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
                 lucide.createIcons();
             }).catch(err => {
                 console.info('CCTV playback notice:', err.message);
@@ -166,29 +213,21 @@ function togglePlayPause() {
         }
     } else {
         cctvVideo.pause();
-        if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
-        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED';
+        if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="play"></i>';
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED';
         lucide.createIcons();
     }
 }
 
 // ─── Setup Event Listeners ───────────────────────────────────
 function setupEventListeners() {
-    const searchInput = document.getElementById('timelineSearchInput');
-    const clearBtn = document.getElementById('clearSearchBtn');
-    const sortSelect = document.getElementById('sortOrderSelect');
-    const severitySelect = document.getElementById('severityFilterSelect');
-    const refreshBtn = document.getElementById('refreshTimelineBtn');
-    const btnPrev = document.getElementById('btnPrev');
-    const btnNext = document.getElementById('btnNext');
-
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
+    if (DOM.searchInput) {
+        DOM.searchInput.addEventListener('input', (e) => {
             currentSearchQuery = e.target.value.trim();
             if (currentSearchQuery) {
-                clearBtn.classList.add('show');
+                DOM.clearBtn.classList.add('show');
             } else {
-                clearBtn.classList.remove('show');
+                DOM.clearBtn.classList.remove('show');
             }
 
             clearTimeout(searchDebounceTimer);
@@ -198,48 +237,48 @@ function setupEventListeners() {
         });
     }
 
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
-            if (searchInput) {
-                searchInput.value = '';
-                clearBtn.classList.remove('show');
+    if (DOM.clearBtn) {
+        DOM.clearBtn.addEventListener('click', () => {
+            if (DOM.searchInput) {
+                DOM.searchInput.value = '';
+                DOM.clearBtn.classList.remove('show');
                 currentSearchQuery = '';
                 fetchTimelineData();
-                searchInput.focus();
+                DOM.searchInput.focus();
             }
         });
     }
 
-    if (sortSelect) {
-        sortSelect.addEventListener('change', (e) => {
+    if (DOM.sortSelect) {
+        DOM.sortSelect.addEventListener('change', (e) => {
             currentSortOrder = e.target.value;
             fetchTimelineData();
         });
     }
 
-    if (severitySelect) {
-        severitySelect.addEventListener('change', (e) => {
+    if (DOM.severitySelect) {
+        DOM.severitySelect.addEventListener('change', (e) => {
             currentSeverity = e.target.value;
             fetchTimelineData();
         });
     }
 
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            showToast('Synchronizing timeline events...', 'info', 1500);
+    if (DOM.refreshBtn) {
+        DOM.refreshBtn.addEventListener('click', () => {
+            showToast('Synchronizing timeline events...', 'info', 1200);
             fetchTimelineData();
         });
     }
 
-    if (btnPrev) {
-        btnPrev.addEventListener('click', () => navigateEvents(-1));
+    if (DOM.btnPrev) {
+        DOM.btnPrev.addEventListener('click', () => navigateEvents(-1));
     }
 
-    if (btnNext) {
-        btnNext.addEventListener('click', () => navigateEvents(1));
+    if (DOM.btnNext) {
+        DOM.btnNext.addEventListener('click', () => navigateEvents(1));
     }
 
-    // Category chips
+    // Category filter chips
     const categoryChips = document.querySelectorAll('.cat-chip');
     categoryChips.forEach(chip => {
         chip.addEventListener('click', () => {
@@ -251,25 +290,19 @@ function setupEventListeners() {
     });
 }
 
-// ─── Real HTML5 CCTV Video Engine ────────────────────────────
+// ─── High-Performance HTML5 CCTV Video Engine ─────────────────
 function initCCTVVideoPlayer() {
     cctvVideo = document.getElementById('cctvVideoPlayer');
-    const playPauseBtn = document.getElementById('btnPlayPause');
-    const speedSelect = document.getElementById('speedControl');
-    const volumeBtn = document.getElementById('btnVolume');
-    const progressBarBg = document.getElementById('progressBarBg');
-    const cctvStatusText = document.getElementById('cctvStatusText');
-
     if (!cctvVideo) return;
 
     // 1. Play / Pause Button
-    if (playPauseBtn) {
-        playPauseBtn.addEventListener('click', togglePlayPause);
+    if (DOM.btnPlayPause) {
+        DOM.btnPlayPause.addEventListener('click', togglePlayPause);
     }
 
     // 2. Playback Speed Selector (0.5x, 1x, 1.5x, 2x)
-    if (speedSelect) {
-        speedSelect.addEventListener('change', (e) => {
+    if (DOM.speedControl) {
+        DOM.speedControl.addEventListener('change', (e) => {
             const speed = parseFloat(e.target.value) || 1.0;
             cctvVideo.playbackRate = speed;
             showToast(`Playback speed: ${speed}x`, 'info', 1200);
@@ -277,13 +310,13 @@ function initCCTVVideoPlayer() {
     }
 
     // 3. Audio / Volume Mute Toggle
-    if (volumeBtn) {
-        volumeBtn.addEventListener('click', () => {
+    if (DOM.btnVolume) {
+        DOM.btnVolume.addEventListener('click', () => {
             cctvVideo.muted = !cctvVideo.muted;
             if (cctvVideo.muted) {
-                volumeBtn.innerHTML = '<i data-lucide="volume-x"></i>';
+                DOM.btnVolume.innerHTML = '<i data-lucide="volume-x"></i>';
             } else {
-                volumeBtn.innerHTML = '<i data-lucide="volume-2"></i>';
+                DOM.btnVolume.innerHTML = '<i data-lucide="volume-2"></i>';
             }
             lucide.createIcons();
         });
@@ -291,74 +324,83 @@ function initCCTVVideoPlayer() {
 
     // 4. Video Events (State Handlers)
     cctvVideo.addEventListener('play', () => {
-        if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="pause"></i>';
-        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
+        if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="pause"></i>';
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
         lucide.createIcons();
     });
 
     cctvVideo.addEventListener('pause', () => {
-        if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
-        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED';
+        if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="play"></i>';
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED';
         lucide.createIcons();
     });
 
+    cctvVideo.addEventListener('waiting', () => {
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV BUFFERING...';
+    });
+
+    cctvVideo.addEventListener('playing', () => {
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
+    });
+
     cctvVideo.addEventListener('ended', () => {
-        if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="play"></i>';
-        if (cctvStatusText) cctvStatusText.textContent = 'CCTV RECORDING ENDED';
+        if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="play"></i>';
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV RECORDING ENDED';
         lucide.createIcons();
     });
 
     cctvVideo.addEventListener('loadedmetadata', () => {
-        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE READY';
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE READY';
     });
 
-    // 5. Continuous Time Update (Synchronize Video Position with Timeline)
+    // 5. Continuous Time Update (Optimized with RAF)
     cctvVideo.addEventListener('timeupdate', () => {
-        if (isSeekingVideo || !cctvVideo.duration) return;
+        if (isScrubbing || isSeekingVideo || !cctvVideo.duration) return;
 
-        const curTime = cctvVideo.currentTime;
-        const duration = cctvVideo.duration;
-        const ratio = curTime / duration;
-        const progressPct = ratio * 100;
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        animationFrameId = requestAnimationFrame(() => {
+            const curTime = cctvVideo.currentTime;
+            const duration = cctvVideo.duration;
+            const ratio = curTime / duration;
+            const progressPct = ratio * 100;
 
-        const progressBarFill = document.getElementById('progressBarFill');
-        const progressHandle = document.getElementById('progressHandle');
-        const playbackTimestamp = document.getElementById('playbackTimestamp');
-        const currentScrubTime = document.getElementById('currentScrubTime');
+            if (DOM.progressBarFill) DOM.progressBarFill.style.width = `${progressPct}%`;
+            if (DOM.progressHandle) DOM.progressHandle.style.left = `${progressPct}%`;
 
-        if (progressBarFill) progressBarFill.style.width = `${progressPct}%`;
-        if (progressHandle) progressHandle.style.left = `${progressPct}%`;
+            // Calculate session clock time
+            const startSec = timeStrToSeconds(SESSION_START_TIME);
+            const endSec = timeStrToSeconds(SESSION_END_TIME);
+            const currentRealSec = startSec + ratio * (endSec - startSec);
+            const timeFormatted = secondsToTimeStr(currentRealSec);
 
-        // Calculate session clock time based on video progress
-        const startSec = timeStrToSeconds(SESSION_START_TIME);
-        const endSec = timeStrToSeconds(SESSION_END_TIME);
-        const currentRealSec = startSec + ratio * (endSec - startSec);
-        const timeFormatted = secondsToTimeStr(currentRealSec);
+            if (DOM.playbackTimestamp) DOM.playbackTimestamp.textContent = timeFormatted;
+            if (DOM.currentScrubTime) DOM.currentScrubTime.textContent = `${timeFormatted} (${formatMediaTime(curTime)} / ${formatMediaTime(duration)})`;
 
-        if (playbackTimestamp) playbackTimestamp.textContent = timeFormatted;
-        if (currentScrubTime) currentScrubTime.textContent = `${timeFormatted} (${formatMediaTime(curTime)} / ${formatMediaTime(duration)})`;
+            // Map video position to nearest timeline event without thrashing DOM
+            if (currentEvents.length > 0) {
+                const mappedIdx = Math.min(
+                    currentEvents.length - 1,
+                    Math.floor(ratio * currentEvents.length)
+                );
 
-        // Map video position to nearest timeline event
-        if (currentEvents.length > 0) {
-            const mappedIdx = Math.min(
-                currentEvents.length - 1,
-                Math.floor(ratio * currentEvents.length)
-            );
-
-            if (mappedIdx !== selectedEventIndex && mappedIdx >= 0) {
-                selectedEventIndex = mappedIdx;
-                highlightTimelineCard(mappedIdx);
-                populateInspector(currentEvents[mappedIdx]);
+                if (mappedIdx !== selectedEventIndex && mappedIdx >= 0) {
+                    selectedEventIndex = mappedIdx;
+                    highlightTimelineCard(mappedIdx);
+                    populateInspector(currentEvents[mappedIdx]);
+                }
             }
-        }
+        });
     });
 
-    // 6. Interactive Scrubber Seeking
-    if (progressBarBg) {
-        progressBarBg.addEventListener('click', (e) => {
-            const rect = progressBarBg.getBoundingClientRect();
+    // 6. Interactive Scrubber Seeking & Dragging
+    if (DOM.progressBarBg) {
+        const handleScrub = (e) => {
+            const rect = DOM.progressBarBg.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const pct = Math.max(0, Math.min(1, clickX / rect.width));
+
+            if (DOM.progressBarFill) DOM.progressBarFill.style.width = `${pct * 100}%`;
+            if (DOM.progressHandle) DOM.progressHandle.style.left = `${pct * 100}%`;
 
             if (cctvVideo.duration && !isNaN(cctvVideo.duration)) {
                 cctvVideo.currentTime = pct * cctvVideo.duration;
@@ -369,8 +411,35 @@ function initCCTVVideoPlayer() {
                     currentEvents.length - 1,
                     Math.round(pct * (currentEvents.length - 1))
                 );
-                inspectEvent(targetIdx);
+                if (targetIdx !== selectedEventIndex) {
+                    selectedEventIndex = targetIdx;
+                    highlightTimelineCard(targetIdx);
+                    populateInspector(currentEvents[targetIdx]);
+                }
             }
+        };
+
+        DOM.progressBarBg.addEventListener('pointerdown', (e) => {
+            isScrubbing = true;
+            DOM.progressBarBg.setPointerCapture(e.pointerId);
+            handleScrub(e);
+        });
+
+        DOM.progressBarBg.addEventListener('pointermove', (e) => {
+            if (isScrubbing) {
+                handleScrub(e);
+            }
+        });
+
+        DOM.progressBarBg.addEventListener('pointerup', (e) => {
+            if (isScrubbing) {
+                isScrubbing = false;
+                DOM.progressBarBg.releasePointerCapture(e.pointerId);
+            }
+        });
+
+        DOM.progressBarBg.addEventListener('pointercancel', () => {
+            isScrubbing = false;
         });
     }
 }
@@ -447,11 +516,10 @@ function updateAnalyticsKPIs(events, totalCount) {
 
 // ─── Render Timeline List ────────────────────────────────────
 function renderTimelineList(events) {
-    const track = document.getElementById('actionTimelineTrack');
-    if (!track) return;
+    if (!DOM.actionTimelineTrack) return;
 
     if (!events || events.length === 0) {
-        track.innerHTML = `
+        DOM.actionTimelineTrack.innerHTML = `
             <div class="timeline-empty">
                 <i data-lucide="search-x"></i>
                 <h4>No matching timeline events found</h4>
@@ -465,13 +533,13 @@ function renderTimelineList(events) {
         return;
     }
 
-    track.innerHTML = events.map((ev, idx) => {
+    DOM.actionTimelineTrack.innerHTML = events.map((ev, idx) => {
         const isSelected = idx === selectedEventIndex;
         const icon = CATEGORY_ICONS[ev.category] || 'activity';
         const sevClass = (ev.severity || 'NORMAL').toLowerCase().replace('_', '-');
         const colorName = CATEGORY_COLORS[ev.category] || 'cyan';
 
-        // Build state changes pill row (e.g. Risk: 35 → 60)
+        // Build state changes pill row
         let stateChangesHtml = '';
         if (ev.state_change && Object.keys(ev.state_change).length > 0) {
             const scItems = [];
@@ -596,58 +664,43 @@ function inspectEvent(index) {
 
 // ─── Populate Event Inspector Subsections ────────────────────
 function populateInspector(ev) {
-    const inspectorTime = document.getElementById('inspectorTime');
-    const inspectorSeverityBadge = document.getElementById('inspectorSeverityBadge');
-    const inspectorCategoryBadge = document.getElementById('inspectorCategoryBadge');
-    const inspectorTitle = document.getElementById('inspectorTitle');
-    const inspectorStudentName = document.getElementById('inspectorStudentName');
-    const inspectorStudentId = document.getElementById('inspectorStudentId');
-    const inspectorInst = document.getElementById('inspectorInst');
-    const inspectorAvatar = document.getElementById('inspectorAvatar');
-    const inspectorDesc = document.getElementById('inspectorDesc');
-    const stateTransitionsGrid = document.getElementById('stateTransitionsGrid');
-    const telConf = document.getElementById('telConf');
-    const telDevice = document.getElementById('telDevice');
-    const telGaze = document.getElementById('telGaze');
-    const telCam = document.getElementById('telCam');
-    const resolveBtn = document.getElementById('resolveIncidentBtn');
-    const resolveBtnText = document.getElementById('resolveBtnText');
+    if (!ev) return;
 
-    if (inspectorTime) inspectorTime.textContent = ev.timestamp;
-    if (inspectorTitle) inspectorTitle.textContent = ev.title;
-    if (inspectorCategoryBadge) inspectorCategoryBadge.textContent = ev.category;
-    if (inspectorStudentName) inspectorStudentName.textContent = ev.student_name || 'System Assessment';
-    if (inspectorStudentId) inspectorStudentId.textContent = `Student ID: ${ev.student_id || 'EXAM-SESSION'}`;
-    if (inspectorInst) inspectorInst.textContent = `Institution: ${ev.institution_id || 'INST-001'}`;
-    if (inspectorDesc) inspectorDesc.textContent = ev.description;
+    if (DOM.inspectorTime) DOM.inspectorTime.textContent = ev.timestamp;
+    if (DOM.inspectorTitle) DOM.inspectorTitle.textContent = ev.title;
+    if (DOM.inspectorCategoryBadge) DOM.inspectorCategoryBadge.textContent = ev.category;
+    if (DOM.inspectorStudentName) DOM.inspectorStudentName.textContent = ev.student_name || 'System Assessment';
+    if (DOM.inspectorStudentId) DOM.inspectorStudentId.textContent = `Student ID: ${ev.student_id || 'EXAM-SESSION'}`;
+    if (DOM.inspectorInst) DOM.inspectorInst.textContent = `Institution: ${ev.institution_id || 'INST-001'}`;
+    if (DOM.inspectorDesc) DOM.inspectorDesc.textContent = ev.description;
 
     // Avatar initials
-    if (inspectorAvatar) {
+    if (DOM.inspectorAvatar) {
         const nameParts = (ev.student_name || 'ST').split(' ');
         const initials = nameParts.length >= 2 ? (nameParts[0][0] + nameParts[1][0]).toUpperCase() : nameParts[0].substring(0, 2).toUpperCase();
-        inspectorAvatar.textContent = initials;
+        DOM.inspectorAvatar.textContent = initials;
     }
 
     // Severity styling
-    if (inspectorSeverityBadge) {
-        inspectorSeverityBadge.className = 'badge';
+    if (DOM.inspectorSeverityBadge) {
+        DOM.inspectorSeverityBadge.className = 'badge';
         if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') {
-            inspectorSeverityBadge.classList.add('badge-danger');
-            inspectorSeverityBadge.textContent = 'HIGH RISK';
-            if (inspectorTime) inspectorTime.className = 'detail-time danger-text';
+            DOM.inspectorSeverityBadge.classList.add('badge-danger');
+            DOM.inspectorSeverityBadge.textContent = 'HIGH RISK';
+            if (DOM.inspectorTime) DOM.inspectorTime.className = 'detail-time danger-text';
         } else if (ev.severity === 'SUSPICIOUS' || ev.severity === 'LOW') {
-            inspectorSeverityBadge.classList.add('badge-warning');
-            inspectorSeverityBadge.textContent = 'SUSPICIOUS';
-            if (inspectorTime) inspectorTime.className = 'detail-time warning-text';
+            DOM.inspectorSeverityBadge.classList.add('badge-warning');
+            DOM.inspectorSeverityBadge.textContent = 'SUSPICIOUS';
+            if (DOM.inspectorTime) DOM.inspectorTime.className = 'detail-time warning-text';
         } else {
-            inspectorSeverityBadge.classList.add('badge-success');
-            inspectorSeverityBadge.textContent = 'NORMAL';
-            if (inspectorTime) inspectorTime.className = 'detail-time success-text';
+            DOM.inspectorSeverityBadge.classList.add('badge-success');
+            DOM.inspectorSeverityBadge.textContent = 'NORMAL';
+            if (DOM.inspectorTime) DOM.inspectorTime.className = 'detail-time success-text';
         }
     }
 
     // Recorded State Transitions Grid
-    if (stateTransitionsGrid) {
+    if (DOM.stateTransitionsGrid) {
         const sc = ev.state_change || {};
         const scItems = [];
 
@@ -714,120 +767,110 @@ function populateInspector(ev) {
                 </div>
             `);
         }
-        stateTransitionsGrid.innerHTML = scItems.join('');
+        DOM.stateTransitionsGrid.innerHTML = scItems.join('');
     }
 
     // Telemetry metadata
     const meta = ev.metadata || {};
-    if (telConf) telConf.textContent = meta.confidence ? `${(meta.confidence * 100).toFixed(1)}%` : (meta.templates ? `${meta.templates} templates` : '98.5%');
-    if (telDevice) telDevice.textContent = meta.device || (ev.category === 'DEVICE' ? 'Mobile Phone' : 'None');
-    if (telGaze) telGaze.textContent = meta.gaze || (meta.direction || 'CENTER (Nominal)');
-    if (telCam) telCam.textContent = meta.camera || 'CAM-01 (1080p SOC)';
+    if (DOM.telConf) DOM.telConf.textContent = meta.confidence ? `${(meta.confidence * 100).toFixed(1)}%` : (meta.templates ? `${meta.templates} templates` : '98.5%');
+    if (DOM.telDevice) DOM.telDevice.textContent = meta.device || (ev.category === 'DEVICE' ? 'Mobile Phone' : 'None');
+    if (DOM.telGaze) DOM.telGaze.textContent = meta.gaze || (meta.direction || 'CENTER (Nominal)');
+    if (DOM.telCam) DOM.telCam.textContent = meta.camera || 'CAM-01 (1080p SOC)';
 
     // Resolution button state
-    if (resolveBtn && resolveBtnText) {
+    if (DOM.resolveBtn && DOM.resolveBtnText) {
         if (ev.resolved) {
-            resolveBtn.classList.add('resolved');
-            resolveBtnText.textContent = '✓ Incident Resolved & Logged';
-            resolveBtn.disabled = true;
+            DOM.resolveBtn.classList.add('resolved');
+            DOM.resolveBtnText.textContent = '✓ Incident Resolved & Logged';
+            DOM.resolveBtn.disabled = true;
         } else {
-            resolveBtn.classList.remove('resolved');
-            resolveBtnText.textContent = 'Acknowledge & Resolve Incident';
-            resolveBtn.disabled = false;
+            DOM.resolveBtn.classList.remove('resolved');
+            DOM.resolveBtnText.textContent = 'Acknowledge & Resolve Incident';
+            DOM.resolveBtn.disabled = false;
         }
     }
 }
 
 // ─── Synchronize Real CCTV Video Evidence ─────────────────────
 function synchronizePlayback(ev, index) {
-    const playbackTime = document.getElementById('playbackTimeDisplay');
-    const playbackBadge = document.getElementById('playbackEventBadge');
-    const playbackTimestamp = document.getElementById('playbackTimestamp');
-    const playbackOverlayTag = document.getElementById('playbackOverlayTag');
-    const playbackOverlayText = document.getElementById('playbackOverlayText');
-    const progressBarFill = document.getElementById('progressBarFill');
-    const progressHandle = document.getElementById('progressHandle');
-    const currentScrubTime = document.getElementById('currentScrubTime');
-    const cctvDetectionBox = document.getElementById('cctvDetectionBox');
-    const cctvDetectionLabel = document.getElementById('cctvDetectionLabel');
-    const cctvStatusText = document.getElementById('cctvStatusText');
+    if (!ev) return;
 
-    if (playbackTime) playbackTime.textContent = ev.timestamp;
-    if (playbackBadge) {
-        playbackBadge.textContent = ev.title;
-        playbackBadge.className = 'badge';
-        if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') playbackBadge.classList.add('badge-danger');
-        else if (ev.severity === 'SUSPICIOUS' || ev.severity === 'LOW') playbackBadge.classList.add('badge-warning');
-        else playbackBadge.classList.add('badge-success');
+    if (DOM.playbackTimeDisplay) DOM.playbackTimeDisplay.textContent = ev.timestamp;
+    if (DOM.playbackBadge) {
+        DOM.playbackBadge.textContent = ev.title;
+        DOM.playbackBadge.className = 'badge';
+        if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') DOM.playbackBadge.classList.add('badge-danger');
+        else if (ev.severity === 'SUSPICIOUS' || ev.severity === 'LOW') DOM.playbackBadge.classList.add('badge-warning');
+        else DOM.playbackBadge.classList.add('badge-success');
     }
-    if (playbackTimestamp) playbackTimestamp.textContent = ev.timestamp;
+    if (DOM.playbackTimestamp) DOM.playbackTimestamp.textContent = ev.timestamp;
 
     // Real event notification banner
-    if (playbackOverlayTag) {
+    if (DOM.playbackOverlayTag) {
         if (ev.severity === 'HIGH_RISK' || ev.severity === 'CRITICAL') {
-            playbackOverlayTag.className = 'status-overlay danger-bg';
-            playbackOverlayTag.style.display = 'flex';
-            if (playbackOverlayText) playbackOverlayText.textContent = ev.title;
+            DOM.playbackOverlayTag.className = 'status-overlay danger-bg';
+            DOM.playbackOverlayTag.style.display = 'flex';
+            if (DOM.playbackOverlayText) DOM.playbackOverlayText.textContent = ev.title;
         } else if (ev.severity === 'SUSPICIOUS') {
-            playbackOverlayTag.className = 'status-overlay warning-bg';
-            playbackOverlayTag.style.display = 'flex';
-            if (playbackOverlayText) playbackOverlayText.textContent = ev.title;
+            DOM.playbackOverlayTag.className = 'status-overlay warning-bg';
+            DOM.playbackOverlayTag.style.display = 'flex';
+            if (DOM.playbackOverlayText) DOM.playbackOverlayText.textContent = ev.title;
         } else {
-            playbackOverlayTag.style.display = 'none';
+            DOM.playbackOverlayTag.style.display = 'none';
         }
         lucide.createIcons();
     }
 
     // Synchronize Genuine AI Detection Bounding Box Overlay
-    if (cctvDetectionBox && cctvDetectionLabel) {
+    if (DOM.cctvDetectionBox && DOM.cctvDetectionLabel) {
         const evType = String(ev.event_type || '').toUpperCase();
         const evCat = String(ev.category || '').toUpperCase();
         const meta = ev.metadata || {};
 
         if (evType.includes('PHONE') || evCat === 'DEVICE') {
-            cctvDetectionBox.style.display = 'block';
-            cctvDetectionBox.style.top = '48%';
-            cctvDetectionBox.style.left = '42%';
-            cctvDetectionBox.style.width = '140px';
-            cctvDetectionBox.style.height = '160px';
-            cctvDetectionBox.style.borderColor = 'var(--danger)';
-            cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
-            cctvDetectionLabel.style.background = 'var(--danger)';
+            DOM.cctvDetectionBox.style.display = 'block';
+            DOM.cctvDetectionBox.style.top = '48%';
+            DOM.cctvDetectionBox.style.left = '42%';
+            DOM.cctvDetectionBox.style.width = '140px';
+            DOM.cctvDetectionBox.style.height = '160px';
+            DOM.cctvDetectionBox.style.borderColor = 'var(--danger)';
+            DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
+            DOM.cctvDetectionLabel.style.background = 'var(--danger)';
             const pconf = meta.confidence ? (meta.confidence * 100).toFixed(0) : '89';
-            cctvDetectionLabel.textContent = `PHONE DETECTED · ${pconf}%`;
+            DOM.cctvDetectionLabel.textContent = `PHONE DETECTED · ${pconf}%`;
         } else if (evType.includes('MULTIPLE') || (meta.faces_count && meta.faces_count > 1)) {
-            cctvDetectionBox.style.display = 'block';
-            cctvDetectionBox.style.top = '25%';
-            cctvDetectionBox.style.left = '64%';
-            cctvDetectionBox.style.width = '170px';
-            cctvDetectionBox.style.height = '240px';
-            cctvDetectionBox.style.borderColor = 'var(--danger)';
-            cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
-            cctvDetectionLabel.style.background = 'var(--danger)';
-            cctvDetectionLabel.textContent = 'UNKNOWN PERSON DETECTED';
+            DOM.cctvDetectionBox.style.display = 'block';
+            DOM.cctvDetectionBox.style.top = '25%';
+            DOM.cctvDetectionBox.style.left = '64%';
+            DOM.cctvDetectionBox.style.width = '170px';
+            DOM.cctvDetectionBox.style.height = '240px';
+            DOM.cctvDetectionBox.style.borderColor = 'var(--danger)';
+            DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.5)';
+            DOM.cctvDetectionLabel.style.background = 'var(--danger)';
+            DOM.cctvDetectionLabel.textContent = 'UNKNOWN PERSON DETECTED';
         } else if (evType.includes('BIOMETRIC') || evType.includes('ENTERED')) {
-            cctvDetectionBox.style.display = 'block';
-            cctvDetectionBox.style.top = '28%';
-            cctvDetectionBox.style.left = '38%';
-            cctvDetectionBox.style.width = '150px';
-            cctvDetectionBox.style.height = '180px';
-            cctvDetectionBox.style.borderColor = 'var(--success)';
-            cctvDetectionBox.style.boxShadow = '0 0 14px rgba(16, 185, 129, 0.5)';
-            cctvDetectionLabel.style.background = 'var(--success)';
+            DOM.cctvDetectionBox.style.display = 'block';
+            DOM.cctvDetectionBox.style.top = '28%';
+            DOM.cctvDetectionBox.style.left = '38%';
+            DOM.cctvDetectionBox.style.width = '150px';
+            DOM.cctvDetectionBox.style.height = '180px';
+            DOM.cctvDetectionBox.style.borderColor = 'var(--success)';
+            DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(16, 185, 129, 0.5)';
+            DOM.cctvDetectionLabel.style.background = 'var(--success)';
             const bconf = meta.confidence ? (meta.confidence * 100).toFixed(0) : '96';
-            cctvDetectionLabel.textContent = `CANDIDATE IDENTIFIED · ${bconf}%`;
+            DOM.cctvDetectionLabel.textContent = `CANDIDATE IDENTIFIED · ${bconf}%`;
         } else if (evCat === 'GAZE') {
-            cctvDetectionBox.style.display = 'block';
-            cctvDetectionBox.style.top = '28%';
-            cctvDetectionBox.style.left = ev.title.includes('Left') ? '32%' : '44%';
-            cctvDetectionBox.style.width = '150px';
-            cctvDetectionBox.style.height = '180px';
-            cctvDetectionBox.style.borderColor = 'var(--warning)';
-            cctvDetectionBox.style.boxShadow = '0 0 14px rgba(245, 158, 11, 0.5)';
-            cctvDetectionLabel.style.background = 'var(--warning)';
-            cctvDetectionLabel.textContent = `GAZE · ${meta.gaze || 'OFF-SCREEN'}`;
+            DOM.cctvDetectionBox.style.display = 'block';
+            DOM.cctvDetectionBox.style.top = '28%';
+            DOM.cctvDetectionBox.style.left = ev.title.includes('Left') ? '32%' : '44%';
+            DOM.cctvDetectionBox.style.width = '150px';
+            DOM.cctvDetectionBox.style.height = '180px';
+            DOM.cctvDetectionBox.style.borderColor = 'var(--warning)';
+            DOM.cctvDetectionBox.style.boxShadow = '0 0 14px rgba(245, 158, 11, 0.5)';
+            DOM.cctvDetectionLabel.style.background = 'var(--warning)';
+            DOM.cctvDetectionLabel.textContent = `GAZE · ${meta.gaze || 'OFF-SCREEN'}`;
         } else {
-            cctvDetectionBox.style.display = 'none';
+            DOM.cctvDetectionBox.style.display = 'none';
         }
     }
 
@@ -839,16 +882,16 @@ function synchronizePlayback(ev, index) {
     const progressRatio = Math.max(0, Math.min(1, (evSec - startSec) / totalSec));
     const progressPct = progressRatio * 100;
 
-    if (progressBarFill) progressBarFill.style.width = `${progressPct.toFixed(1)}%`;
-    if (progressHandle) progressHandle.style.left = `${progressPct.toFixed(1)}%`;
-    if (currentScrubTime) currentScrubTime.textContent = `${ev.timestamp} (Event ${index + 1}/${currentEvents.length})`;
+    if (DOM.progressBarFill) DOM.progressBarFill.style.width = `${progressPct.toFixed(1)}%`;
+    if (DOM.progressHandle) DOM.progressHandle.style.left = `${progressPct.toFixed(1)}%`;
+    if (DOM.currentScrubTime) DOM.currentScrubTime.textContent = `${ev.timestamp} (Event ${index + 1}/${currentEvents.length})`;
 
     // Seek real HTML5 video player if available
     if (cctvVideo && cctvVideo.duration && !isNaN(cctvVideo.duration)) {
         isSeekingVideo = true;
         cctvVideo.currentTime = progressRatio * cctvVideo.duration;
         cctvVideo.pause();
-        if (cctvStatusText) cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED (FORENSIC FRAME)';
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PAUSED (FORENSIC FRAME)';
         setTimeout(() => { isSeekingVideo = false; }, 50);
     }
 }
@@ -888,14 +931,12 @@ async function resolveCurrentEvent() {
 
 // ─── Quick Search Helper ─────────────────────────────────────
 function applyQuickSearch(term) {
-    const searchInput = document.getElementById('timelineSearchInput');
-    const clearBtn = document.getElementById('clearSearchBtn');
-    if (searchInput) {
-        searchInput.value = term;
+    if (DOM.searchInput) {
+        DOM.searchInput.value = term;
         currentSearchQuery = term;
-        if (clearBtn) clearBtn.classList.add('show');
+        if (DOM.clearBtn) DOM.clearBtn.classList.add('show');
         fetchTimelineData();
-        searchInput.focus();
+        DOM.searchInput.focus();
     }
 }
 
@@ -905,13 +946,9 @@ function resetFilters() {
     currentCategory = 'ALL';
     currentSeverity = 'ALL';
 
-    const searchInput = document.getElementById('timelineSearchInput');
-    const clearBtn = document.getElementById('clearSearchBtn');
-    const severitySelect = document.getElementById('severityFilterSelect');
-
-    if (searchInput) searchInput.value = '';
-    if (clearBtn) clearBtn.classList.remove('show');
-    if (severitySelect) severitySelect.value = 'ALL';
+    if (DOM.searchInput) DOM.searchInput.value = '';
+    if (DOM.clearBtn) DOM.clearBtn.classList.remove('show');
+    if (DOM.severitySelect) DOM.severitySelect.value = 'ALL';
 
     document.querySelectorAll('.cat-chip').forEach(c => {
         if (c.getAttribute('data-category') === 'ALL') c.classList.add('active');
@@ -955,10 +992,8 @@ function updateSummaryStatus(totalCount, visibleCount) {
 
 // ─── Render Empty Inspector ──────────────────────────────────
 function renderEmptyInspector() {
-    const title = document.getElementById('inspectorTitle');
-    const desc = document.getElementById('inspectorDesc');
-    if (title) title.textContent = 'No Event Selected';
-    if (desc) desc.textContent = 'Adjust search query or category filters above to inspect timeline telemetry.';
+    if (DOM.inspectorTitle) DOM.inspectorTitle.textContent = 'No Event Selected';
+    if (DOM.inspectorDesc) DOM.inspectorDesc.textContent = 'Adjust search query or category filters above to inspect timeline telemetry.';
 }
 
 // ─── Export Timeline Data ────────────────────────────────────

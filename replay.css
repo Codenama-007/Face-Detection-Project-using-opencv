@@ -1423,6 +1423,7 @@ body::before {
 .video-placeholder {
     position: relative;
     aspect-ratio: 16 / 9;
+    max-height: 480px;
     border-radius: var(--radius-md);
     overflow: hidden;
     background: #000000;
@@ -1430,6 +1431,8 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: center;
+    transform: translateZ(0);
+    will-change: transform;
 }
 
 .cctv-video-element {
@@ -1438,6 +1441,7 @@ body::before {
     object-fit: cover;
     display: block;
     background: #000000;
+    transform: translateZ(0);
 }
 
 .cctv-hud-top {
