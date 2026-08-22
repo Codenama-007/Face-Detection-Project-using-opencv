@@ -175,6 +175,8 @@ function cacheDOMElements() {
     DOM.playbackOverlayTag = document.getElementById('playbackOverlayTag');
     DOM.playbackOverlayText = document.getElementById('playbackOverlayText');
     DOM.videoStateOverlay = document.getElementById('videoStateOverlay');
+    DOM.cctvCamTag = document.getElementById('cctvCamTag');
+    DOM.cctvRecTag = document.getElementById('cctvRecTag');
     DOM.cctvDetectionBox = document.getElementById('cctvDetectionBox');
     DOM.cctvDetectionLabel = document.getElementById('cctvDetectionLabel');
     DOM.cctvStatusText = document.getElementById('cctvStatusText');
@@ -202,6 +204,14 @@ function cacheDOMElements() {
 function togglePlayPause() {
     if (!cctvVideo) return;
 
+    if (cctvVideo.error || !cctvVideo.currentSrc) {
+        if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'flex';
+        if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV RECORDING UNAVAILABLE';
+        if (DOM.cctvRecTag) DOM.cctvRecTag.style.display = 'none';
+        showToast('No CCTV recording file found in project', 'warning', 2500);
+        return;
+    }
+
     if (cctvVideo.paused || cctvVideo.ended) {
         const p = cctvVideo.play();
         if (p !== undefined) {
@@ -209,11 +219,13 @@ function togglePlayPause() {
                 if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'none';
                 if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="pause"></i>';
                 if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
+                if (DOM.cctvRecTag) DOM.cctvRecTag.style.display = 'inline-flex';
                 lucide.createIcons();
             }).catch(err => {
                 console.info('CCTV playback notice:', err.message);
                 if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'flex';
                 if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV RECORDING UNAVAILABLE';
+                if (DOM.cctvRecTag) DOM.cctvRecTag.style.display = 'none';
                 showToast('CCTV recording source unavailable for this session', 'warning', 2500);
             });
         }
@@ -304,11 +316,15 @@ function initCCTVVideoPlayer() {
     const setUnavailableState = () => {
         if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'flex';
         if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV RECORDING UNAVAILABLE';
+        if (DOM.cctvRecTag) DOM.cctvRecTag.style.display = 'none';
+        if (DOM.cctvCamTag) DOM.cctvCamTag.textContent = 'CAM-01 · OFFLINE';
     };
 
     const setReadyState = () => {
         if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'none';
         if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE READY';
+        if (DOM.cctvRecTag) DOM.cctvRecTag.style.display = 'inline-flex';
+        if (DOM.cctvCamTag) DOM.cctvCamTag.textContent = 'CAM-01 · 1080p';
     };
 
     // 1. Play / Pause Button
@@ -343,6 +359,7 @@ function initCCTVVideoPlayer() {
         if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'none';
         if (DOM.btnPlayPause) DOM.btnPlayPause.innerHTML = '<i data-lucide="pause"></i>';
         if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
+        if (DOM.cctvRecTag) DOM.cctvRecTag.style.display = 'inline-flex';
         lucide.createIcons();
     });
 
@@ -359,6 +376,7 @@ function initCCTVVideoPlayer() {
     cctvVideo.addEventListener('playing', () => {
         if (DOM.videoStateOverlay) DOM.videoStateOverlay.style.display = 'none';
         if (DOM.cctvStatusText) DOM.cctvStatusText.textContent = 'CCTV EVIDENCE PLAYING';
+        if (DOM.cctvRecTag) DOM.cctvRecTag.style.display = 'inline-flex';
     });
 
     cctvVideo.addEventListener('ended', () => {
@@ -370,6 +388,13 @@ function initCCTVVideoPlayer() {
     cctvVideo.addEventListener('loadedmetadata', setReadyState);
     cctvVideo.addEventListener('canplay', setReadyState);
     cctvVideo.addEventListener('error', setUnavailableState);
+
+    // Initial check on load
+    setTimeout(() => {
+        if (cctvVideo.error || (!cctvVideo.currentSrc && cctvVideo.networkState === HTMLMediaElement.NETWORK_NO_SOURCE)) {
+            setUnavailableState();
+        }
+    }, 200);
 
     // 5. Continuous Time Update (Optimized with RAF)
     cctvVideo.addEventListener('timeupdate', () => {
@@ -385,7 +410,7 @@ function initCCTVVideoPlayer() {
             if (DOM.progressBarFill) DOM.progressBarFill.style.width = `${progressPct}%`;
             if (DOM.progressHandle) DOM.progressHandle.style.left = `${progressPct}%`;
 
-            // Calculate session clock time
+            // Calculate session clock time based on video progress
             const startSec = timeStrToSeconds(SESSION_START_TIME);
             const endSec = timeStrToSeconds(SESSION_END_TIME);
             const currentRealSec = startSec + ratio * (endSec - startSec);
@@ -892,20 +917,21 @@ function synchronizePlayback(ev, index) {
         }
     }
 
-    // Scrubber progress calculation based on session time
+    // Mathematical Session Offset to Video Position Mapping
     const startSec = timeStrToSeconds(SESSION_START_TIME);
     const endSec = timeStrToSeconds(SESSION_END_TIME);
     const totalSec = Math.max(1, endSec - startSec);
     const evSec = timeStrToSeconds(ev.timestamp);
-    const progressRatio = Math.max(0, Math.min(1, (evSec - startSec) / totalSec));
+    const eventOffsetSec = Math.max(0, evSec - startSec);
+    const progressRatio = Math.max(0, Math.min(1, eventOffsetSec / totalSec));
     const progressPct = progressRatio * 100;
 
     if (DOM.progressBarFill) DOM.progressBarFill.style.width = `${progressPct.toFixed(1)}%`;
     if (DOM.progressHandle) DOM.progressHandle.style.left = `${progressPct.toFixed(1)}%`;
     if (DOM.currentScrubTime) DOM.currentScrubTime.textContent = `${ev.timestamp} (Event ${index + 1}/${currentEvents.length})`;
 
-    // Seek real HTML5 video player if available
-    if (cctvVideo && cctvVideo.duration && !isNaN(cctvVideo.duration)) {
+    // Seek real HTML5 video player if available and duration is known
+    if (cctvVideo && cctvVideo.duration && !isNaN(cctvVideo.duration) && !cctvVideo.error) {
         isSeekingVideo = true;
         cctvVideo.currentTime = progressRatio * cctvVideo.duration;
         cctvVideo.pause();
