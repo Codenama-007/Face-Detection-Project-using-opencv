@@ -4387,34 +4387,36 @@ def _ai_worker_loop():
         book_boxes = []
         tablet_boxes = []
 
+        RED_RISK_BGR = (0, 0, 255)  # Pure Red in OpenCV BGR format
+
         for d in phone_hits:
             px1, py1, px2, py2 = [int(v) for v in d["bbox"]]
             pconf = float(d["conf"])
             dev_type = d.get("device_type", "phone")
             if dev_type == "smartwatch":
                 smartwatch_boxes.append((px1, py1, px2, py2, pconf))
-                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 140, 255), 2,
-                                 "SMARTWATCH DETECTED", f"PROHIBITED DEVICE · {pconf:.0%}"))
-            elif dev_type == "earbud":
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), RED_RISK_BGR, 2,
+                                 "SMARTWATCH", f"PROHIBITED DEVICE · {pconf:.0%}"))
+            elif dev_type in ("earbud", "earbuds", "headphones"):
                 earbud_boxes.append((px1, py1, px2, py2, pconf))
-                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 165, 255), 2,
-                                 "EARBUD DETECTED", f"PROHIBITED DEVICE · {pconf:.0%}"))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), RED_RISK_BGR, 2,
+                                 "EARBUDS", f"PROHIBITED DEVICE · {pconf:.0%}"))
             elif dev_type == "laptop":
                 laptop_boxes.append((px1, py1, px2, py2, pconf))
-                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (255, 180, 0), 2,
-                                 "LAPTOP DETECTED", f"EXAM ENVIRONMENT · {pconf:.0%}"))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), RED_RISK_BGR, 2,
+                                 "LAPTOP", f"PROHIBITED DEVICE · {pconf:.0%}"))
             elif dev_type == "book":
                 book_boxes.append((px1, py1, px2, py2, pconf))
-                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 70, 255), 2,
-                                 "UNAUTHORIZED NOTES DETECTED", f"PROHIBITED MATERIAL · {pconf:.0%}"))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), RED_RISK_BGR, 2,
+                                 "NOTES / BOOK", f"PROHIBITED MATERIAL · {pconf:.0%}"))
             elif dev_type == "tablet":
                 tablet_boxes.append((px1, py1, px2, py2, pconf))
-                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (255, 140, 0), 2,
-                                 "TABLET / SCREEN DETECTED", f"SECONDARY SCREEN · {pconf:.0%}"))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), RED_RISK_BGR, 2,
+                                 "TABLET", f"PROHIBITED DEVICE · {pconf:.0%}"))
             else:
                 phone_boxes.append((px1, py1, px2, py2, pconf))
-                draw_ops.append(('hud_box', (px1, py1), (px2, py2), (0, 0, 255), 2,
-                                 "CELL PHONE DETECTED", f"PROHIBITED DEVICE · {pconf:.0%}"))
+                draw_ops.append(('hud_box', (px1, py1), (px2, py2), RED_RISK_BGR, 2,
+                                 "PHONE", f"PROHIBITED DEVICE · {pconf:.0%}"))
 
         room_state["phone_detected"] = len(phone_boxes) > 0
         room_state["smartwatch_detected"] = len(smartwatch_boxes) > 0
