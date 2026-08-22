@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reviewable Action Timeline & Replay Engine | ProctorAI</title>
-    <meta name="description" content="Forensic Search and Discovery Reviewable Action Timeline for AI Examination Integrity Platform.">
+    <title>Reviewable Action Timeline | ProctorAI</title>
+    <meta name="description" content="Forensic Search & Discovery Reviewable Action Timeline for AI Examination Integrity Platform.">
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="theme.css">
     <script src="theme.js"></script>
     <script src="https://unpkg.com/lucide@0.462.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 </head>
 <body>
     <!-- Back Button -->
@@ -25,7 +24,9 @@
     </a>
 
     <div class="app-container">
-        <!-- 1. Premium Header -->
+        <!-- ═════════════════════════════════════════════════════════════════
+             HEADER
+             ═════════════════════════════════════════════════════════════════ -->
         <header class="glass-header">
             <div class="header-left">
                 <div class="brand-badge-box">
@@ -34,9 +35,9 @@
                 <div>
                     <div class="title-with-badge">
                         <h1>Reviewable Action Timeline</h1>
-                        <span class="badge badge-cyan">FORENSIC SEARCH & DISCOVERY</span>
+                        <span class="badge badge-cyan">FORENSIC SEARCH &amp; DISCOVERY</span>
                     </div>
-                    <p class="header-sub">Chronological audit ledger of student actions, biometric validations, telemetry alerts & state transitions</p>
+                    <p class="header-sub">Chronological audit ledger of student actions, biometric validations, telemetry alerts &amp; state updates</p>
                 </div>
             </div>
             <div class="header-right">
@@ -47,9 +48,6 @@
                     <button type="button" class="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark/light mode" title="Toggle theme">
                         <span data-theme-icon><i data-lucide="sun" style="width:15px;height:15px;"></i></span>
                     </button>
-                    <a href="reports.html" class="btn-icon" title="View Analytics Reports" aria-label="Reports">
-                        <i data-lucide="bar-chart-2"></i>
-                    </a>
                     <button class="btn-primary" id="exportTimelineBtn" onclick="exportTimelineData()">
                         <i data-lucide="download"></i> Export Timeline Log
                     </button>
@@ -57,9 +55,11 @@
             </div>
         </header>
 
-        <!-- 2. Search & Discovery Command Bar -->
+        <!-- ═════════════════════════════════════════════════════════════════
+             SECTION 1: SEARCH & DISCOVERY
+             ═════════════════════════════════════════════════════════════════ -->
         <section class="glass-panel search-discovery-deck">
-            <!-- Search Bar Row -->
+            <!-- Search & Controls Bar -->
             <div class="search-row">
                 <div class="search-input-wrap">
                     <i data-lucide="search" class="search-icon"></i>
@@ -67,7 +67,7 @@
                         type="text" 
                         id="timelineSearchInput" 
                         class="search-input" 
-                        placeholder="Search timeline by student name, ID (e.g. 1002, Alex), event type (phone, gaze), status, or risk level..." 
+                        placeholder="Search timeline by student name, ID (e.g. 1002, Alex), event (phone, gaze), status, or risk level..." 
                         autocomplete="off"
                         spellcheck="false"
                     >
@@ -79,23 +79,22 @@
                     </div>
                 </div>
 
-                <!-- Sort and Filter Controls -->
                 <div class="search-aux-controls">
-                    <div class="sort-select-wrap">
+                    <div class="control-group">
                         <label for="sortOrderSelect" class="control-label">Order:</label>
                         <select id="sortOrderSelect" class="select-glass">
-                            <option value="desc" selected>Newest First (Chronological Reverse)</option>
-                            <option value="asc">Oldest First (Chronological 09:58 → 11:30)</option>
+                            <option value="desc" selected>Newest First</option>
+                            <option value="asc">Oldest First (09:58 → 11:30)</option>
                         </select>
                     </div>
 
-                    <div class="sort-select-wrap">
+                    <div class="control-group">
                         <label for="severityFilterSelect" class="control-label">Severity:</label>
                         <select id="severityFilterSelect" class="select-glass">
                             <option value="ALL" selected>All Severities</option>
-                            <option value="NORMAL">Normal / Clear</option>
-                            <option value="SUSPICIOUS">Suspicious (Med)</option>
-                            <option value="HIGH_RISK">High Risk (Critical)</option>
+                            <option value="NORMAL">Normal</option>
+                            <option value="SUSPICIOUS">Suspicious</option>
+                            <option value="HIGH_RISK">High Risk</option>
                         </select>
                     </div>
 
@@ -151,7 +150,7 @@
                 </div>
             </div>
 
-            <!-- Active Search Status & Summary Strip -->
+            <!-- Quick Queries & Result Feedback -->
             <div class="search-status-bar" id="searchStatusBar">
                 <div class="results-summary">
                     <span id="resultsCountText">Showing 15 of 15 recorded timeline events</span>
@@ -167,17 +166,21 @@
             </div>
         </section>
 
-        <!-- 3. Main Timeline & Inspector Workspace -->
+        <!-- ═════════════════════════════════════════════════════════════════
+             MAIN WORKSPACE: TIMELINE (PRIMARY) & INSPECTOR / EVIDENCE (SIDE)
+             ═════════════════════════════════════════════════════════════════ -->
         <div class="main-grid">
-            <!-- Left Column: The Reviewable Action Timeline -->
-            <div class="column-main">
+            <!-- ═════════════════════════════════════════════════════════════
+                 SECTION 2: REVIEWABLE ACTION TIMELINE (PRIMARY DOMINANT)
+                 ═════════════════════════════════════════════════════════════ -->
+            <section class="column-main">
                 <div class="glass-panel timeline-container">
                     <div class="section-header">
                         <div class="header-title-flex">
                             <i data-lucide="list-ordered" class="accent-icon"></i>
                             <div>
-                                <h3>Action & State Change Timeline</h3>
-                                <p class="sec-desc">Click any event node to inspect root causes, telemetry metrics, and state transitions</p>
+                                <h2>Chronological Action &amp; State Timeline</h2>
+                                <p class="sec-desc">Select any event to review detailed root cause, state transitions, and evidence</p>
                             </div>
                         </div>
                         <div class="timeline-legend">
@@ -189,18 +192,129 @@
 
                     <!-- Scrollable Reviewable Timeline Track -->
                     <div class="timeline-track" id="actionTimelineTrack">
-                        <!-- Dynamically populated by JS from /api/timeline -->
+                        <!-- Dynamically populated by replay.js from /api/timeline -->
                     </div>
                 </div>
+            </section>
 
-                <!-- Video / Playback Area & Synchronized Flight Recorder -->
-                <div class="glass-panel playback-container">
+            <!-- ═════════════════════════════════════════════════════════════
+                 RIGHT RAIL: SECTION 3 (INSPECTOR) & SECTION 4 (EVIDENCE)
+                 ═════════════════════════════════════════════════════════════ -->
+            <div class="column-side">
+                <!-- ═════════════════════════════════════════════════════════
+                     SECTION 3: EVENT TELEMETRY INSPECTOR
+                     ═════════════════════════════════════════════════════════ -->
+                <section class="glass-panel event-details" id="eventDetailsPanel">
+                    <div class="section-header">
+                        <div class="header-title-flex">
+                            <i data-lucide="scan-search" class="accent-icon"></i>
+                            <div>
+                                <h3>Event Telemetry Inspector</h3>
+                                <p class="sec-desc">Selected incident breakdown &amp; state impact</p>
+                            </div>
+                        </div>
+                        <span class="badge badge-danger" id="inspectorSeverityBadge">HIGH RISK</span>
+                    </div>
+
+                    <div class="details-content" id="inspectorContent">
+                        <!-- Top Metadata Row -->
+                        <div class="inspector-meta-row">
+                            <div class="detail-time danger-text" id="inspectorTime">10:42:31</div>
+                            <span class="badge badge-outline" id="inspectorCategoryBadge">DEVICE</span>
+                        </div>
+
+                        <!-- Title and Student -->
+                        <h4 class="detail-title" id="inspectorTitle">PHONE DETECTED</h4>
+                        
+                        <div class="inspector-student-card" id="inspectorStudentCard">
+                            <div class="stu-avatar-box" id="inspectorAvatar">NT</div>
+                            <div class="stu-info-box">
+                                <strong id="inspectorStudentName">Nalin Tuscano</strong>
+                                <span class="stu-id-tag" id="inspectorStudentId">Student ID: 1002</span>
+                                <span class="inst-tag" id="inspectorInst">Institution: INST-001</span>
+                            </div>
+                        </div>
+
+                        <!-- Description & Root Cause -->
+                        <div class="inspector-desc-wrap">
+                            <label class="inspector-lbl">Incident Summary &amp; Description:</label>
+                            <p class="detail-desc" id="inspectorDesc">
+                                Mobile device detected inside examination area near candidate workspace via YOLO11 neural detector.
+                            </p>
+                        </div>
+
+                        <!-- Recorded State Transitions Card (X → Y) -->
+                        <div class="state-changes-card" id="inspectorStateChanges">
+                            <div class="sc-header">
+                                <i data-lucide="git-commit" style="width:13px;height:13px;color:var(--cyan);"></i>
+                                <span>Recorded State Updates</span>
+                            </div>
+                            <div class="sc-grid" id="stateTransitionsGrid">
+                                <div class="sc-item">
+                                    <span class="sc-label">Risk Score</span>
+                                    <span class="sc-val danger-text">35 <span class="arr">&rarr;</span> 60</span>
+                                </div>
+                                <div class="sc-item">
+                                    <span class="sc-label">Trust Score</span>
+                                    <span class="sc-val warning-text">94% <span class="arr">&rarr;</span> 71%</span>
+                                </div>
+                                <div class="sc-item">
+                                    <span class="sc-label">Candidate Status</span>
+                                    <span class="sc-val">VERIFIED <span class="arr">&rarr;</span> UNDER REVIEW</span>
+                                </div>
+                                <div class="sc-item">
+                                    <span class="sc-label">Security Alert</span>
+                                    <span class="sc-val danger-text">NONE <span class="arr">&rarr;</span> CREATED</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Available Telemetry -->
+                        <div class="telemetry-block" id="telemetryBlock">
+                            <div class="tel-header">
+                                <i data-lucide="cpu" style="width:13px;height:13px;color:var(--accent);"></i>
+                                <span>Event Telemetry</span>
+                            </div>
+                            <div class="tel-grid" id="telGrid">
+                                <div class="tel-item">
+                                    <span class="t-lbl">Confidence:</span>
+                                    <span class="t-val" id="telConf">89.4%</span>
+                                </div>
+                                <div class="tel-item">
+                                    <span class="t-lbl">Device / Event:</span>
+                                    <span class="t-val" id="telDevice">cell phone</span>
+                                </div>
+                                <div class="tel-item">
+                                    <span class="t-lbl">Gaze Direction:</span>
+                                    <span class="t-val" id="telGaze">DOWN-RIGHT</span>
+                                </div>
+                                <div class="tel-item">
+                                    <span class="t-lbl">Camera ID:</span>
+                                    <span class="t-val" id="telCam">CAM-01</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Resolution Button -->
+                        <div class="inspector-action-row" id="inspectorActionRow">
+                            <button type="button" class="btn-resolve" id="resolveIncidentBtn" onclick="resolveCurrentEvent()">
+                                <i data-lucide="check-circle"></i>
+                                <span id="resolveBtnText">Acknowledge &amp; Resolve Incident</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═════════════════════════════════════════════════════════
+                     SECTION 4: SYNCHRONIZED CCTV & EVIDENCE REVIEW
+                     ═════════════════════════════════════════════════════════ -->
+                <section class="glass-panel playback-container">
                     <div class="section-header playback-hdr">
                         <div class="header-title-flex">
                             <i data-lucide="video" class="accent-icon"></i>
                             <div>
-                                <h3>Synchronized CCTV Flight Recorder</h3>
-                                <p class="sec-desc">Session REC-9948271 | CS302 Examination Room</p>
+                                <h3>Synchronized CCTV Evidence</h3>
+                                <p class="sec-desc">Session REC-9948271 | Examination Room Frame</p>
                             </div>
                         </div>
                         <div class="playback-badge-row">
@@ -218,7 +332,7 @@
                         </div>
                     </div>
                     
-                    <!-- Event Playback Controls Deck -->
+                    <!-- Playback Scrubber & Timeline Position -->
                     <div class="playback-controls">
                         <div class="progress-container">
                             <div class="progress-bar-bg" id="progressBarBg">
@@ -226,9 +340,9 @@
                                 <div class="progress-handle" id="progressHandle" style="left: 65%"></div>
                             </div>
                             <div class="time-labels">
-                                <span>09:58:01 (Session Start)</span>
+                                <span>09:58:01 (Start)</span>
                                 <span id="currentScrubTime">10:42:31 (Event 10/15)</span>
-                                <span>11:30:00 (Session End)</span>
+                                <span>11:30:00 (End)</span>
                             </div>
                         </div>
                         <div class="controls-row">
@@ -241,171 +355,30 @@
                                 </select>
                             </div>
                             <div class="main-controls">
-                                <button class="btn-control" id="btnPrev" aria-label="Previous Event" title="Previous Event"><i data-lucide="skip-back"></i></button>
+                                <button class="btn-control" id="btnPrev" aria-label="Previous Event" title="Previous Event (k / ↑)"><i data-lucide="skip-back"></i></button>
                                 <button class="btn-control btn-play" id="btnPlayPause" aria-label="Play/Pause" title="Play / Pause"><i data-lucide="play"></i></button>
-                                <button class="btn-control" id="btnNext" aria-label="Next Event" title="Next Event"><i data-lucide="skip-forward"></i></button>
+                                <button class="btn-control" id="btnNext" aria-label="Next Event" title="Next Event (j / ↓)"><i data-lucide="skip-forward"></i></button>
                             </div>
                             <div class="volume-control">
-                                <button class="btn-control" id="btnVolume" aria-label="Toggle Mute" title="Audio Telemetry"><i data-lucide="volume-2"></i></button>
+                                <button class="btn-control" id="btnVolume" aria-label="Toggle Mute" title="Audio"><i data-lucide="volume-2"></i></button>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Event Details Inspector, Progression & Analytics -->
-            <div class="column-side">
-                <!-- 5. Event Details Inspector Panel (Expandable & Interactive) -->
-                <div class="glass-panel event-details" id="eventDetailsPanel">
-                    <div class="section-header">
-                        <div class="header-title-flex">
-                            <i data-lucide="scan-search" class="accent-icon"></i>
-                            <div>
-                                <h3>Event Telemetry Inspector</h3>
-                                <p class="sec-desc">Detailed incident breakdown & state impact</p>
-                            </div>
-                        </div>
-                        <span class="badge badge-danger" id="inspectorSeverityBadge">HIGH RISK</span>
-                    </div>
-
-                    <div class="details-content" id="inspectorContent">
-                        <!-- Top Metadata Row -->
-                        <div class="inspector-meta-row">
-                            <div class="detail-time danger-text" id="inspectorTime">10:42:31</div>
-                            <span class="badge badge-outline" id="inspectorCategoryBadge">DEVICE DETECTION</span>
-                        </div>
-
-                        <!-- Title and Student -->
-                        <h4 class="detail-title" id="inspectorTitle">PHONE DETECTED</h4>
-                        
-                        <div class="inspector-student-card" id="inspectorStudentCard">
-                            <div class="stu-avatar-box" id="inspectorAvatar">NT</div>
-                            <div class="stu-info-box">
-                                <strong id="inspectorStudentName">Nalin Tuscano</strong>
-                                <span class="stu-id-tag" id="inspectorStudentId">Student ID: 1002</span>
-                                <span class="inst-tag" id="inspectorInst">Institution: INST-001 (Apex Tech)</span>
-                            </div>
-                        </div>
-
-                        <!-- Description & Explanation -->
-                        <div class="inspector-desc-wrap">
-                            <label class="inspector-lbl">Incident Summary & Root Cause:</label>
-                            <p class="detail-desc" id="inspectorDesc">
-                                Mobile device detected inside examination area near candidate workspace via YOLO11 neural detector. Potential unauthorized communication or resource access during exam session.
-                            </p>
-                        </div>
-
-                        <!-- State Change Progression Card (X → Y) -->
-                        <div class="state-changes-card" id="inspectorStateChanges">
-                            <div class="sc-header">
-                                <i data-lucide="git-commit" style="width:13px;height:13px;color:var(--cyan);"></i>
-                                <span>Recorded State Transitions</span>
-                            </div>
-                            <div class="sc-grid" id="stateTransitionsGrid">
-                                <div class="sc-item">
-                                    <span class="sc-label">Risk Score</span>
-                                    <span class="sc-val danger-text">35 <span class="arr">&rarr;</span> 60</span>
-                                </div>
-                                <div class="sc-item">
-                                    <span class="sc-label">Trust Score</span>
-                                    <span class="sc-val warning-text">94% <span class="arr">&rarr;</span> 71%</span>
-                                </div>
-                                <div class="sc-item">
-                                    <span class="sc-label">Status</span>
-                                    <span class="sc-val">VERIFIED <span class="arr">&rarr;</span> UNDER REVIEW</span>
-                                </div>
-                                <div class="sc-item">
-                                    <span class="sc-label">Security Alert</span>
-                                    <span class="sc-val danger-text">NONE <span class="arr">&rarr;</span> CREATED</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Technical Telemetry & Evidence Snapshot Preview -->
-                        <div class="telemetry-block" id="telemetryBlock">
-                            <div class="tel-header">
-                                <i data-lucide="cpu" style="width:13px;height:13px;color:var(--accent);"></i>
-                                <span>Vision Telemetry & Evidence</span>
-                            </div>
-                            <div class="tel-grid" id="telGrid">
-                                <div class="tel-item">
-                                    <span class="t-lbl">Confidence:</span>
-                                    <span class="t-val" id="telConf">89.4%</span>
-                                </div>
-                                <div class="tel-item">
-                                    <span class="t-lbl">Device Class:</span>
-                                    <span class="t-val" id="telDevice">cell phone</span>
-                                </div>
-                                <div class="tel-item">
-                                    <span class="t-lbl">Gaze Angle:</span>
-                                    <span class="t-val" id="telGaze">DOWN-RIGHT</span>
-                                </div>
-                                <div class="tel-item">
-                                    <span class="t-lbl">Camera ID:</span>
-                                    <span class="t-val" id="telCam">CAM-01 (HD)</span>
-                                </div>
-                            </div>
-
-                            <!-- Snapshot Image Preview if available -->
-                            <div class="evidence-preview-box" id="evidencePreviewBox">
-                                <div class="ep-lbl">Forensic Capture Evidence:</div>
-                                <img src="exam_room.jpg" alt="Incident Evidence" class="evidence-thumb" id="evidenceThumb" onerror="this.style.display='none'">
-                            </div>
-                        </div>
-
-                        <!-- Interactive Action Resolution Button -->
-                        <div class="inspector-action-row" id="inspectorActionRow">
-                            <button type="button" class="btn-resolve" id="resolveIncidentBtn" onclick="resolveCurrentEvent()">
-                                <i data-lucide="check-circle"></i>
-                                <span id="resolveBtnText">Acknowledge & Resolve Incident</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 6. Risk Score History Progression Chart -->
-                <div class="glass-panel chart-panel">
-                    <div class="section-header">
-                        <div class="header-title-flex">
-                            <i data-lucide="trending-up" class="accent-icon"></i>
-                            <div>
-                                <h3>Risk Score Progression</h3>
-                                <p class="sec-desc">Cumulative suspicious heuristic trajectory</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-wrapper">
-                        <canvas id="riskHistoryChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- 7. Gaze Direction & Threat Distribution -->
-                <div class="glass-panel chart-panel">
-                    <div class="section-header">
-                        <div class="header-title-flex">
-                            <i data-lucide="pie-chart" class="accent-icon"></i>
-                            <div>
-                                <h3>Timeline Category Breakdown</h3>
-                                <p class="sec-desc">Distribution across verified audit categories</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-wrapper donut-wrapper">
-                        <canvas id="directionChart"></canvas>
-                    </div>
-                </div>
+                </section>
             </div>
         </div>
 
-        <!-- 11. Footer -->
+        <!-- ═════════════════════════════════════════════════════════════════
+             FOOTER
+             ═════════════════════════════════════════════════════════════════ -->
         <footer class="glass-footer">
             <div class="footer-left">
                 <i data-lucide="shield-check" class="accent-icon"></i>
-                <span>ProctorAI Enterprise | Forensic Search & Discovery Action Timeline Engine</span>
+                <span>ProctorAI Enterprise | Reviewable Action Timeline Engine</span>
             </div>
             <div class="footer-right">
-                <span>Session ID: REC-9948271</span>
-                <span>SHA-256 Verified Immutable Ledger</span>
+                <span>Session: REC-9948271</span>
+                <span>SHA-256 Verified Immutable Audit Trail</span>
             </div>
         </footer>
     </div>
@@ -414,7 +387,6 @@
     <script>
         // ═══════════════════════════════════════════════════════════════════
         // DEMO AUTHENTICATION & SETUP CHECK
-        // Redirect to setup/login if not authenticated
         // ═══════════════════════════════════════════════════════════════════
         (function checkAuth() {
             const setupCompleted = sessionStorage.getItem('proctorai_setup_completed') || localStorage.getItem('proctorai_setup_completed');

@@ -1,6 +1,6 @@
 /* ═════════════════════════════════════════════════════════════════════
    PROCTORAI — REVIEWABLE ACTION TIMELINE ENGINE (replay.js)
-   Real-Time Search & Discovery, Telemetry Inspection, State Transitions
+   Search & Discovery, Chronological Timeline, State Transitions, Inspector
    ═════════════════════════════════════════════════════════════════════ */
 
 // ─── Toast System ────────────────────────────────────────────
@@ -56,8 +56,6 @@ let currentSearchQuery = '';
 let currentSeverity = 'ALL';
 let currentSortOrder = 'desc';
 let searchDebounceTimer = null;
-let riskChartInstance = null;
-let directionChartInstance = null;
 
 // ─── Category Visual Mappings ────────────────────────────────
 const CATEGORY_ICONS = {
@@ -82,11 +80,10 @@ const CATEGORY_COLORS = {
 
 // ─── DOM Ready ───────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    initCharts();
     setupEventListeners();
     fetchTimelineData();
 
-    // Auto-focus search on '/' keypress
+    // Global keyboard shortcuts
     window.addEventListener('keydown', (e) => {
         if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
             e.preventDefault();
@@ -182,7 +179,7 @@ function setupEventListeners() {
         btnNext.addEventListener('click', () => navigateEvents(1));
     }
 
-    // Category chips click listeners
+    // Category chips
     const categoryChips = document.querySelectorAll('.cat-chip');
     categoryChips.forEach(chip => {
         chip.addEventListener('click', () => {
@@ -213,10 +210,8 @@ async function fetchTimelineData() {
             updateCategoryCounts(data.category_counts || {});
             renderTimelineList(currentEvents);
             updateSummaryStatus(data.total_count, currentEvents.length);
-            updateCharts(currentEvents);
 
             if (currentEvents.length > 0) {
-                // Keep selected index within bounds
                 if (selectedEventIndex >= currentEvents.length) {
                     selectedEventIndex = 0;
                 }
@@ -252,7 +247,7 @@ function renderTimelineList(events) {
             <div class="timeline-empty">
                 <i data-lucide="search-x"></i>
                 <h4>No matching timeline events found</h4>
-                <p>Try searching for a different term like <code>"phone"</code>, <code>"Nalin"</code>, or reset category filters.</p>
+                <p>Try searching for a different keyword like <code>"phone"</code>, <code>"Nalin"</code>, or reset category filters.</p>
                 <button type="button" class="btn-primary" onclick="resetFilters()" style="margin-top:0.5rem;">
                     Reset All Filters
                 </button>
@@ -316,7 +311,6 @@ function renderTimelineList(events) {
             sevLabel = 'Suspicious';
         }
 
-        // Resolved badge
         const resolvedPill = ev.resolved ? `<span class="badge badge-success" style="font-size:0.6rem;">✓ RESOLVED</span>` : '';
 
         return `
@@ -371,7 +365,7 @@ function renderTimelineList(events) {
     lucide.createIcons();
 }
 
-// ─── Inspect Selected Event ──────────────────────────────────
+// ─── Inspect Selected Event (Section 3) ──────────────────────
 function inspectEvent(index) {
     if (index < 0 || index >= currentEvents.length) return;
     selectedEventIndex = index;
@@ -501,8 +495,8 @@ function inspectEvent(index) {
         if (scItems.length === 0) {
             scItems.push(`
                 <div class="sc-item" style="grid-column:1/-1;">
-                    <span class="sc-label">Telemetry Update</span>
-                    <span class="sc-val success-text">No integrity threshold breach recorded</span>
+                    <span class="sc-label">State Audit</span>
+                    <span class="sc-val success-text">Nominal baseline state maintained</span>
                 </div>
             `);
         }
@@ -515,18 +509,6 @@ function inspectEvent(index) {
     if (telDevice) telDevice.textContent = meta.device || (ev.category === 'DEVICE' ? 'Mobile Phone' : 'None');
     if (telGaze) telGaze.textContent = meta.gaze || (meta.direction || 'CENTER (Nominal)');
     if (telCam) telCam.textContent = meta.camera || 'CAM-01 (1080p SOC)';
-
-    // Evidence Snapshot
-    const evidenceBox = document.getElementById('evidencePreviewBox');
-    const evidenceThumb = document.getElementById('evidenceThumb');
-    if (evidenceBox && evidenceThumb) {
-        if (meta.evidence_url || ev.category === 'DEVICE' || ev.severity === 'HIGH_RISK') {
-            evidenceBox.style.display = 'flex';
-            evidenceThumb.src = meta.evidence_url || 'exam_room.jpg';
-        } else {
-            evidenceBox.style.display = 'none';
-        }
-    }
 
     // Resolution button state
     if (resolveBtn && resolveBtnText) {
@@ -541,11 +523,11 @@ function inspectEvent(index) {
         }
     }
 
-    // Synchronize Flight Recorder / Playback
+    // Synchronize CCTV Evidence Review (Section 4)
     synchronizePlayback(ev, index);
 }
 
-// ─── Synchronize Playback Area ───────────────────────────────
+// ─── Synchronize CCTV Evidence (Section 4) ───────────────────
 function synchronizePlayback(ev, index) {
     const playbackTime = document.getElementById('playbackTimeDisplay');
     const playbackBadge = document.getElementById('playbackEventBadge');
@@ -718,92 +700,6 @@ function exportTimelineData() {
     const jsonStr = JSON.stringify(currentEvents, null, 2);
     downloadBlob(jsonStr, `proctorai_timeline_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
     showToast('Exported reviewable timeline data!', 'success');
-}
-
-// ─── Charts Initialization & Updates ─────────────────────────
-function initCharts() {
-    // 1. Risk Progression Chart
-    const riskCtx = document.getElementById('riskHistoryChart');
-    if (riskCtx) {
-        riskChartInstance = new Chart(riskCtx, {
-            type: 'line',
-            data: {
-                labels: ['09:58', '10:05', '10:12', '10:18', '10:30', '10:42', '10:55', '11:30'],
-                datasets: [{
-                    label: 'Risk Score (%)',
-                    data: [0, 0, 15, 35, 45, 60, 20, 10],
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                    fill: true,
-                    tension: 0.35,
-                    borderWidth: 2,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#ef4444'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(6, 9, 14, 0.95)',
-                        titleColor: '#00e5ff',
-                        bodyColor: '#ffffff',
-                        borderColor: 'rgba(0, 229, 255, 0.3)',
-                        borderWidth: 1
-                    }
-                },
-                scales: {
-                    x: { grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } } },
-                    y: { min: 0, max: 100, grid: { color: 'rgba(255, 255, 255, 0.04)' }, ticks: { color: '#64748b', font: { family: 'JetBrains Mono', size: 10 } } }
-                }
-            }
-        });
-    }
-
-    // 2. Category Breakdown Chart
-    const catCtx = document.getElementById('directionChart');
-    if (catCtx) {
-        directionChartInstance = new Chart(catCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['AI Detection', 'Alert', 'Device', 'Gaze', 'Identity', 'Risk', 'Session'],
-                datasets: [{
-                    data: [3, 3, 1, 2, 2, 2, 2],
-                    backgroundColor: ['#00e5ff', '#ef4444', '#f43f5e', '#eab308', '#38bdf8', '#f59e0b', '#a855f7'],
-                    borderColor: 'rgba(6, 9, 14, 0.8)',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: { color: '#94a3b8', font: { family: 'Inter', size: 10 }, boxWidth: 10 }
-                    }
-                },
-                cutout: '68%'
-            }
-        });
-    }
-}
-
-function updateCharts(events) {
-    if (!events || !events.length) return;
-
-    // Update Category Breakdown dynamically
-    if (directionChartInstance) {
-        const catMap = {};
-        events.forEach(e => {
-            catMap[e.category] = (catMap[e.category] || 0) + 1;
-        });
-        directionChartInstance.data.labels = Object.keys(catMap);
-        directionChartInstance.data.datasets[0].data = Object.values(catMap);
-        directionChartInstance.update();
-    }
 }
 
 // ─── Utility HTML Escaper ────────────────────────────────────
