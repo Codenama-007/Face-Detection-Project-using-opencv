@@ -210,6 +210,7 @@ async function fetchTimelineData() {
             updateCategoryCounts(data.category_counts || {});
             renderTimelineList(currentEvents);
             updateSummaryStatus(data.total_count, currentEvents.length);
+            updateAnalyticsKPIs(currentEvents, data.total_count);
 
             if (currentEvents.length > 0) {
                 if (selectedEventIndex >= currentEvents.length) {
@@ -222,7 +223,6 @@ async function fetchTimelineData() {
         }
     } catch (err) {
         console.error('Error loading action timeline:', err);
-        renderTimelineError();
     }
 }
 
@@ -237,7 +237,31 @@ function updateCategoryCounts(counts) {
     }
 }
 
-// ─── Render Timeline List ────────────────────────────────────
+// ─── Update Analytics Section KPIs (Section 6) ───────────────
+function updateAnalyticsKPIs(events, totalCount) {
+    const kpiTotal = document.getElementById('kpiTotalEvents');
+    const kpiRisk = document.getElementById('kpiHighRisk');
+    const kpiAlerts = document.getElementById('kpiAlerts');
+    const kpiIdentity = document.getElementById('kpiIdentity');
+
+    if (kpiTotal) kpiTotal.textContent = totalCount || events.length;
+
+    let highRiskCount = 0;
+    let alertsCount = 0;
+    let identityCount = 0;
+
+    events.forEach(e => {
+        if (e.severity === 'HIGH_RISK' || e.severity === 'CRITICAL') highRiskCount++;
+        if (e.category === 'ALERT') alertsCount++;
+        if (e.category === 'IDENTITY') identityCount++;
+    });
+
+    if (kpiRisk) kpiRisk.textContent = highRiskCount;
+    if (kpiAlerts) kpiAlerts.textContent = alertsCount;
+    if (kpiIdentity) kpiIdentity.textContent = identityCount;
+}
+
+// ─── Render Timeline List (Section 3: Hero Timeline) ─────────
 function renderTimelineList(events) {
     const track = document.getElementById('actionTimelineTrack');
     if (!track) return;
@@ -365,7 +389,7 @@ function renderTimelineList(events) {
     lucide.createIcons();
 }
 
-// ─── Inspect Selected Event (Section 3) ──────────────────────
+// ─── Inspect Selected Event (Section 4) ──────────────────────
 function inspectEvent(index) {
     if (index < 0 || index >= currentEvents.length) return;
     selectedEventIndex = index;
@@ -523,11 +547,11 @@ function inspectEvent(index) {
         }
     }
 
-    // Synchronize CCTV Evidence Review (Section 4)
+    // Synchronize CCTV Evidence (Section 5)
     synchronizePlayback(ev, index);
 }
 
-// ─── Synchronize CCTV Evidence (Section 4) ───────────────────
+// ─── Synchronize CCTV Evidence (Section 5) ───────────────────
 function synchronizePlayback(ev, index) {
     const playbackTime = document.getElementById('playbackTimeDisplay');
     const playbackBadge = document.getElementById('playbackEventBadge');
@@ -572,7 +596,7 @@ function synchronizePlayback(ev, index) {
     if (playbackFaceBox) {
         if (ev.category === 'GAZE') {
             playbackFaceBox.style.borderColor = 'var(--warning)';
-            playbackFaceBox.style.transform = 'translate(-30px, 0)';
+            playbackFaceBox.style.transform = 'translate(-25px, 0)';
         } else if (ev.category === 'DEVICE' || ev.severity === 'HIGH_RISK') {
             playbackFaceBox.style.borderColor = 'var(--danger)';
             playbackFaceBox.style.transform = 'translate(0, 10px)';

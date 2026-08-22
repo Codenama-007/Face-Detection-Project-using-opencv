@@ -15,7 +15,7 @@
     <script src="https://unpkg.com/lucide@0.462.0"></script>
 </head>
 <body>
-    <!-- Back Button -->
+    <!-- Back to SOC Button -->
     <a href="monitoring.html" class="back-btn" id="backBtn" aria-label="Back to Monitoring SOC">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -25,7 +25,7 @@
 
     <div class="app-container">
         <!-- ═════════════════════════════════════════════════════════════════
-             HEADER
+             LEVEL 1: HEADER
              ═════════════════════════════════════════════════════════════════ -->
         <header class="glass-header">
             <div class="header-left">
@@ -56,10 +56,10 @@
         </header>
 
         <!-- ═════════════════════════════════════════════════════════════════
-             SECTION 1: SEARCH & DISCOVERY
+             LEVEL 2: SEARCH & DISCOVERY COMMAND DECK
              ═════════════════════════════════════════════════════════════════ -->
         <section class="glass-panel search-discovery-deck">
-            <!-- Search & Controls Bar -->
+            <!-- Search Input & Sorting Controls -->
             <div class="search-row">
                 <div class="search-input-wrap">
                     <i data-lucide="search" class="search-icon"></i>
@@ -104,7 +104,7 @@
                 </div>
             </div>
 
-            <!-- Category Filter Chips -->
+            <!-- Lightweight Category Filter Chips -->
             <div class="category-filters-row">
                 <span class="filter-group-label"><i data-lucide="filter" style="width:12px;height:12px;"></i> Categories:</span>
                 <div class="category-chips" id="categoryChips">
@@ -167,11 +167,11 @@
         </section>
 
         <!-- ═════════════════════════════════════════════════════════════════
-             MAIN WORKSPACE: TIMELINE (PRIMARY) & INSPECTOR / EVIDENCE (SIDE)
+             MAIN WORKSPACE: TIMELINE (HERO) & EVENT INSPECTOR (RIGHT)
              ═════════════════════════════════════════════════════════════════ -->
         <div class="main-grid">
             <!-- ═════════════════════════════════════════════════════════════
-                 SECTION 2: REVIEWABLE ACTION TIMELINE (PRIMARY DOMINANT)
+                 LEVEL 3: REVIEWABLE ACTION TIMELINE (HERO FEATURE)
                  ═════════════════════════════════════════════════════════════ -->
             <section class="column-main">
                 <div class="glass-panel timeline-container">
@@ -198,19 +198,16 @@
             </section>
 
             <!-- ═════════════════════════════════════════════════════════════
-                 RIGHT RAIL: SECTION 3 (INSPECTOR) & SECTION 4 (EVIDENCE)
+                 LEVEL 4: SELECTED EVENT INSPECTOR
                  ═════════════════════════════════════════════════════════════ -->
-            <div class="column-side">
-                <!-- ═════════════════════════════════════════════════════════
-                     SECTION 3: EVENT TELEMETRY INSPECTOR
-                     ═════════════════════════════════════════════════════════ -->
+            <aside class="column-side">
                 <section class="glass-panel event-details" id="eventDetailsPanel">
                     <div class="section-header">
                         <div class="header-title-flex">
                             <i data-lucide="scan-search" class="accent-icon"></i>
                             <div>
-                                <h3>Event Telemetry Inspector</h3>
-                                <p class="sec-desc">Selected incident breakdown &amp; state impact</p>
+                                <h3>Selected Event Inspector</h3>
+                                <p class="sec-desc">Forensic breakdown of selected incident</p>
                             </div>
                         </div>
                         <span class="badge badge-danger" id="inspectorSeverityBadge">HIGH RISK</span>
@@ -304,69 +301,113 @@
                         </div>
                     </div>
                 </section>
-
-                <!-- ═════════════════════════════════════════════════════════
-                     SECTION 4: SYNCHRONIZED CCTV & EVIDENCE REVIEW
-                     ═════════════════════════════════════════════════════════ -->
-                <section class="glass-panel playback-container">
-                    <div class="section-header playback-hdr">
-                        <div class="header-title-flex">
-                            <i data-lucide="video" class="accent-icon"></i>
-                            <div>
-                                <h3>Synchronized CCTV Evidence</h3>
-                                <p class="sec-desc">Session REC-9948271 | Examination Room Frame</p>
-                            </div>
-                        </div>
-                        <div class="playback-badge-row">
-                            <span class="badge badge-outline" id="playbackTimeDisplay">10:42:31</span>
-                            <span class="badge badge-danger" id="playbackEventBadge">PHONE DETECTED</span>
-                        </div>
-                    </div>
-
-                    <div class="video-placeholder" id="videoPlaceholder">
-                        <img src="exam_room.jpg" alt="Examination Room Feed" class="video-bg-img" id="playbackBgImg" onerror="this.style.display='none'">
-                        <div class="face-box" id="playbackFaceBox"></div>
-                        <div class="timestamp-overlay" id="playbackTimestamp">10:42:31</div>
-                        <div class="status-overlay danger-bg" id="playbackOverlayTag">
-                            <i data-lucide="smartphone"></i> Mobile Device Detected
-                        </div>
-                    </div>
-                    
-                    <!-- Playback Scrubber & Timeline Position -->
-                    <div class="playback-controls">
-                        <div class="progress-container">
-                            <div class="progress-bar-bg" id="progressBarBg">
-                                <div class="progress-bar-fill" id="progressBarFill" style="width: 65%"></div>
-                                <div class="progress-handle" id="progressHandle" style="left: 65%"></div>
-                            </div>
-                            <div class="time-labels">
-                                <span>09:58:01 (Start)</span>
-                                <span id="currentScrubTime">10:42:31 (Event 10/15)</span>
-                                <span>11:30:00 (End)</span>
-                            </div>
-                        </div>
-                        <div class="controls-row">
-                            <div class="speed-control">
-                                <select class="select-glass" id="speedControl" aria-label="Playback Speed">
-                                    <option value="0.5">0.5x</option>
-                                    <option value="1.0" selected>1.0x</option>
-                                    <option value="1.5">1.5x</option>
-                                    <option value="2.0">2.0x</option>
-                                </select>
-                            </div>
-                            <div class="main-controls">
-                                <button class="btn-control" id="btnPrev" aria-label="Previous Event" title="Previous Event (k / ↑)"><i data-lucide="skip-back"></i></button>
-                                <button class="btn-control btn-play" id="btnPlayPause" aria-label="Play/Pause" title="Play / Pause"><i data-lucide="play"></i></button>
-                                <button class="btn-control" id="btnNext" aria-label="Next Event" title="Next Event (j / ↓)"><i data-lucide="skip-forward"></i></button>
-                            </div>
-                            <div class="volume-control">
-                                <button class="btn-control" id="btnVolume" aria-label="Toggle Mute" title="Audio"><i data-lucide="volume-2"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
+            </aside>
         </div>
+
+        <!-- ═════════════════════════════════════════════════════════════════
+             LEVEL 5: SYNCHRONIZED CCTV & EVIDENCE REVIEW (DEDICATED SECTION)
+             ═════════════════════════════════════════════════════════════════ -->
+        <section class="glass-panel evidence-section" id="evidenceSection">
+            <div class="section-header evidence-hdr">
+                <div class="header-title-flex">
+                    <i data-lucide="video" class="accent-icon"></i>
+                    <div>
+                        <h3>Synchronized CCTV Evidence</h3>
+                        <p class="sec-desc">Session REC-9948271 | Correlated Examination Room Frame</p>
+                    </div>
+                </div>
+                <div class="playback-badge-row">
+                    <span class="badge badge-outline" id="playbackTimeDisplay">10:42:31</span>
+                    <span class="badge badge-danger" id="playbackEventBadge">PHONE DETECTED</span>
+                </div>
+            </div>
+
+            <div class="evidence-grid">
+                <div class="video-placeholder" id="videoPlaceholder">
+                    <img src="exam_room.jpg" alt="Examination Room Feed" class="video-bg-img" id="playbackBgImg" onerror="this.style.display='none'">
+                    <div class="face-box" id="playbackFaceBox"></div>
+                    <div class="timestamp-overlay" id="playbackTimestamp">10:42:31</div>
+                    <div class="status-overlay danger-bg" id="playbackOverlayTag">
+                        <i data-lucide="smartphone"></i> Mobile Device Detected
+                    </div>
+                </div>
+                
+                <div class="playback-controls">
+                    <div class="progress-container">
+                        <div class="progress-bar-bg" id="progressBarBg">
+                            <div class="progress-bar-fill" id="progressBarFill" style="width: 65%"></div>
+                            <div class="progress-handle" id="progressHandle" style="left: 65%"></div>
+                        </div>
+                        <div class="time-labels">
+                            <span>09:58:01 (Session Start)</span>
+                            <span id="currentScrubTime">10:42:31 (Event 10/15)</span>
+                            <span>11:30:00 (Session End)</span>
+                        </div>
+                    </div>
+                    <div class="controls-row">
+                        <div class="speed-control">
+                            <select class="select-glass" id="speedControl" aria-label="Playback Speed">
+                                <option value="0.5">0.5x</option>
+                                <option value="1.0" selected>1.0x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2.0">2.0x</option>
+                            </select>
+                        </div>
+                        <div class="main-controls">
+                            <button class="btn-control" id="btnPrev" aria-label="Previous Event" title="Previous Event (k / ↑)"><i data-lucide="skip-back"></i></button>
+                            <button class="btn-control btn-play" id="btnPlayPause" aria-label="Play/Pause" title="Play / Pause"><i data-lucide="play"></i></button>
+                            <button class="btn-control" id="btnNext" aria-label="Next Event" title="Next Event (j / ↓)"><i data-lucide="skip-forward"></i></button>
+                        </div>
+                        <div class="volume-control">
+                            <button class="btn-control" id="btnVolume" aria-label="Toggle Audio" title="Audio"><i data-lucide="volume-2"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═════════════════════════════════════════════════════════════════
+             LEVEL 6: ANALYTICS & SUMMARY (COLLAPSIBLE SECONDARY SECTION)
+             ═════════════════════════════════════════════════════════════════ -->
+        <section class="glass-panel analytics-accordion-section" id="analyticsSection">
+            <button type="button" class="analytics-accordion-toggle" id="analyticsToggleBtn" onclick="toggleAnalyticsSection()" aria-expanded="false">
+                <div class="accordion-title-flex">
+                    <i data-lucide="bar-chart-2" style="width:16px;height:16px;color:var(--accent);"></i>
+                    <span>Analytics &amp; Summary</span>
+                    <span class="badge badge-outline" style="font-size:0.65rem;margin-left:0.5rem;">Audit Overview</span>
+                </div>
+                <div class="accordion-right-flex">
+                    <span class="kpi-mini-pill"><strong>15</strong> Total Events</span>
+                    <span class="kpi-mini-pill danger"><strong>4</strong> High Risk</span>
+                    <i data-lucide="chevron-down" class="accordion-chevron" id="analyticsChevron"></i>
+                </div>
+            </button>
+
+            <div class="analytics-collapsible-content" id="analyticsContent" style="display:none;">
+                <div class="analytics-kpi-grid">
+                    <div class="kpi-box">
+                        <span class="kpi-label">Total Recorded Events</span>
+                        <span class="kpi-value" id="kpiTotalEvents">15</span>
+                        <span class="kpi-sub">Across 09:58 – 11:30 session</span>
+                    </div>
+                    <div class="kpi-box danger">
+                        <span class="kpi-label">High Risk Incidents</span>
+                        <span class="kpi-value danger-text" id="kpiHighRisk">4</span>
+                        <span class="kpi-sub">Security breaches &amp; mobile phones</span>
+                    </div>
+                    <div class="kpi-box warning">
+                        <span class="kpi-label">Security Alerts</span>
+                        <span class="kpi-value warning-text" id="kpiAlerts">3</span>
+                        <span class="kpi-sub">Gaze deviations &amp; missing faces</span>
+                    </div>
+                    <div class="kpi-box cyan">
+                        <span class="kpi-label">Identity Verifications</span>
+                        <span class="kpi-value success-text" id="kpiIdentity">2</span>
+                        <span class="kpi-sub">Biometric &amp; enrollment checkpoints</span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- ═════════════════════════════════════════════════════════════════
              FOOTER
@@ -401,6 +442,22 @@
                 return;
             }
         })();
+
+        // Analytics Accordion Toggle
+        function toggleAnalyticsSection() {
+            const content = document.getElementById('analyticsContent');
+            const chevron = document.getElementById('analyticsChevron');
+            const btn = document.getElementById('analyticsToggleBtn');
+            if (content.style.display === 'none' || !content.style.display) {
+                content.style.display = 'block';
+                chevron.style.transform = 'rotate(180deg)';
+                btn.setAttribute('aria-expanded', 'true');
+            } else {
+                content.style.display = 'none';
+                chevron.style.transform = 'rotate(0deg)';
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        }
 
         lucide.createIcons();
     </script>
