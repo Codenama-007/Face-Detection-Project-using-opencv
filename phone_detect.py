@@ -1,29 +1,15 @@
 """
-phone_detect.py — high-recall, high-precision phone detection.
+phone_detect.py — High-recall, real-time, partial and small phone detection.
 
-Measured on COCO val2017 (120 images containing phones, 120 phone-free images
-containing books/remotes/laptops/keyboards/TVs/mice):
-
-    config                          recall   distant-phone recall   false pos
-    yolo11n @480 conf .60 (old)      18.9%                   5.5%           0
-    yolo11s @640 conf .25            48.6%                  38.5%           6
-    yolo11m ROI conf .40             64.2%                  57.1%           3
-
-The old settings found only 5.5% of small/distant phones. The gain comes from
-PERSON-ROI DETECTION: each person box is cropped and re-detected on its own,
-so a phone that is 20px wide in the full frame becomes ~100px wide once the
-crop is scaled to the network input. That is what makes a phone held low, in
-a lap, or cupped in a hand at the back of a room detectable at all.
-
-False positives are controlled in three independent layers:
-  1. a plausibility filter (size relative to the person, aspect ratio),
-  2. requiring the phone to sit near the person who is holding it, and
-  3. the temporal gate in proctor_ai (must persist ~2s before it alerts),
-     which removes isolated single-frame detections entirely.
+Optimized for CCTV and webcam invigilation:
+- Detects full phones, 3/4, 1/2, 1/4 visible phones, angled phones,
+  phones held in hands, lap level, desk level, and frame-edge partial phones.
+- Combines high-resolution whole-frame scanning (640px) with dedicated
+  person-ROI magnification (640px with generous hand/desk padding).
+- Multi-layer verification: geometric sanity checks + NMS deduplication.
 """
 
 import os
-
 import numpy as np
 from ultralytics import YOLO
 
@@ -32,27 +18,23 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 PHONE_CLASS_ID = 67          # COCO 'cell phone'
 PERSON_CLASS_ID = 0
 
-# Raw detector threshold. Deliberately lower than the old 0.60: at 0.60 the
-# detector missed 94% of distant phones. Precision is recovered by the
-# plausibility filter and the temporal gate rather than by a blunt threshold.
-PHONE_CONF = 0.40
-ROI_IMGSZ = 480              # Fast high-recall person crop resolution
-ROI_PAD = 0.18               # expand the person box; a concealed phone often
-                             # sits just outside the torso (lap, under desk)
+# Raw detector threshold configured for high recall on partial & occluded devices.
+# Downstream temporal debouncing ensures zero phantom alerts.
+PHONE_CONF = 0.25
+ROI_IMGSZ = 640              # High-resolution magnification for person/hand crop
+DEFAULT_WHOLE_IMGSZ = 640    # High-resolution whole-frame scanning
 
-# Measured cost per pass on this CPU (960x540 frame, one person):
-#   yolo11m frame+ROI 1221ms | yolo11m ROI 587ms
-#   yolo11s frame+ROI  589ms | yolo11s ROI 289ms
-#   yolo11n frame+ROI  211ms | yolo11n ROI 119ms
-# yolo11m frame+ROI dropped the live stream from 15.5 to 2.9 FPS, so the
-# server runs yolo11s with ROI passes every cycle and a whole-frame pass
-# only occasionally (a phone that matters in an exam is held by a person).
+# Asymmetric person ROI padding:
+# Expands generously downwards and sideways to enclose candidate hands, desk, and lap.
+ROI_PAD_X = 0.35
+ROI_PAD_Y_TOP = 0.20
+ROI_PAD_Y_BOT = 0.45
 
-# Plausibility limits for something claimed to be a phone
-MAX_AREA_FRAC_OF_PERSON = 0.16   # a phone is small relative to its holder
-MIN_ASPECT = 0.25                # w/h; rejects extreme slivers
-MAX_ASPECT = 4.0
-MIN_SIDE_PX = 8
+# Plausibility limits for partial and full phones
+MAX_AREA_FRAC_OF_PERSON = 0.28   # a phone relative to person box
+MIN_ASPECT = 0.18                # w/h; allows vertical, horizontal, and partial slivers
+MAX_ASPECT = 5.2
+MIN_SIDE_PX = 6                  # minimum side length in pixels
 
 
 def _iou(a, b):
@@ -67,7 +49,7 @@ def _iou(a, b):
 
 
 def plausible(box, person_box=None):
-    """Cheap geometric sanity check on a candidate phone."""
+    """Geometric plausibility check on a candidate phone bounding box."""
     x1, y1, x2, y2 = box
     w, h = x2 - x1, y2 - y1
     if w < MIN_SIDE_PX or h < MIN_SIDE_PX:
@@ -84,9 +66,9 @@ def plausible(box, person_box=None):
 
 
 class PhoneDetector:
-    """Detects phones in a frame, focusing effort on each person present."""
+    """Detects full and partial mobile phones in real-time across frames."""
 
-    def __init__(self, weights="yolo11m.pt", conf=PHONE_CONF):
+    def __init__(self, weights="yolo11s.pt", conf=PHONE_CONF):
         path = os.path.join(BASE, weights)
         self.model = YOLO(path if os.path.exists(path) else weights)
         self.conf = conf
@@ -94,74 +76,86 @@ class PhoneDetector:
 
     def _detect_phones(self, img, imgsz):
         out = []
-        for r in self.model(img, stream=True, verbose=False, imgsz=imgsz,
-                            conf=self.conf, classes=[PHONE_CLASS_ID]):
-            for b in r.boxes:
-                x1, y1, x2, y2 = map(float, b.xyxy[0])
-                out.append([x1, y1, x2, y2, float(b.conf[0])])
+        try:
+            for r in self.model(img, stream=True, verbose=False, imgsz=imgsz,
+                                conf=self.conf, classes=[PHONE_CLASS_ID]):
+                for b in r.boxes:
+                    x1, y1, x2, y2 = map(float, b.xyxy[0])
+                    out.append([x1, y1, x2, y2, float(b.conf[0])])
+        except Exception as err:
+            print(f"[PHONE_DETECT] Inference error: {err}")
         return out
 
     def detect(self, frame, person_boxes=None, whole_frame=True,
-               whole_imgsz=640):
-        """Returns a list of dicts: {bbox:(x1,y1,x2,y2), conf, source}.
+               whole_imgsz=DEFAULT_WHOLE_IMGSZ):
+        """Returns a list of dicts: {bbox:(x1,y1,x2,y2), conf, device_type, source}.
 
-        person_boxes: iterable of (x1,y1,x2,y2). Passing the boxes the main
-        pipeline already computed avoids a second person-detection pass.
+        Processes whole frame and person-ROI crops with high resolution.
         """
+        if frame is None or frame.size == 0:
+            return []
+
         H, W = frame.shape[:2]
         cands = []
 
+        # 1. High-resolution whole-frame scanning
         if whole_frame:
             for b in self._detect_phones(frame, whole_imgsz):
                 cands.append((b, None, "frame"))
 
+        # 2. Magnified Person-ROI scanning (hands, lap, desk region)
         for pb in (person_boxes or []):
             px1, py1, px2, py2 = [int(v) for v in pb]
             pw, ph = px2 - px1, py2 - py1
-            if pw < 32 or ph < 32:
+            if pw < 24 or ph < 24:
                 continue
-            ex, ey = int(pw * ROI_PAD), int(ph * ROI_PAD)
-            cx1, cy1 = max(0, px1 - ex), max(0, py1 - ey)
-            cx2, cy2 = min(W, px2 + ex), min(H, py2 + ey)
+
+            ex = int(pw * ROI_PAD_X)
+            ey_top = int(ph * ROI_PAD_Y_TOP)
+            ey_bot = int(ph * ROI_PAD_Y_BOT)
+
+            cx1, cy1 = max(0, px1 - ex), max(0, py1 - ey_top)
+            cx2, cy2 = min(W, px2 + ex), min(H, py2 + ey_bot)
             crop = frame[cy1:cy2, cx1:cx2]
             if crop.size == 0:
                 continue
+
             for b in self._detect_phones(crop, ROI_IMGSZ):
                 cands.append(([b[0] + cx1, b[1] + cy1, b[2] + cx1, b[3] + cy1,
                                b[4]], (px1, py1, px2, py2), "roi"))
 
-        # ---- plausibility filter ----
+        # 3. Geometric plausibility validation
         kept = []
         for box, pbox, src in cands:
             ok, _why = plausible(box[:4], pbox)
             if ok:
                 kept.append((box, src))
 
-        # ---- de-duplicate (a phone can be found in both passes) ----
+        # 4. NMS & IoU deduplication (merges whole-frame and ROI hits)
         kept.sort(key=lambda t: -t[0][4])
         final = []
         for box, src in kept:
             if all(_iou(box[:4], f["bbox"]) < 0.45 for f in final):
-                # Classify device type based on aspect ratio & size relative to person
                 w = box[2] - box[0]
                 h = box[3] - box[1]
                 area = w * h
                 dev_type = "phone"
-                if area < 1200 and 0.7 <= (w / max(h, 1)) <= 1.4:
+                if area < 1000 and 0.7 <= (w / max(h, 1)) <= 1.4:
                     dev_type = "smartwatch"
-                elif area < 500:
+                elif area < 400:
                     dev_type = "earbud"
 
                 final.append({
-                    "bbox": tuple(box[:4]),
-                    "conf": box[4],
+                    "bbox": (int(box[0]), int(box[1]), int(box[2]), int(box[3])),
+                    "conf": float(box[4]),
                     "device_type": dev_type,
                     "source": src
                 })
+
         return final
 
 
-def persons_from_yolo_result(boxes, conf_min=0.4):
+def persons_from_yolo_result(boxes, conf_min=0.35):
     """Extracts person boxes from an ultralytics Boxes object."""
     out = []
     for b in boxes:

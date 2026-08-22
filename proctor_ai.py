@@ -89,11 +89,11 @@ TIERS = [(20, "LOW"), (50, "MEDIUM"), (80, "HIGH"), (float("inf"), "CRITICAL")]
 
 # Minimum model confidences (detections below these are ignored entirely)
 CONF_FACE   = 0.60
-CONF_PHONE  = 0.45   # Fast and accurate phone confidence threshold
+CONF_PHONE  = 0.25   # Responsive and accurate phone confidence threshold for full & partial phones
 
 # Event definitions: points, min sustained duration (s), cooldown (s)
 EVENTS = {
-    "PHONE_VISIBLE":    {"points": 100, "min_s": 0.5, "cooldown": 8,  "label": "Phone visible"},
+    "PHONE_VISIBLE":    {"points": 100, "min_s": 0.20, "cooldown": 6,  "label": "Phone visible"},
     "EXTRA_PERSON":     {"points": 80,  "min_s": 2.5, "cooldown": 20, "label": "Another person in frame"},
     "CAMERA_BLOCKED":   {"points": 60,  "min_s": 1.5, "cooldown": 15, "label": "Camera blocked"},
     "LOOKING_BEHIND":   {"points": 45,  "min_s": 1.5, "cooldown": 10, "label": "Looking behind"},

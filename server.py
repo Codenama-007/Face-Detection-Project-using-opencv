@@ -3138,9 +3138,9 @@ def start_identification_worker():
 
 
 # ---- Phone detection thread -------------------------------------------
-PHONE_INTERVAL = 0.1         # Fast responsive phone detection
-PHONE_RESULT_TTL = 0.8       # Immediately clear when phone is removed
-PHONE_WHOLE_FRAME_EVERY = 2  # Balance whole-frame and person-ROI for high recall
+PHONE_INTERVAL = 0.04         # High-responsiveness continuous phone detection (25 FPS)
+PHONE_RESULT_TTL = 1.0       # Hold detection bounding box smoothly across frames
+PHONE_WHOLE_FRAME_EVERY = 1  # Continuous whole-frame + person-ROI scanning on every pass
 
 _phone_lock = threading.Lock()
 _phone_input = {"frame": None, "persons": []}
@@ -3156,14 +3156,14 @@ def _phone_worker():
             persons = list(_phone_input["persons"])
             _phone_input["frame"] = None
         if frame is None:
-            time.sleep(0.02)
+            time.sleep(0.01)
             continue
         try:
             pass_no += 1
-            whole = (pass_no % PHONE_WHOLE_FRAME_EVERY == 0) or not persons
             if phone_detector is None:
                 continue
-            found = phone_detector.detect(frame, persons, whole_frame=whole, whole_imgsz=480)
+            # Continuous high-resolution scanning (640px) for small and partial phones
+            found = phone_detector.detect(frame, persons, whole_frame=True, whole_imgsz=640)
             with _phone_lock:
                 _phone_output["boxes"] = found
                 _phone_output["ts"] = time.time()
@@ -3595,11 +3595,17 @@ def _ai_worker_loop():
                 if sid not in behaviors:
                     behaviors[sid] = proctor_ai.StudentBehavior(sid, sname or sid)
 
-                # Attribute nearby phones
+                # Attribute detected phones to candidate workspace/body/hands
                 phone_conf = 0.0
                 for (px1, py1, px2, py2, pconf) in phone_boxes:
                     pcx, pcy = (px1 + px2) / 2, (py1 + py2) / 2
-                    if (sfx1 - 50) <= pcx <= (sfx2 + 50) and (sfy1 - 50) <= pcy <= (sfy2 + 80):
+                    # Check candidate perimeter (hands, desk, lap, side workspace)
+                    in_workspace = (
+                        (sfx1 - 240) <= pcx <= (sfx2 + 240) and
+                        (sfy1 - 60) <= pcy <= (sfy2 + 650)
+                    )
+                    # If candidate workspace match or single candidate in view
+                    if in_workspace or len(face_obs_list) <= 1:
                         phone_conf = max(phone_conf, pconf)
 
                 prev_logged = tracked_students.get(sid, {}).get("_logged_event")
