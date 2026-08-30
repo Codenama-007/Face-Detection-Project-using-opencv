@@ -20,7 +20,6 @@ import os
 import sys
 import time
 from collections import Counter, defaultdict
-
 import cv2
 import numpy as np
 from ultralytics import YOLO
